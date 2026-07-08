@@ -1,0 +1,8 @@
+[project]
+name = "uft2uipath-converter"
+version = "0.2.0"
+description = "ALM/UFT BPT QCP to UiPath Test Project converter"
+requires-python = ">=3.10"
+
+[project.scripts]
+uft2uipath = "uft2uipath.cli:main"

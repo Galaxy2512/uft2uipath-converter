@@ -1,0 +1,114 @@
+from __future__ import annotations
+import json, shutil
+from pathlib import Path
+from dataclasses import asdict
+from uft2uipath.model.ast import MigrationModel
+from uft2uipath.uipath.xaml import component_xaml, test_xaml, xaml_header, write_line
+
+class UiPathProjectWriter:
+    def write(self, model: MigrationModel, out_dir: str | Path) -> Path:
+        out = Path(out_dir)
+        if out.exists():
+            shutil.rmtree(out)
+        (out/"TestCases"/"Components").mkdir(parents=True)
+        (out/"Data").mkdir()
+        (out/"ObjectRepository").mkdir()
+        (out/"Reports").mkdir()
+
+        for c in model.components:
+            (out/"TestCases"/"Components"/f"{c.name}.xaml").write_text(component_xaml(c), encoding="utf-8")
+        for t in model.tests:
+            (out/"TestCases"/f"{t.name}.xaml").write_text(test_xaml(t), encoding="utf-8")
+
+        (out/"Main.xaml").write_text(f'''{xaml_header('Main')}
+  <Sequence DisplayName="Main">
+{write_line('Open Test Explorer and run generated BPT test cases.', 'Info')}
+  </Sequence>
+</Activity>
+''', encoding="utf-8")
+        project = {
+            "name": out.name,
+            "description": f"Generated from {Path(model.source_qcp).name}",
+            "main": "Main.xaml",
+            "projectType": "Tests",
+            "expressionLanguage": "CSharp",
+            "language": "CSharp",
+            "targetFramework": "Windows",
+            "dependencies": {
+                "UiPath.System.Activities": "[25.4.4]",
+                "UiPath.Testing.Activities": "[25.4.4]",
+                "UiPath.UIAutomation.Activities": "[25.10.0]"
+            },
+            "schemaVersion": "4.0",
+            "studioVersion": "25.0.0.0",
+            "projectVersion": "0.2.0"
+        }
+        (out/"project.json").write_text(json.dumps(project, indent=2), encoding="utf-8")
+        self._write_model_json(model, out/"Data"/"migration_model.json")
+        (out/"Reports"/"ConversionReport.md").write_text(self._report(model), encoding="utf-8")
+        (out/"ObjectRepository"/"README.md").write_text("Object Repository generation is planned for v0.3. v0.2 marks selector-dependent operations in Reports/ConversionReport.md.\n", encoding="utf-8")
+        (out/"README.md").write_text(self._readme(model), encoding="utf-8")
+        return out
+
+    def _write_model_json(self, model: MigrationModel, path: Path) -> None:
+        payload = {
+            "source_qcp": model.source_qcp,
+            "components": [
+                {
+                    "name": c.name,
+                    "source_files": c.source_files,
+                    "operations": [
+                        {"type": o.type.value, "name": o.name, "properties": o.properties, "confidence": o.confidence, "source": o.source}
+                        for o in c.operations
+                    ],
+                }
+                for c in model.components
+            ],
+            "tests": [{"name": t.name, "component_names": t.component_names, "source": t.source} for t in model.tests],
+            "issues": [asdict(i) for i in model.issues],
+        }
+        path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    def _report(self, model: MigrationModel) -> str:
+        mapped = sum(1 for c in model.components for o in c.operations if o.type.value != "unknown")
+        unknown = sum(1 for c in model.components for o in c.operations if o.type.value == "unknown")
+        lines = [
+            "# Conversion Report",
+            "",
+            f"Source QCP: `{Path(model.source_qcp).name}`",
+            f"Components discovered: **{len(model.components)}**",
+            f"Test cases generated: **{len(model.tests)}**",
+            f"Mapped operations: **{mapped}**",
+            f"Unknown operations: **{unknown}**",
+            "",
+            "## Important",
+            "v0.2 is a general converter foundation. It classifies operations and creates a valid UiPath Test Project with explicit TODO native activities. It does not silently guess selectors or custom VBScript behavior.",
+            "",
+            "## Issues",
+        ]
+        if not model.issues:
+            lines.append("No issues detected.")
+        else:
+            for i in model.issues:
+                lines.append(f"- **{i.severity.upper()}** `{i.item}` — {i.message}")
+        lines += ["", "## Components"]
+        for c in model.components:
+            lines.append(f"### {c.name}")
+            if c.source_files:
+                lines.append("Source files: " + ", ".join(f"`{s}`" for s in c.source_files[:5]))
+            for op in c.operations:
+                lines.append(f"- `{op.type.value}` — {op.name} (confidence {op.confidence:.2f})")
+            lines.append("")
+        return "\n".join(lines)
+
+    def _readme(self, model: MigrationModel) -> str:
+        return """# Generated UiPath Test Project
+
+Open `project.json` in UiPath Studio.
+
+Generated by `uft2uipath` v0.2.
+
+This version is intentionally general: it discovers BPT components, classifies known UFT operations, generates a valid UiPath Test Project, and writes a conversion report. Native UiPath UIAutomation activities are the next step once selector/Object Repository mapping is available.
+
+Check `Reports/ConversionReport.md` before using the generated tests.
+"""
