@@ -1,0 +1,12 @@
+.venv/
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+dist/
+build/
+*.egg-info/
+*.zip
+samples/qcp/*.qcp
