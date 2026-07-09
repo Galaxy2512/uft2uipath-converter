@@ -36,16 +36,25 @@ class ConversionIssue:
     recommendation: str | None = None
     raw: dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass
 class Parameter:
+    """
+    Represents a UFT/ALM parameter.
+
+    This can become a UiPath argument later.
+    """
+
     name: str
     value: Any = None
     datatype: str | None = None
     direction: str | None = None
+
+    # ALM traceability
+    id: int | None = None
+    source_entity: str | None = None
+    source_id: int | None = None
+
     raw: dict[str, Any] = field(default_factory=dict)
-
-
 @dataclass
 class Variable:
     name: str
@@ -74,11 +83,25 @@ class DataTable:
 
 @dataclass
 class Step:
+    """
+    Represents one executable or descriptive UFT step.
+
+    This will later become one or more UiPath activities.
+    """
+
     name: str
     type: StepType = StepType.UNKNOWN
+
+    # ALM identity and ordering
+    id: int | None = None
+    order: int | None = None
+
+    # Step content
     action: str | None = None
     target: str | None = None
     value: Any = None
+    description: str | None = None
+    expected_result: str | None = None
 
     parameters: list[Parameter] = field(default_factory=list)
     variables: list[Variable] = field(default_factory=list)
@@ -88,10 +111,22 @@ class Step:
     status: ConversionStatus = ConversionStatus.SUCCESS
     raw: dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass
 class BusinessComponent:
+    """
+    Represents one ALM/UFT Business Component.
+
+    This will later become a reusable UiPath XAML workflow.
+    """
+
     name: str
+
+    # ALM identity
+    id: int | None = None
+    alm_status: str | None = None
+    script_type: str | None = None
+    component_type: str | None = None
+
     description: str | None = None
 
     parameters: list[Parameter] = field(default_factory=list)
@@ -105,7 +140,20 @@ class BusinessComponent:
 
 @dataclass
 class UftTestCase:
+    """
+    Represents one ALM/UFT test case.
+
+    This will later become a UiPath Test Case.
+    """
+
     name: str
+
+    # ALM identity
+    id: int | None = None
+    alm_status: str | None = None
+    test_type: str | None = None
+    execution_status: str | None = None
+
     description: str | None = None
 
     components: list[BusinessComponent] = field(default_factory=list)
@@ -117,16 +165,28 @@ class UftTestCase:
     status: ConversionStatus = ConversionStatus.SUCCESS
     raw: dict[str, Any] = field(default_factory=dict)
 
-
 @dataclass
 class SharedResource:
+    """
+    Shared ALM/UFT resources.
+
+    Examples:
+    - Excel data tables
+    - Function libraries
+    - Application Areas
+    - Object repositories
+    """
+
     name: str
     type: str
+
+    id: int | None = None
+    file_name: str | None = None
+    location_type: str | None = None
     path: str | None = None
+
     metadata: dict[str, Any] = field(default_factory=dict)
     raw: dict[str, Any] = field(default_factory=dict)
-
-
 @dataclass
 class Project:
     name: str
