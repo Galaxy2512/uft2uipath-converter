@@ -1,4 +1,7 @@
 import argparse
+from pathlib import Path
+from uft2uipath.archive.extractor import ArchiveExtractor
+from uft2uipath.discovery.discovery_report import DiscoveryReportBuilder
 
 
 def main():
@@ -11,28 +14,53 @@ def main():
 
     inspect_cmd = sub.add_parser(
         "inspect",
-        help="Inspect a QCP project",
+        help="Inspect an extracted UFT/ALM project folder",
     )
-
-    inspect_cmd.add_argument(
-        "project",
-        help="Path to .qcp file or extracted project",
-    )
+    inspect_cmd.add_argument("project")
 
     convert_cmd = sub.add_parser(
         "convert",
-        help="Convert a project",
+        help="Convert a UFT/ALM project to UiPath",
     )
-
     convert_cmd.add_argument("project")
 
     args = parser.parse_args()
 
     if args.command == "inspect":
-        print(f"Inspecting: {args.project}")
-
+        _run_inspect(args.project)
     elif args.command == "convert":
         print(f"Converting: {args.project}")
-
     else:
         parser.print_help()
+
+
+def _run_inspect(project_path: str) -> None:
+    path = Path(project_path)
+
+    if path.is_file() and path.suffix.lower() in [".qcp", ".zip"]:
+        print(f"Extracting archive: {path}")
+        path = ArchiveExtractor().extract(path)
+
+    report = DiscoveryReportBuilder().build(path)
+
+    print("===================================================")
+    print("UFT Project Discovery Report")
+    print("===================================================")
+    print(f"Project root: {report.project_root}")
+    print(f"Total files:  {report.total_files}")
+    print()
+
+    print("Categories:")
+    for category, count in sorted(report.categories.items()):
+        print(f"  {category}: {count}")
+
+    print()
+    print("XML files:")
+    for xml in report.xml_files:
+        print(f"  {xml.path.name}")
+        print(f"    root: {xml.root_tag}")
+        print(f"    elements: {xml.element_count}")
+
+
+if __name__ == "__main__":
+    main()

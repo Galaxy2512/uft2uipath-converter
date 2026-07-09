@@ -2,15 +2,29 @@ import json
 from pathlib import Path
 
 from uft2uipath.ast import Project
+from uft2uipath.generator.workflow_generator import WorkflowGenerator
 
 
 class UiPathProjectGenerator:
+    def __init__(self, workflow_generator: WorkflowGenerator | None = None):
+        self.workflow_generator = workflow_generator or WorkflowGenerator()
+
     def generate(self, project: Project, output_dir: str | Path) -> Path:
         output_path = Path(output_dir) / project.name
         output_path.mkdir(parents=True, exist_ok=True)
 
+        workflows_path = output_path / "Workflows"
+        workflows_path.mkdir(exist_ok=True)
+
         self._write_project_json(project, output_path)
-        self._write_main_xaml(output_path)
+        self._write_main_xaml(project, output_path)
+
+        for test in project.tests:
+            for component in test.components:
+                self.workflow_generator.generate_component_workflow(
+                    component,
+                    workflows_path,
+                )
 
         return output_path
 
@@ -31,15 +45,27 @@ class UiPathProjectGenerator:
             encoding="utf-8",
         )
 
-    def _write_main_xaml(self, output_path: Path) -> None:
-        xaml = """<?xml version="1.0" encoding="utf-8"?>
+    def _write_main_xaml(self, project: Project, output_path: Path) -> None:
+        invoke_lines = []
+
+        for test in project.tests:
+            for component in test.components:
+                invoke_lines.append(
+                    f'    <InvokeWorkflowFile DisplayName="{component.name}" WorkflowFileName="Workflows\\\\{component.name}.xaml" />'
+                )
+
+        invokes = "\n".join(invoke_lines)
+
+        xaml = f"""<?xml version="1.0" encoding="utf-8"?>
 <Activity mc:Ignorable="sap sap2010"
  xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities"
  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
  xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation"
  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
+ xmlns:ui="http://schemas.uipath.com/workflow/activities"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Sequence DisplayName="Generated Main">
+  <Sequence DisplayName="{project.name}">
+{invokes}
   </Sequence>
 </Activity>
 """
