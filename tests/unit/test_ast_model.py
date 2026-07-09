@@ -1,4 +1,11 @@
-from uft2uipath.ast import BusinessComponent, Project, Step, StepType, TestCase
+from uft2uipath.ast import (
+    BusinessComponent,
+    ConversionStatus,
+    Project,
+    Step,
+    StepType,
+    UftTestCase,
+)
 
 
 def test_create_project_ast():
@@ -14,7 +21,7 @@ def test_create_project_ast():
         steps=[step],
     )
 
-    test_case = TestCase(
+    test_case = UftTestCase(
         name="Simple browser test",
         components=[component],
     )
@@ -27,3 +34,4 @@ def test_create_project_ast():
     assert project.name == "Migration_BPT"
     assert project.tests[0].components[0].name == "Browser_Start_QWERTZ"
     assert project.tests[0].components[0].steps[0].type == StepType.ACTION
+    assert project.tests[0].status == ConversionStatus.SUCCESS
