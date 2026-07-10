@@ -1,0 +1,19 @@
+{
+  "source_root": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT",
+  "scan_timestamp_utc": "2026-07-10T10:12:26.433071+00:00",
+  "directory_count": 9,
+  "file_count": 683,
+  "total_size_bytes": 21010667,
+  "text_file_count": 177,
+  "binary_file_count": 506,
+  "error_count": 0,
+  "uft_script_candidate_count": 50,
+  "object_repository_reference_count": 29,
+  "parameter_reference_count": 29,
+  "control_flow_count": 75,
+  "function_or_sub_count": 72,
+  "top_level_directories": [
+    "ProjRep",
+    "tables"
+  ]
+}

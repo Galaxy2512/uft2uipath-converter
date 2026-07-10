@@ -1,0 +1,2099 @@
+[
+  {
+    "relative_path": "ProjRep/000/000/000/001/302",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\302",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "302",
+    "suffix": "",
+    "size_bytes": 14974,
+    "sha256": "c6268ca7cd17d6650c40ec5c6898d62dac5771ec42279c78fc13971d514e5b8e",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 218,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Wend"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "Option Explicit\n\n'Rückgabewert - Hashtable\nFunction Excel_ReadLine(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByRef oHash)\n\tExcel_ReadLine = Excel_Value(sFile, sWorksheet, sLine, vbNullString, oHash, False)\nEnd Function\n\n'Rückgabewert - String\nFunction Excel_ReadValue(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByVal sColumn)\n\tDim sValue\n\n\tIf Excel_Value(sFile, sWorksheet, sLine, sColumn, sValue, False) Then\n\t\tExcel_ReadValue = sValue\n\tElse\n\t\tExcel_ReadValue = Null\n\tEnd If\nEnd Function\n\nFunctio\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/303",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\303",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "303",
+    "suffix": "",
+    "size_bytes": 3782,
+    "sha256": "a12d8ba248e413a6ef9d114c15116c8467f1c1bb6a0430224f86f2e5e3f137a2",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 67,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "Then",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function "
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tActiveX Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all ActiveX test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all ActiveX test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for all ActiveX test objects)\n'\t* VerifyValue - Verifies the value of a specifi\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/304",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\304",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "304",
+    "suffix": "",
+    "size_bytes": 17739,
+    "sha256": "5490215e2b2fdf6ee1ba08fabe45b108199b34760dc24ac72f45c7571ccfe7bc",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 379,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tGeneral and Standard Windows functions, plus registration information required by all add-in function library files\n'       -------------------------\n'\n'   Available Functions:\n'\t* OpenApp - Opens a specified application (common file)\n'\t* AddToTestResults - Adds a Report.Event step to the Test Results (common file)\n'\t* VerifyProperty - Verifies the value of a specified property (for all Standard Windows test obje\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/305",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\305",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "305",
+    "suffix": "",
+    "size_bytes": 5486,
+    "sha256": "4f87af17f70b8d6936cfaaa07eb15cd5fe1caa77a9a1bbfd31ce260948262fa4",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 94,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "Then",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function "
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tVisual Basic Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all Visual Basic test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all Visual Basic test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for all Visual Basic test objects)\n'\t* VerifyValue - Verifies th\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/306",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\306",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "306",
+    "suffix": "",
+    "size_bytes": 6695,
+    "sha256": "4675b822cfbc82611d40ee73e35e143cab4d70601d242b31735585fd4e96a0ce",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 131,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tWeb Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all Web test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all Web test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for all Web test objects)\n'\t* VerifyValue - Verifies the value of a specified object (for W\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/307",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\307",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "307",
+    "suffix": "",
+    "size_bytes": 71154,
+    "sha256": "a886b6bcdbde2b55c6f79c74ebb9deaaf20c5e65895b0963fdd167a865fc615e",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 1232,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Desktop."
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Loop",
+        "While ",
+        "Wend",
+        "Select Case",
+        "End Select"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "'----------------------------------------------------------------------------------------------------------\n'\n' Stand: 20170802\n'\n'----------------------------------------------------------------------------------------------------------\n'BubbleSort(aSort)\n'InArray(Element, Array)\n'WriteToFile(Text, Datei)\n'CheckFile(FullPath)\n'RemoveFile(FullPath)\n'Fill(byVal Nummer, Anzahl, Seite)\n'FillLeft(byVal Nummer, Anzahl)\n'FillRight(byVal Nummer, Anzahl)\n'MatchCount(GesamtString, SuchString, Start)\n'Zuf\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/309",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\309",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "309",
+    "suffix": "",
+    "size_bytes": 16450,
+    "sha256": "ade0f2c7c02292a9a47b50c97dd7dcd5bb48fb9301b6d77ab8c993113077c2b0",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 263,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser(",
+        "Window(",
+        "Dialog("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Loop",
+        "While ",
+        "Wend",
+        "Select Case",
+        "End Select"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "'----------------------------------------------------------------------------------------------------------\n'\n' Stand: 20191127 16:05:00\n'\n'----------------------------------------------------------------------------------------------------------\n' SetWindowState(oObject, sEigenschaft)\n' CountBrowser()\n' CloseAllBrowser()\n' CloseIEBrowser()\n' CloseFFBrowser()\n' CloseCRBrowser()\n' GetBrowserVersion()\n' GetBrowserType(oBrowser)\n\n'--------------------------------------------------------------------\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/310",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\310",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "310",
+    "suffix": "",
+    "size_bytes": 115136,
+    "sha256": "6b882fda42e79f622dbfb1d8a2e2f77a2ffc7afc0435a8157cd9dbadd925eb96",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 1322,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "object_repository_reference": [
+        "WebList("
+      ],
+      "parameter_reference": [
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Do ",
+        "Wend",
+        "Select Case",
+        "End Select"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'TODO: WebList und RadioGroup - gleich ? -> In Funktionen auslagern\n\n'----------------------------------------------------------------------------------------------------------\n'\n' Stand: 20190306 15:40:00\n'\n'----------------------------------------------------------------------------------------------------------\n'\n'Function ImageHandleParam(oObject, sParameter)\n'Function LinkHandleParam(oObject, sParameter)\n'Function PageHandleParam(oObject, sParameter)\n'Function WebAreaHandleParam(oObject, sP\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/311",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\311",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "311",
+    "suffix": "",
+    "size_bytes": 1548,
+    "sha256": "325667fe0a98b2be37db116c0b5e85b64fd219cc1e39f07e4ce5499aca84173d",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 31,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "Public Function AddRunInformation(CustomKey, strDescription)\n\tDim RetCode : RetCode = False\n\t\n\tReporter.AddRunInformation CustomKey, strDescription\n\tRetCode=True\n\t\n\tAddRunInformation = RetCode\nEnd Function\n\nPublic Function ReportEvent(EventStatus, ReportStepName, Details, ImageFilePath)\n\tDim RetCode : RetCode = False\n\t\n\tIf ImageFilePath = vbNullString Then\n\t\tReporter.ReportEvent EventStatus, ReportStepName, Details\n\t\tRetCode = True\n\tElse\t\t\n\t\tReporter.ReportEvent EventStatus, ReportStepName, Deta\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/313",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\313",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "313",
+    "suffix": "",
+    "size_bytes": 18008,
+    "sha256": "67b5c03e38b45214eaf59275f0eb33724624ef903b643776b6fb4518390a46c5",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 317,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "parameter_reference": [
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "' VWFS Report.qfl\nOption Explicit\n\nPrivate blnReportEnabled\n\nPrivate objXMLDoc\n\nPrivate intCompCount\n\n' Includes the current component object data to add steps etc.\nPrivate objCurComponent\n\n' Includes the current step object to add additional options\nPrivate objCurStep \n\nPrivate blnReportDebug\n\n' Kopierte Funktion zu Testzwecken\nPublic Function convertImageToBase64(filePath)\n  Dim inputStream\n  Set inputStream = CreateObject(\"ADODB.Stream\")\n  inputStream.Open\n  inputStream.Type = 1  ' adTypeBina\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/314",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\314",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "314",
+    "suffix": "",
+    "size_bytes": 74764,
+    "sha256": "ae21bc583a8b6ed930fdb9d57e506f234f3502c5fd7b00d408a88c50f56e4d90",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 986,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Desktop."
+      ],
+      "object_repository_reference": [
+        "WebList("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Wend",
+        "Select Case",
+        "End Select"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "'----------------------------------------------------------------------------------------------------------\n'\n' Stand: 20190306 15:40:00\n'\n'----------------------------------------------------------------------------------------------------------\n' CheckDisabled(oObject, sExpectedStatus)\n' CheckVisible(oObject, sExpectedStatus)\n' CheckAttribute(oObject, sExpectedValue, sAttribute)\n' CheckDate(oObject, sExpectedValue, sAttribute)\n' CheckTime(oObject, sExpectedValue, sAttribute)\n' CheckDateTime(oO\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/331",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\331",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "331",
+    "suffix": "",
+    "size_bytes": 3315,
+    "sha256": "138e70d36a995d0a443e56ab18a5902a976be00c72e5d1e5d7e35ada88c66d12",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 73,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "ExitTest"
+      ],
+      "parameter_reference": [
+        "Parameter("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ]
+    },
+    "text_preview": "'Parameterpruefung\nIf Len(Parameter(\"Path\")) <= 0 Then\n\tReporter.ReportEvent micFail, Environment.Value(\"TestName\") & \"-Init\", \"Parameter 'DataTable' darf nicht leer sein!\"\n\tExitTest(-1)\nElse\n\tDim sResourcePath, sResourceFileName\n\n\tsResourcePath = Left(CStr(Parameter(\"Path\")), InStrRev(CStr(Parameter(\"Path\")), \"\\\") - 1)\n\tsResourceFileName = Right(CStr(Parameter(\"Path\")), Len(CStr(Parameter(\"Path\"))) - InStrRev(CStr(Parameter(\"Path\")), \"\\\"))\nEnd If\n\n'Laden der angeforderten Resource aus dem HP AL\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/364",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\364",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "364",
+    "suffix": "",
+    "size_bytes": 5615,
+    "sha256": "cfb08ab7d4de81d55379fd5e8865fcf6ed4ad1768103487ce7866cb06003071a",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 141,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser(",
+        "Window(",
+        "Dialog("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ]
+    },
+    "text_preview": "Dim strBrowserPath, strBrowserPathAlternative, mySendKeys, sUrl, bIsUrlEmpty\n\n\nSetting.WebPackage(\"ReplayType\") = 1\n\nCloseAllBrowser\n\n'Check the Parameter 'Url', if is empty or <skip> then set sUrl to about:blank otherwise set the input Url\nIf Parameter(\"Url\") = \"\" Or LCase(Parameter(\"Url\")) = \"<skip>\" Then\n\tbIsUrlEmpty = True\n\tsUrl = \"about:blank\"\nElse\n\tbIsUrlEmpty = False\n\tsUrl = Replace(Parameter(\"Url\"), \"\\\", \"/\")\nEnd If\n\nIf (Parameter(\"Browser\") = \"IE\") Then\n\t' IE 32bit\n\tstrBrowserPath = \"C:\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/434",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\434",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "434",
+    "suffix": "",
+    "size_bytes": 6563,
+    "sha256": "753d0bdfec65f2257e244b5aa15da2eeb0b1bde18154ab0c855f18dcd186d01a",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 119,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "Then",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tJava Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all Java test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all Java test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for all Java test objects)\n'\t* VerifyValue - Verifies the value of a specified object (f\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/436",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\436",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "436",
+    "suffix": "",
+    "size_bytes": 10280,
+    "sha256": "96139f4d538b9e681ff41af17bddc97c881f216f1ac41c429438b16e25a79722",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 182,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\t.Net Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all .Net test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all .Net test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for all .Net test objects)\n'\t* VerifyValue - Verifies the value of a specified object (f\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/437",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\437",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "437",
+    "suffix": "",
+    "size_bytes": 6565,
+    "sha256": "dac2827522e9767454fd03fb773b4d87491822ded61dc15c56053349b83f24c3",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 119,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "Then",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tOracle Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all Java test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all Java test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for all Java test objects)\n'\t* VerifyValue - Verifies the value of a specified object \n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/438",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\438",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "438",
+    "suffix": "",
+    "size_bytes": 799,
+    "sha256": "aa027a67dd376a3c0d032de50e4ae90cd242d698bb2927e2db3d5051f336cfaf",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 24,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "Then",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tPeopleSoft Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t\n'   Version: QTP8.2 November 2004\n'\n'   ** Do not modify this file. It may be automatically updated by a later version, and then you will lose your changes.\n'********************************************************************************\n\nOption Explicit\n\n' Function InvokePeopleSoft\n' --------------------\n' Invoke the PeopleSoft\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/439",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\439",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "439",
+    "suffix": "",
+    "size_bytes": 78078,
+    "sha256": "f483df4256cc755cab707fb50bf469acfa831dfabc2c0f25ef19e997d3d06713",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 1774,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Window("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Do ",
+        "Loop",
+        "While ",
+        "Wend"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'       Sap Functions\n'       -------------------------\n'\n'   Available Functions:\n' * ---------------------------------------\n' *\n' * - ActivateForWindow - Makes Activate the default method for SAPGuiWindow.\n' *\n' * - SelectMenuForToolbar - Selects an item from the toolbar. The toolbar can be\n' *                                        independent or residing in a grid.\n' *\n' * - ExtendNodeSelectionForTree - Extend\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/440",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\440",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "440",
+    "suffix": "",
+    "size_bytes": 22085,
+    "sha256": "1f7be36782e7f231e93ff96953d51bbf338c5d1752b7872c0c8b3649484e11b1",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 433,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tSiebel Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all Siebel test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all Siebel test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for SiebText, SiebTextArea, SiebPicklist, SiebCheckbox, SiebButton, SiebCurrency, \n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/441",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\441",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "441",
+    "suffix": "",
+    "size_bytes": 2832,
+    "sha256": "6c2ae0861dd0bda959f2b679cdf8e23a961d7650455468cd368b3a47beb2d852",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 64,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Do "
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tTerminal Emulator Functions\n'       -------------------------\n'\n'   Available Functions:\n'\t* VerifyProperty - Verifies the value of a specified property (for all TE test objects)\n'\t* OutputProperty - Returns the value of the specified property (for all TE test objects)\n'\t* VerifyEnable - Verifies whether a specified object is enabled (for TeField)\n'\t* VerifyValue - Verifies the value of a specified object (for Te\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/444",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\444",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "444",
+    "suffix": "",
+    "size_bytes": 8884,
+    "sha256": "569557631738d01f58e087db5dfef444cca5133ab840ac1f73e5e9391953af87",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 212,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Do ",
+        "Select Case",
+        "End Select"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "'********************************************************************************\n'\tWeb services Functions\n'\t-------------------------\n'\n'   Available Functions:\n'\t* VerifyXMLFile - Checks whether the content of a specified XML file matches the content of another specified XML file.\n'\t* VerifyXMLValue- Checks whether the content of the element with the supplied XPath has the expected value.\n'\t* ValidateXML - Checks whether the specified XML object conforms to the specified schema file.\n'\t* Outpu\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/458",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\458",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "458",
+    "suffix": "",
+    "size_bytes": 1673,
+    "sha256": "7958ce1c8ae3d022d2b0d9a3e7ab6c1b9b730453c79dd84747efeee7fb82c073",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 60,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "Dim strBrowserPath, strBrowserPathAlternative, mySendKeys, sUrl, bIsUrlEmpty\n\n\nSetting.WebPackage(\"ReplayType\") = 1\n\n'Check the Parameter 'Url', if is empty or <skip> then set sUrl to about:blank otherwise set the input Url\nIf Parameter(\"Url\") = \"\" Or LCase(Parameter(\"Url\")) = \"<skip>\" Then\n\tbIsUrlEmpty = True\n\tsUrl = \"about:blank\"\nElse\n\tbIsUrlEmpty = False\n\tsUrl = Replace(Parameter(\"Url\"), \"\\\", \"/\")\nEnd If\n\nIf (Parameter(\"Browser\") = \"IE\") Then\n\t' IE 32bit\n\tstrBrowserPath = \"C:\\Program Files (x\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/466",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\466",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "466",
+    "suffix": "",
+    "size_bytes": 1532,
+    "sha256": "d1787132cf9195de721cb71cd23b862e42d495101863ce4c46340f25fc7257c8",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 54,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "Dim strBrowserPath, strBrowserPathAlternative, mySendKeys, sUrl, bIsUrlEmpty\n\n\nSetting.WebPackage(\"ReplayType\") = 1\n\n'Check the Parameter 'Url', if is empty or <skip> then set sUrl to about:blank otherwise set the input Url\nIf Parameter(\"Url\") = \"\" Or LCase(Parameter(\"Url\")) = \"<skip>\" Then\n\tbIsUrlEmpty = True\n\tsUrl = \"about:blank\"\nElse\n\tbIsUrlEmpty = False\n\tsUrl = Replace(Parameter(\"Url\"), \"\\\", \"/\")\nEnd If\n\nIf (Parameter(\"Browser\") = \"IE\") Then\n\t' IE 32bit\n\tstrBrowserPath = \"C:\\Program Files (x\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/473",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\473",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "473",
+    "suffix": "",
+    "size_bytes": 809,
+    "sha256": "bd3d98d965693f73020ccc46db5c7ed26ca41fba5f85d41bd7da84ab7f0581e4",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 23,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser(",
+        "Dialog("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "End If"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nDim strUser : strUser = \"dkx2v0r\"\nDim strPassword : strPassword = \"5c46fc04575b0e8800f95a631f40043b7a82e73e3419\"\n\nWith Browser(\"Browser\")\n\t.Navigate(Parameter(\"edt_URL\"))\n\t.Sync\n\n\tIf (.Dialog(\"Windows-Sicherheit\").Exist(1)) Then\n\t\t.Dialog(\"Windows-Sicherheit\").WinEdit(\"User\").Set strUser\n\t\t.Dialog(\"Windows-Sicherheit\").WinEdit(\"Password\").SetSecure strPassword\n\t\t.Dialog(\"Windows-Sicherheit\").WinButton(\"OK\").Click\n\tEnd If\n\n\tIf (.WinObject(\"Benachrichtigung\").WinButton(\"Geblockte \n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/541",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\541",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "541",
+    "suffix": "",
+    "size_bytes": 218,
+    "sha256": "ef143c470a0bd7826752bd736bea7bc6925c249db99438fca253c5fc534ab880",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 10,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ]
+    },
+    "text_preview": "Option Explicit\n\nWith Browser(\"Browser\")\n\t.Navigate(Parameter(\"edt_URL\"))\n\t.Sync\n\n\tReporter.ReportEvent micDone, Environment(\"TestName\"), \"Navigation zu '\" & Parameter(\"edt_URL\") & \"' beendet.\"\nEnd With",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/566",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\566",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "566",
+    "suffix": "",
+    "size_bytes": 525,
+    "sha256": "779863628b93cd511051d26753ae01693bc4e5de3fa455de88363c4e5b6d6310",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 11,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ]
+    },
+    "text_preview": "If Browser(\"title:=\" & Parameter(\"Title\")).Exist(5) Then\n\tBrowser(\"title:=\" & Parameter(\"Title\")).Close\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"Bowser '\" & Parameter(\"Title\") & \"' not found!\"\nEnd  If\n\nIf Not Browser(\"title:=\" & Parameter(\"Title\")).Exist(0) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"Bowser '\" & Parameter(\"Title\") & \"' closed.\"\nElse \n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"Bowser '\" & Parameter(\"Title\") & \"' could not close\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/666",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\666",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "666",
+    "suffix": "",
+    "size_bytes": 364,
+    "sha256": "ddfd78cb36d263c5fd6bebecec82858daabcbcd5f65d6f3861accf0b3b2a721d",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Exeplit\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/674",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\674",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "674",
+    "suffix": "",
+    "size_bytes": 365,
+    "sha256": "b7380eb3abfbfa0ff558b8a19abbb4dbcf923e3cfc523dca1ec5f946f37fe924",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/780",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\780",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "780",
+    "suffix": "",
+    "size_bytes": 3251,
+    "sha256": "ebf6df449c899868abef9c4fbf5758ebf5cfb4127895bf9deb4f80bb8a06f93a",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 82,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser(",
+        "Window(",
+        "Dialog("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "Dim strBrowserPath, strBrowserPathAlternative, mySendKeys, sUrl, bIsUrlEmpty\n\n\nSetting.WebPackage(\"ReplayType\") = 1\n\n'Check the Parameter 'Url', if is empty or <skip> then set sUrl to about:blank otherwise set the input Url\nIf Parameter(\"Url\") = \"\" Or LCase(Parameter(\"Url\")) = \"<skip>\" Then\n\tbIsUrlEmpty = True\n\tsUrl = \"about:blank\"\nElse\n\tbIsUrlEmpty = False\n\tsUrl = Replace(Parameter(\"Url\"), \"\\\", \"/\")\nEnd If\n\nIf (Parameter(\"Browser\") = \"IE\") Then\n\t' IE 32bit\n\tstrBrowserPath = \"C:\\Program Files (x\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/788",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\788",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "788",
+    "suffix": "",
+    "size_bytes": 3253,
+    "sha256": "d6b6f36be70d5450c130ec684a355f73b69a1624379eca260cb8096be4e1ce0b",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 82,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "Browser(",
+        "Window(",
+        "Dialog("
+      ],
+      "object_repository_reference": [
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "Dim strBrowserPath, strBrowserPathAlternative, mySendKeys, sUrl, bIsUrlEmpty\n\n\nSetting.WebPackage(\"ReplayType\") = 1\n\n'Check the Parameter 'Url', if is empty or <skip> then set sUrl to about:blank otherwise set the input Url\nIf Parameter(\"Url\") = \"\" Or LCase(Parameter(\"Url\")) = \"<skip>\" Then\n\tbIsUrlEmpty = True\n\tsUrl = \"about:blank\"\nElse\n\tbIsUrlEmpty = False\n\tsUrl = Replace(Parameter(\"Url\"), \"\\\", \"/\")\nEnd If\n\nIf (Parameter(\"Browser\") = \"IE\") Then\n\t' IE 32bit\n\tstrBrowserPath = \"C:\\Program Files (x\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/803",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\803",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "803",
+    "suffix": "",
+    "size_bytes": 764,
+    "sha256": "3d8c0059603cc3d1977536652016366c038df5fc68fb1cccf050defaf1a8e1c4",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 14,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "ExitTest",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebEdit(",
+        "WebButton(",
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\nDim sUser, sPassword\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\n\tExitTest(-1)\nEnd  If\n\nBrowser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebEdit(\"username_WebEdit\").Set \"Admin\" Paramet\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/811",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\811",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "811",
+    "suffix": "",
+    "size_bytes": 756,
+    "sha256": "77bc94dd81237611caa73a7c9df180924b9a87af3231cab1e2bb68f0ce96b93d",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 14,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "ExitTest",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebEdit(",
+        "WebButton(",
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\nDim sUser, sPassword\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\n\tExitTest(-1)\nEnd  If\n\nBrowser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebEdit(\"username_WebEdit\").Set Parameter(\"Inpu\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/820",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\820",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "820",
+    "suffix": "",
+    "size_bytes": 1077,
+    "sha256": "78bf1f305e337152f7d9e6d4e727eeb785028aa0275451dbc0ee71756e314dc5",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 20,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "ExitTest",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebEdit(",
+        "WebButton(",
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\nDim sUser, sPassword\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\n\tExitTest(-1)\nEnd  If\n\nBrowser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebEdit(\"username_WebEdit\").Set Parameter(\"Inpu\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/833",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\833",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "833",
+    "suffix": "",
+    "size_bytes": 4688,
+    "sha256": "5fe6425b265c145f8595e44e9d3aa7486bef2eaffa5d05575ddd4972a3befb4c",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 111,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "ExitTest"
+      ],
+      "parameter_reference": [
+        "Parameter("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'Parameterpruefung\nIf Len(Parameter(\"Path\")) <= 0 Then\n\tReporter.ReportEvent micFail, Environment.Value(\"TestName\") & \"-Init\", \"Parameter 'DataTable' darf nicht leer sein!\"\n\tExitTest(-1)\nElse\n\tDim sResourcePath, sResourceFileName\n\n\tsResourcePath = Left(CStr(Parameter(\"Path\")), InStrRev(CStr(Parameter(\"Path\")), \"\\\") - 1)\n\tsResourceFileName = Right(CStr(Parameter(\"Path\")), Len(CStr(Parameter(\"Path\"))) - InStrRev(CStr(Parameter(\"Path\")), \"\\\"))\nEnd If\n\n'Laden der angeforderten Resource aus dem HP AL\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/848",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\848",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "848",
+    "suffix": "",
+    "size_bytes": 4960,
+    "sha256": "2ff57f9e39193f6dad939e1ec94b32fd889ce9a36c211ee9823c62209336b3a7",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 125,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_parameter_references",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Reporter.ReportEvent",
+        "ExitTest"
+      ],
+      "parameter_reference": [
+        "Parameter("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function"
+      ]
+    },
+    "text_preview": "'Parameterpruefung\nIf Len(Parameter(\"Path\")) <= 0 Then\n\tReporter.ReportEvent micFail, Environment.Value(\"TestName\") & \"-Init\", \"Parameter 'DataTable' darf nicht leer sein!\"\n\tExitTest(-1)\nElse\n\tDim sResourcePath, sResourceFileName\n\n\tsResourcePath = Left(CStr(Parameter(\"Path\")), InStrRev(CStr(Parameter(\"Path\")), \"\\\") - 1)\n\tsResourceFileName = Right(CStr(Parameter(\"Path\")), Len(CStr(Parameter(\"Path\"))) - InStrRev(CStr(Parameter(\"Path\")), \"\\\"))\nEnd If\n\n'Laden der angeforderten Resource aus dem HP AL\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/849",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\849",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "849",
+    "suffix": "",
+    "size_bytes": 17398,
+    "sha256": "016fc1c5f555133d93a9c74033a2e5a1726d76693a0ca9e1faf18caef7287b12",
+    "is_text": true,
+    "detected_encoding": "utf-16",
+    "printable_ratio": 1.0,
+    "line_count": 260,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Wend"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "Option Explicit\n\n'Rückgabewert - Hashtable\nFunction Excel_ReadLine(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByRef oHash)\n\tExcel_ReadLine = Excel_Value(sFile, sWorksheet, sLine, vbNullString, oHash, False)\nEnd Function\n\n'Rückgabewert - String\nFunction Excel_ReadValue(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByVal sColumn)\n\tDim sValue\n\n\tIf Excel_Value(sFile, sWorksheet, sLine, sColumn, sValue, False) Then\n\t\tExcel_ReadValue = sValue\n\tElse\n\t\tExcel_ReadValue = Null\n\tEnd If\nEnd Function\n\nFunctio\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/850",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\850",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "850",
+    "suffix": "",
+    "size_bytes": 8695,
+    "sha256": "ce90b9d6e9ae0daf83fbc72c7643db014a6fdf90fd14033f96f472771eb42f2e",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 260,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Wend"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "Option Explicit\n\n'Rückgabewert - Hashtable\nFunction Excel_ReadLine(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByRef oHash)\n\tExcel_ReadLine = Excel_Value(sFile, sWorksheet, sLine, vbNullString, oHash, False)\nEnd Function\n\n'Rückgabewert - String\nFunction Excel_ReadValue(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByVal sColumn)\n\tDim sValue\n\n\tIf Excel_Value(sFile, sWorksheet, sLine, sColumn, sValue, False) Then\n\t\tExcel_ReadValue = sValue\n\tElse\n\t\tExcel_ReadValue = Null\n\tEnd If\nEnd Function\n\nFunctio\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/851",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\851",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "851",
+    "suffix": "",
+    "size_bytes": 9004,
+    "sha256": "7b2e82f2c4711a343ae155f86687ba2b28ef362f45fb6feb9493002205003306",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 276,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_control_flow",
+      "contains_function_or_sub"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent"
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If",
+        "For ",
+        "Next",
+        "Wend"
+      ],
+      "function_or_sub": [
+        "Function ",
+        "End Function",
+        "Sub ",
+        "End Sub"
+      ]
+    },
+    "text_preview": "Option Explicit\n\n'Rückgabewert - Hashtable\nFunction Excel_ReadLine(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByRef oHash)\n\tExcel_ReadLine = Excel_Value(sFile, sWorksheet, sLine, vbNullString, oHash, False)\nEnd Function\n\n'Rückgabewert - String\nFunction Excel_ReadValue(ByVal sFile, ByVal sWorksheet, ByVal sLine, ByVal sColumn)\n\tDim sValue\n\n\tIf Excel_Value(sFile, sWorksheet, sLine, sColumn, sValue, False) Then\n\t\tExcel_ReadValue = sValue\n\tElse\n\t\tExcel_ReadValue = Null\n\tEnd If\nEnd Function\n\nFunctio\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/883",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\883",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "883",
+    "suffix": "",
+    "size_bytes": 367,
+    "sha256": "d97f3596897b0f4c9481025c1df7bc1915519696dad018838dfab08a6b3f7be9",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "control_flow": [
+        "If ",
+        "Then"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"-- Select --_WebElement\").Exist(20) Then\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"-- Select --_WebElement\").Click\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"Admin_ESS_WebElement\").Click\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/892",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\892",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "892",
+    "suffix": "",
+    "size_bytes": 361,
+    "sha256": "1321f336ebfb0125957e1a244c5912bccffe1829e8888dbcda1c138d47d49b35",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "control_flow": [
+        "If ",
+        "Then"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"-- Select --_WebElement\").Exist(20) Then\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"Select_WebElement\").Click\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"Admin_ESS_WebElement\").Click\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/900",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\900",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "900",
+    "suffix": "",
+    "size_bytes": 355,
+    "sha256": "80615716d555baa88c1df671cbeb42bea51f53b1849fb36fadd5697b63c3a6d3",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "control_flow": [
+        "If ",
+        "Then"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"Select_WebElement\").Exist(20) Then\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"Select_WebElement\").Click\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_2\").WebElement(\"Admin_ESS_WebElement\").Click\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/909",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\909",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "909",
+    "suffix": "",
+    "size_bytes": 458,
+    "sha256": "df7ba5abe21bc913389192e9582f2da203dff72ef4a8fe989006b1c92ea98cdc",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "WebList(",
+        "Page(",
+        "Browser("
+      ],
+      "control_flow": [
+        "If ",
+        "Then"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebElement(\"-- Select --_2\").Exist(10) Then\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebElement(\"-- Select --_2\").Click @@ script infofile_;_ZIP::ssf3.xml_;_\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebList(\"-- Select --AdminESS\").Select \"Admin\" @@ script infofile_;_ZIP::ssf4.xml_;_\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/918",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\918",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "918",
+    "suffix": "",
+    "size_bytes": 484,
+    "sha256": "af9dcd52a87168ccf7d71cd26dc4bb73c489243a1291e3b7cbc538dac040bfd6",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "WebList(",
+        "Page(",
+        "Browser("
+      ],
+      "control_flow": [
+        "If ",
+        "Then"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebElement(\"-- Select --_WebElement\").Exist(10) Then\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebElement(\"-- Select --_WebElement\").Click @@ script infofile_;_ZIP::ssf3.xml_;_\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebList(\"-- Select --AdminESS_WebList\").Select \"Admin\" @@ script infofile_;_ZIP::ssf4.xml_;_\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/934",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\934",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "934",
+    "suffix": "",
+    "size_bytes": 405,
+    "sha256": "aa17a9a0a6859a73a960456be31986c03fe673a099e02e192d45055c43adb3dd",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 10,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM\").WebElement(\"Admin\").GetTOProperty(\"innertext\") = Parameter(\"Input_UserRole\") Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"Select hat funktioniert.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"Select hat nicht funktioniert!\"\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/942",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\942",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "942",
+    "suffix": "",
+    "size_bytes": 338,
+    "sha256": "deb232f3bcb089bf375edda6e55b7b16a4851004b97f54da0de1aa448c5012b4",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM\").WebElement(\"Admin\").GetTOProperty(\"innertext\") = Parameter(\"Input_UserRole\") Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"Select hat funktioniert.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"Select hat nicht funktioniert!\"\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/951",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\951",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "951",
+    "suffix": "",
+    "size_bytes": 404,
+    "sha256": "e7959dc8b0fefea330908e21e986bac200ca85381b576180d9932d44ff2d5608",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 10,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM\").WebElement(\"Admin\").GetTOProperty(\"innertext\") = Parameter(\"Input_UserRole\") Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"Select hat funktioniert.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"Select hat nicht funktioniert!\"\nEnd  If\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Dashboard\").Click",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/965",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\965",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "965",
+    "suffix": "",
+    "size_bytes": 502,
+    "sha256": "953721a4c615d8e3d23d3162b944c83c51082490379f21911edba5819ee24972",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 8,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "WebList(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter("
+      ],
+      "control_flow": [
+        "If ",
+        "Then"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Admin_Link\").Click\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebElement(\"-- Select --_WebElement\").Exist(10) Then\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebElement(\"-- Select --_WebElement\").Click @@ script infofile_;_ZIP::ssf3.xml_;_\n\tBrowser(\"OrangeHRM\").Page(\"OrangeHRM_Admin_Page\").WebList(\"-- Select --AdminESS_WebList\").Select Parameter(\"Input_Select\") @@ script infofile_;_ZIP::ssf4.xml_;_\nEnd  If",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001/980",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\001\\980",
+    "parent_directory": "ProjRep/000/000/000/001",
+    "name": "980",
+    "suffix": "",
+    "size_bytes": 404,
+    "sha256": "cb123e93e63ddfa87b6d290359bb3820a730d62efbb13633d72e44bb2615d267",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 10,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else"
+      ]
+    },
+    "text_preview": "Option Explicit\n\nIf Browser(\"OrangeHRM\").Page(\"OrangeHRM\").WebElement(\"Admin\").GetROProperty(\"innertext\") = Parameter(\"Input_UserRole\") Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"Select hat funktioniert.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"Select hat nicht funktioniert!\"\nEnd  If\n\nBrowser(\"OrangeHRM\").Page(\"OrangeHRM\").Link(\"Dashboard\").Click",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/002/011",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\002\\011",
+    "parent_directory": "ProjRep/000/000/000/002",
+    "name": "011",
+    "suffix": "",
+    "size_bytes": 1366,
+    "sha256": "91b30ec88f036f59da56d7bd45a8b3273cd3c8e7c111a3ccba7d29ff09d3f585",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 26,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "ExitTest",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebEdit(",
+        "WebButton(",
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ]
+    },
+    "text_preview": "Option Explicit\nDim sUser, sPassword\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\n\tExitTest(-1)\nEnd  If\n\nBrowser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebEdit(\"username_WebEdit\").Set Parameter(\"Inpu\n...[truncated]",
+    "error": null
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/002/019",
+    "absolute_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\samples\\extracted\\Migration_BPT\\ProjRep\\000\\000\\000\\002\\019",
+    "parent_directory": "ProjRep/000/000/000/002",
+    "name": "019",
+    "suffix": "",
+    "size_bytes": 1366,
+    "sha256": "a53f252e5f74142972b656dd3f69fddd161163a4edc0a4575d8a68024847e19f",
+    "is_text": true,
+    "detected_encoding": "utf-8-sig",
+    "printable_ratio": 1.0,
+    "line_count": 26,
+    "categories": [
+      "text",
+      "uft_script_candidate",
+      "contains_object_references",
+      "contains_parameter_references",
+      "contains_control_flow"
+    ],
+    "matched_markers": {
+      "uft_script": [
+        "Option Explicit",
+        "Reporter.ReportEvent",
+        "ExitTest",
+        "Browser("
+      ],
+      "object_repository_reference": [
+        "WebEdit(",
+        "WebButton(",
+        "WebElement(",
+        "Page(",
+        "Browser("
+      ],
+      "parameter_reference": [
+        "Parameter(",
+        "Environment("
+      ],
+      "control_flow": [
+        "If ",
+        "Then",
+        "Else",
+        "End If"
+      ]
+    },
+    "text_preview": "Option Explicit\nDim sUser, sPassword\n\nIf Browser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebElement(\"Innertext_WebElement\").Exist(10) Then\n\tReporter.ReportEvent micPass, Environment(\"TestName\"), \"URL wurde im Browser erfolgreich geladen.\"\nElse\n\tReporter.ReportEvent micFail, Environment(\"TestName\"), \"URL wurde im Browser nicht erfolgreich geladen!\"\n\tExitTest(-1)\nEnd  If\n\nBrowser(\"OrangeHRM_BrowserObject\").Page(\"OrangeHRM_PageObject\").WebEdit(\"username_WebEdit\").Set Parameter(\"Inpu\n...[truncated]",
+    "error": null
+  }
+]

@@ -1,0 +1,2769 @@
+================================================================================
+PROJREP ANALYSIS
+================================================================================
+
+ProjRep folder: C:\Users\KristinaŠeparović\Documents\uft2uipath-converter\samples\extracted\Migration_BPT\ProjRep
+Relevant files: 160
+
+================================================================================
+FILE: 000\000\000\001\234
+OBJECT ID: 1234
+COMPONENTS: []
+SIGNATURES: ['.Set', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+End If
+ End If
+
+
+ If ActionName = "actOpenDefectDetails" Then
+ Template_ActionCanExecute = False
+ msgbox "Please use the link via the entity ID!"
+ End If
+
+ If ActionName = "Defects.RefreshAll" or ActionName = "Defects.SetFilter" _
+ or ActionName = "Defects.ClearFilter" Then
+ T_Refresh_All ' Um Comments aus IT zu bernehmen
+ End If
+
+ If ActionName = "Template_Defects_Debug" then
+ If user.IsInGroup("TDAdmin") Then
+ If debugFlag = True then
+ msgbox "Debug Off"
+ debugFlag = False
+ Else
+ msgbox "Debug On"
+ debugFlag = True
+ End If
+ End If
+ End If
+
+ If ActionName = "UserDefinedActions.TestPlan_BC_Activate" Then
+ T_BC_Activate
+ End If
+
+ If ActionName = "Defects_Action_Testfall_betroffen" then
+ ' Tenten 20130313: Feature zum Summieren der Betroffenen Testflle
+ ret = Defects_Anzahl_Betroffener_Testfaelle
+ End If
+
+ If ActionName = "UserDefinedActions.TestLab_Action1" Then
+ T_TestLab_ShowTestLog
+ End If
+
+ If ActionName = "UserDefinedActions.REQ_TF_LINK_TS" Then
+ msgbox T_AddTestsToCoverageTS("W0* or IM*")
+ End If
+
+ If ActionName = "UserDefinedActions.REQ_TF_LINK" Then
+ Local_Coverage_Update
+ End If
+
+ If ActionName = "UserDefinedActions.T_TP_Move2Trash" Then
+ T_TP_Move2Trash
+ End If
+
+ If ActionName = "UserDefinedActions.T_TL_M
+
+================================================================================
+FILE: 000\000\000\001\242
+OBJECT ID: 1242
+COMPONENTS: []
+SIGNATURES: ['.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+achment.Name
+ sOriName = right(sAttachmentName, len(sAttachmentName) - len("STEP_" & oStep.ID) - 1)
+ ' Prfen ob Attachment existiert bzw. mehr als 1 MB laden wir nicht zustzlich hoch
+ If Not oBugAttachNameDic.Exists(sAttachmentName) Then
+ If oAttachment.FileSize < 1000000 Then
+ oAttachment.Load True, ""
+ T_AddAttachment oBug, oAttachment.FileName
+ sExpected = Replace(sExpected, sOriName, sAttachmentName)
+ sActual = Replace(sActual, sOriName, sAttachmentName)
+ Else
+' msgBox "Add Attachment: " & sOriName & " Size: " & oAttachment.FileSize
+ sActual = sActual & sOriName & " not linked because of size restrictions."
+ End If
+ End If
+ ' Falls das Attachment im Step nicht verlinkt ist, dann jetzt den Link noch hinzufgen
+ If instr(1,sExpected,sAttachmentName,0) + instr(1,sActual,sAttachmentName,0) < 1 Then
+ sActual = sActual & "<p style=""margin-top:0; margin-bottom:0; line-height: 9pt; min-height: 9pt; "">" & _
+ "<a href=""Attachment:" & sAttachmentName & """><font face=""Arial"" color=""#0000ff"">" & _
+ "<span style=""font-size:8pt""><u>[Attachment: " & sAttachmentName & "]</u>" & _
+ "</span></font></a>
+
+================================================================================
+FILE: 000\000\000\001\302
+OBJECT ID: 1302
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+bLineMode = vbFalse
+
+	'define function default value
+	Excel_Value = True
+
+	'deactivate error handling
+	On Error Resume Next
+
+	'create excel object
+	Set oApplication = CreateObject("Excel.Application")
+	If Not isObject(oApplication) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Excel", "Die Anwendung Excel konnte nicht gestartet werden!"
+		Excel_Value = False
+		Exit Function
+	End If
+
+	'set app properties (invisible, non-Interactive)
+	oApplication.Visible = False
+	oApplication.DisplayAlerts = False
+
+	'open excel file
+	Set oWorkBook = oApplication.Workbooks.Open(sFile, , False)
+	If Not isObject(oWorkBook) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Lade Datei", "Die Excel-Datei konnte nicht verarbeitet werden!"
+		Excel_Value = False
+		Call Excel_DestroyApplication(oApplication)
+		Exit Function
+	End If
+
+	'set default shett to 1 if not empty
+	If Len(sWorksheet) = 0 Then
+		sWorksheet = "#1"
+	End If
+	'select and activate sheet
+	If CheckNumeric(sWorksheet) Then
+		Set oSheet = oWorkBook.Sheets(CInt(Right(sWorksheet, Len(sWorksheet) - 1)))
+	Else
+		Set oSheet = oWorkBook.Sheets(sWorksheet)
+	End If
+	If Not isObject(oSheet) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Aktiviere Tabellenblatt", "Das angeforderte Tabellenblatt konte in der Excel-Datei nicht gefunden werden!"
+		Excel_Value = False
+		Call Excel_DestroyWorkbook(oWorkBook)
+		Call Excel_Des
+
+================================================================================
+FILE: 000\000\000\001\304
+OBJECT ID: 1304
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+the report (object name)
+' details - Description of the report event
+'
+'@Description Reports an event to the Test Results
+'@Documentation Report an event to the Test Results.
+Public Function AddToTestResults (status, StepName, details)
+	Reporter.ReportEvent status, StepName, details
+End Function
+
+' Function VerifyProperty
+' -----------------------
+' Verify the value of a specified property
+' Parameters:
+'	PropertyName - the property name to check
+' ExpectedValue - the expected value of the property
+' Returns - True - if the expected value matches the actual value
+'
+'@Description Checks whether a property value matches its expected value
+'@Documentation Check whether the <Test object name> <test object type> <PropertyName> property value matches the expected value: <ExpectedValue>.
+Public Function VerifyProperty (obj, PropertyName, ExpectedValue)
+	Dim actual_value
+	' Get the actual property value
+	actual_value = obj.GetROProperty(PropertyName)
+	' Compare the actual value to the expected value
+	If actual_value = ExpectedValue Then
+		Reporter.ReportEvent micPass, "VerifyProperty Succeeded", "The " & PropertyName & " expected value: " & ExpectedValue & " matches the actual value"
+		VerifyProperty = True
+	Else
+		Reporter.ReportEvent micFail, "VerifyProperty Failed", "The " & PropertyName & " expected value: " & ExpectedValue & " does not match the actual value: " & actual_value
+		VerifyPro
+
+================================================================================
+FILE: 000\000\000\001\306
+OBJECT ID: 1306
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+pe> is enabled.
+Public Function VerifyWebEnabled(obj)
+	Dim disable_property
+	' Get the enabled property from the test object
+	disable_property = obj.GetROProperty("disabled")
+	If disable_property = 0 Then ' The value is True (anything but 0)
+		Reporter.ReportEvent micPass, "VerifyEnabled Succeeded", "The test object is enabled"
+		VerifyWebEnabled = True
+	Else
+		Reporter.ReportEvent micFail, "VerifyEnabled Failed", "The test object is NOT enabled"
+		VerifyWebEnabled = False
+	End If
+End Function
+
+' Function LaunchBrowser
+' -----------------------
+' Launch browsers manually with different parameters.
+' Parameters:
+' Browser - The name of the browser to launch
+' device_model - The model of the specified device containing the browser
+' device_manufacturer - The manufacturer of the specified device
+' device_ostype - The operation system running on the specified device
+' device_osversion - The operating system version running on the specified device
+
+'@Description Launch browser with specified parameters
+'@Documentation Launch desktop or mobile browser with specified parameters
+Public Function LaunchBrowser(Browser, device_model, device_manufacturer, device_ostype, device_osversion)
+ WebUtil.LaunchBrowser Browser, device_model, device_manufacturer, device_ostype, device_osversion
+End Function
+
+' *****************************************************************************
+
+================================================================================
+FILE: 000\000\000\001\307
+OBJECT ID: 1307
+COMPONENTS: []
+SIGNATURES: ['.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+den spaeter entfernt)
+		oDifferenceAnotB(oItem) = 0
+	Next
+
+	For Each oItem In ArrayB
+		'Alle Eintraege aus ArrayB ebenfalls in oUnion hinzufuegen
+		oUnion(oItem) = 0
+		'Wenn Eintrag in ArrayB in oDifferenceAnotB gefunden
+		If oDifferenceAnotB.Exists(oItem) Then
+			'Eintrag in oIntersection hinzufuegen
+			oIntersection(oItem) = 0
+			'UND Loeschen des Eintrags aus oDifferenceAnotB
+			oDifferenceAnotB.Remove oItem
+		Else
+			'Wenn Eintrag von ArrayB NICHT in der Schnittmenge (oIntersection) vorhanden Eintrag in oDifferenceBnotA hinzufuegen
+			If Not oIntersection.Exists(oItem) Then oDifferenceBnotA(oItem) = 0
+		End If
+	Next
+	DifferenceArray = Array(oUnion.Keys, oIntersection.Keys, oDifferenceAnotB.Keys, oDifferenceBnotA.Keys)
+End Function
+
+'Function ValidateString(val, RegExpPattern)
+'	Dim oRegExp
+'
+'	Set oRegExp = New RegExp
+'	oRegExp.Pattern = RegExpPattern
+'	oRegExp.Global = True
+'
+'	ValidateString = oRegExp.Test(val)
+'
+'	Set oRegExp = Nothing
+'End Function
+'
+''----------------------------------------------------------------------------------------------------------
+'
+Function getKeyWord(strParam)
+	Dim FUNCTIONNAME : FUNCTIONNAME = "getKeyWord"
+	Dim strKeyWord : strKeyWord = ""
+	Dim oXml
+	Dim iNodes
+
+	Dim iPos, strParamTemp
+
+	iPos = InStrRev(strParam, ">")
+	If iPos = 0 Or IsNull(iPos) Then
+		strKeyWord = ""
+	Else
+		strParamTemp = Mid(strParam, 1, iPos-1) & "/>"
+	
+		'Set oXml = Cr
+
+================================================================================
+FILE: 000\000\000\001\309
+OBJECT ID: 1309
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Click', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+---------------------------------------------------------
+'
+' Stand: 20191127 16:05:00
+'
+'----------------------------------------------------------------------------------------------------------
+' SetWindowState(oObject, sEigenschaft)
+' CountBrowser()
+' CloseAllBrowser()
+' CloseIEBrowser()
+' CloseFFBrowser()
+' CloseCRBrowser()
+' GetBrowserVersion()
+' GetBrowserType(oBrowser)
+
+'----------------------------------------------------------------------------------------------------------
+
+Option Explicit
+
+'! @brief 	Funktion zum Setzen der Fenstereigenschaften (Minimiert, Maximiert, Wiederherstellen)
+'! @Param	oObject 		: Objekt, bei dem die Eigenschaft gesetzt werden soll zB: Browser("MeinBrowser")
+'! @Param	sEigenschaft : Eigenschft die gesetzt werden soll (min, max, restore)
+Sub SetWindowState(oObject, sEigenschaft)
+	Dim oHandle
+
+	'Auslesen der Fenster-ID aus den Eigenschaften des bergebenen Objektes
+	oHandle = oObject.Object.HWND
+	With Window("hwnd:=" & oHandle)
+		.Activate
+		'Setzen der gew nschten Eigenschaft
+		Select Case sEigenschaft
+			Case "max"	.Maximize
+			Case "min"	.Minimize
+			Case "restore"	.Restore
+		End Select
+	End With
+End Sub
+
+'! @brief 	Funktion zum Ermitteln der Anzahl offener InternetExplorer-Fenster (ausser QC)
+'! @return	integer mit der Anzahl offener InternetExplorer-Fenster (ausser QC)
+Function CountBrowser()
+	Dim paName
+	Dim piCount
+	Dim poShell, poShellWind
+
+================================================================================
+FILE: 000\000\000\001\310
+OBJECT ID: 1310
+COMPONENTS: []
+SIGNATURES: ['.Set']
+
+PREVIEW
+--------------------------------------------------------------------------------
+wordExist(oObject) Then
+		' Ermitteln des KeyWords
+		sKeyWord = LCase(getKeyWord(sParameter))
+		' Wurde ein KeyWord gefunden?
+		If Len(sKeyWord) = 0 Then
+			' Nein -> KEIN Fehler!
+			' Der Wert wird so wie er ist ins Feld bertragen
+			oObject.Set(sParameter)
+			VWFSReportEvent micPass, Environment("TestName"), FUNCTIONNAME & vbCRLF & oObject.ToString & "DEPRECATED: No keyword found: """ & sParameter & """ set."
+			bReturn = True
+		Else
+			Select Case sKeyWord
+				Case "set"
+					bReturn = KeywordSet(oObject, sParameter, "value")
+				Case "get"
+					If evaluateAttributes(sParameter, "matches") Then
+						sAttributeValue = getAttribute(sParameter, "matches")
+						Set bReturn = Matches(oObject.getROProperty("value"), sAttributeValue)
+					Else
+						VWFSReportEvent micFail, Environment("TestName"), oObject.ToString & vbCRLF & FUNCTIONNAME & ": " & vbCRLF & "Unknown parameter for keyword """ & sKeyWord & """ found!"
+					End If
+				Case "compare"
+					If evaluateAttributes(sParameter, "regexp") Then
+						bReturn = KeywordCompare(oObject, "regexp", sParameter, "value")
+					ElseIf evaluateAttributes(sParameter, "text") Then
+						bReturn = KeywordCompare(oObject, "text", sParameter, "value")
+					ElseIf evaluateAttributes(sParameter, "tooltip") Then
+						bReturn = KeywordCompare(oObject, "tooltip", sParameter, "title")
+					ElseIf evaluateAttributes(sParameter, "date") Then
+						bReturn = KeywordCo
+
+================================================================================
+FILE: 000\000\000\001\311
+OBJECT ID: 1311
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+CustomKey, strDescription
+	RetCode=True
+	
+	AddRunInformation = RetCode
+End Function
+
+Public Function ReportEvent(EventStatus, ReportStepName, Details, ImageFilePath)
+	Dim RetCode : RetCode = False
+	
+	If ImageFilePath = vbNullString Then
+		Reporter.ReportEvent EventStatus, ReportStepName, Details
+		RetCode = True
+	Else		
+		Reporter.ReportEvent EventStatus, ReportStepName, Details, ImageFilePath
+		RetCode = True
+	End If
+	
+	ReportEvent = RetCode
+End Function
+
+Public Function ReportNote(NoteContent)
+	Dim RetCode : RetCode = False
+	
+	Reporter.ReportNote NoteContent
+	RetCode = True
+	
+	ReportNote = RetCode
+End Function
+
+================================================================================
+FILE: 000\000\000\001\313
+OBJECT ID: 1313
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+sformNode(oXSL)
+			If Err.Number = 0 Then
+				Set oFile = FSO.OpenTextFile(pDestination, ForWriting, True)
+				oFile.Write sResult
+				oFile.Close
+			End If
+			If Err.Number = 0 Then XMLTransform = True
+			Set oFile = Nothing
+		Else
+			
+			Reporter.ReportEvent micFail, "PublishReport", "File """ & pXSL & """ is not well formatted."
+		End If
+	Else
+		
+		Reporter.ReportEvent micFail, "PublishReport", "File """ & pXSL & """ is not well formatted."
+	End If
+	
+	Set oXSL = Nothing
+End Function
+
+Private Sub saveXML()
+	If Reporter.RunStatus = micFail Then
+		' TODO: save to alm	
+		objXMLDoc.Save Reporter.ReportPath & "\VWFSReport.xml"
+		
+		XMLTransform LoadTestResource("BPT Resources\Tools", "Report XSLT", Reporter.ReportPath), Reporter.ReportPath & "\VWFSReport.html"
+		' Upload temporaly disabled
+		'UploadAttachmentToTestRun Reporter.ReportPath & "\VWFSReport.html"
+	End If
+End Sub
+
+Private Sub addAttribute(ByRef objNode, strAttributeName, strAttributeValue)
+	Dim objAttribute, objTestInfoNodeMap
+	
+	Set objAttribute = objXMLDoc.createAttribute(strAttributeName)
+	objAttribute.value = strAttributeValue
+	
+	Set objTestInfoNodeMap = objNode.attributes
+	objTestInfoNodeMap.setNamedItem(objAttribute)	
+End Sub
+
+Private Sub generateXMLDoc
+	Dim objRootNode, objTestInfo 
+	
+	If Not objXMLDoc is Nothing Then
+		' Exit if report is already created
+		Exit Sub
+	End If
+			
+	Reporter.ReportEvent micDone,"VWFS
+
+================================================================================
+FILE: 000\000\000\001\314
+OBJECT ID: 1314
+COMPONENTS: []
+SIGNATURES: ['.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+'" & FUNCTIONNAME & "'," & vbCRLF & " Object '" & oObject.ToString & "' Unknown attribute '" & sParameter & "' for SET keyword, no action performed!"
+			sAttribute = ""
+			bReturn = False
+	End Select
+
+	If sAttribute = "password" Then
+		oObject.SetSecure sValue
+		bReturn = True
+	'Wurde auskommentiert da Hr. Marten keine Pr fung nach dem SET m chte
+'	ElseIf sAttribute <> "" And Not bNoCheck Then
+'		bReturn = SetAndCheck(oObject, sValue, sUFTAttribute)
+	Else
+		oObject.Set sValue
+		bReturn = True
+	End If
+
+	If bReturn Then
+		VWFSReportEvent micPass, Environment("TestName"), "Function '" & FUNCTIONNAME & "'," & vbCRLF & " Object '" & oObject.ToString & "' value '" & sValue & "' set."
+	End If
+
+	KeywordSet = bReturn
+End Function
+
+'! @brief 	Verarbeitung des Skip Keywords
+'! @Param	oObject : HP UFT Objekt
+'! @Param	sParameter 	 : Parameter Wert mit dem Schl sselwort
+'! @return	Boolean (True or False)
+Function KeywordSkip(oObject, sParameter)
+	Dim FUNCTIONNAME : FUNCTIONNAME = "KeywordSkip"
+
+	' Reporting im Falle, dass das Schl sselwort Skip ist
+	If StrComp(LCase(getKeyWord(sParameter)), "skip") = 0 Then
+		VWFSReportEvent micDone, Environment("TestName"), "Function '" & FUNCTIONNAME & "'," & vbCRLF & " Object '" & oObject.ToString & "' skipped."
+		KeywordSkip = True
+	Else
+		KeywordSkip = False
+	End If
+End Function
+
+'! @brief 	Pr fung ob ein Objekt existiert, inkl. Reporting
+'! @details Fal
+
+================================================================================
+FILE: 000\000\000\001\331
+OBJECT ID: 1331
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent', 'Environment.']
+
+PREVIEW
+--------------------------------------------------------------------------------
+'Parameterpruefung
+If Len(Parameter("Path")) <= 0 Then
+	Reporter.ReportEvent micFail, Environment.Value("TestName") & "-Init", "Parameter 'DataTable' darf nicht leer sein!"
+	ExitTest(-1)
+Else
+	Dim sResourcePath, sResourceFileName
+
+	sResourcePath = Left(CStr(Parameter("Path")), InStrRev(CStr(Parameter("Path")), "\") - 1)
+	sResourceFileName = Right(CStr(Parameter("Path")), Len(CStr(Parameter("Path"))) - InStrRev(CStr(Parameter("Path")), "\"))
+End If
+
+'Laden der angeforderten Resource aus dem HP ALM
+Dim sFullFileName : sFullFileName = LoadTestResource(sResourcePath, sResourceFileName, GetSpecialDirectory(2))
+
+If Len(sFullFileName) = 0 Then
+	Reporter.ReportEvent micFail, Environment.Value("TestName"), "Die im Parameter 'DataTable' angegebene Excel-Datei konnte nicht geladen werden!"
+	ExitTest(-1)
+End If
+
+Dim max,max_Real,min,rand,sValue, iRandom
+max=101
+max_Real = 11
+min=2
+
+If Parameter("Reale_Daten") = False Then
+	Randomize
+	iRandom = Int((max-min+1)*Rnd+min)
+	sValue = Excel_ReadValue(sFullFileName, Parameter("Sheet"), "#" + CStr(iRandom), "#1")
+	Parameter("Anrede") = sValue
+	sValue = Excel_ReadValue(sFullFileName, Parameter("Sheet"), "#" + CStr(iRandom), "#2")
+	Parameter("Vorname") = sValue
+	Randomize
+	sValue
+
+================================================================================
+FILE: 000\000\000\001\361
+OBJECT ID: 1361
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Exist', 'Page(', 'WebEdit(']
+
+PREVIEW
+--------------------------------------------------------------------------------
+' '+ ( sCP m l @eCML yV k 1If Browser("openurl:=about:blank").Exist(30) Then AC 6 4 U D` ! \r ( 	 m i c c l a s s W e b B u t t o n _ x p a t h v i s i b l e v a l u e O K 
+ t y p e x u l : b u t t o n 
+ n a m e O K h t m l t a g X U L : B U T T O N h t m l i d c l a s s d i a l o g - b u t t o n 2 M e r c u r y . T o l e r a n t P r i o r i t y Q` e9N j 1 1 1 N H Q` o9N p 1 1 1 $ Q` i9N 1P 1 1 8` Q` s9N | 1 1P 1 @ Q` }9N ^ 1 1 1 Q` 9N 1 1P 1 Xy Q` 9N 1@ 1@ 1 z I` 9N 1@ 1 1 9N 1p 1 1 K 9N 1p 1@ 1 z 0 9N 1 1 1 9N 10 10 1 ` 9N 1 1@ 1 ( ` 9N 6 1 1 1 ( 9N 0 1 1 1
+
+================================================================================
+FILE: 000\000\000\001\364
+OBJECT ID: 1364
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+= "IE") Then
+	' IE 32bit
+	strBrowserPath = "C:\Program Files (x86)\Internet Explorer\iexplore.exe"
+	'Starte InternetExplorer
+	If CheckFile(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+		
+		If Not bIsUrlEmpty Then
+			If Browser("Browser").WinObject("Benachrichtigung").WinButton("Geblockte Inhalte zulassen").Exist(10) Then
+				Browser("Browser").WinObject("Benachrichtigung").WinButton("Geblockte Inhalte zulassen").Click
+			End If
+		End If
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & "!"
+	End If
+ElseIf (Parameter("Browser") = "IE64") Then
+	strBrowserPath = "C:\Program Files\Internet Explorer\iexplore.exe"
+	'Starte InternetExplorer
+	If CheckFile(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+		SetWindowState Browser("openurl:=" & sUrl), "max"
+		
+		If Not bIsUrlEmpty Then
+			If Browser("Browser").WinObject("Benachrichtigung").WinButton("Geblockte Inhalte zulassen").Exist(10) Then
+				Browser("Browser").WinObject("Benachrichtigung").WinButton("Geblockte Inhalte zulassen").Click
+			End If
+		End If
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & "!"
+	End If
+ElseIf (Parameter("Browser") = "FF") Then
+	strBrowserPath = "C:\Program Files (x86)\Mozilla Firefox\firefox.exe"
+	strBrowser
+
+================================================================================
+FILE: 000\000\000\001\435
+OBJECT ID: 1435
+COMPONENTS: []
+SIGNATURES: ['.Set']
+
+PREVIEW
+--------------------------------------------------------------------------------
+obile device to use for the business process (BPT) test.
+' Parameter: device_ostype, device_osversion, device_model, device_manufacturer
+Function SetActiveMobileDevice(device_ostype, device_osversion, device_model, device_manufacturer)
+	mobileUtil.SetActiveMobileDevice device_ostype, device_osversion, device_model, device_manufacturer
+End Function
+
+Function SetActiveMobileDeviceById(device_id)
+	mobileUtil.SetActiveMobileDeviceById device_id
+End Function
+
+================================================================================
+FILE: 000\000\000\001\439
+OBJECT ID: 1439
+COMPONENTS: []
+SIGNATURES: ['.Click', '.Set', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+ectGridToolbarMenuItem obj, Path
+ Exit Sub
+ End If
+ If StrComp(obj.object.subType, "Toolbar", 1) = 0 Then
+ SelectIndependentToolbarMenuItem obj, Path
+ Exit Sub
+ End If
+ If Err.Number <> 0 Then
+ Reporter.ReportEvent micFail, method, Err.Description
+ End If
+End Sub
+
+' Function ExtendNodeSelectionForTree
+' -----------------------------------
+' Extends the node selection in a tree.
+' Parameter:
+' Path - the node path (string or index).
+'@Description Extends the node selection in a tree.
+'@Documentation Extend the <Path> node selection in the <Test object name> <Test object type>.
+Sub ExtendNodeSelectionForTree(obj, Path)
+ obj.ExtendNode Path
+End Sub
+
+' Function SelectColumnForTree
+' ----------------------------
+' Select a column in a tree.
+' Parameter:
+' Column - the column to select. Either the title or the index.
+'@Description Selects a column in a tree.
+'@Documentation Select the <Column> column in the <Test object name> <Test object type>.
+Sub SelectColumnForTree(obj, Column)
+ obj.ClickColumn Column
+End Sub
+
+' Function SelectItemForTree
+' ----------------------------
+' Select or click an item in a tree. Item can be normal/link/button.
+' Parameters:
+' NodePath - path to the tree node (string or index).
+' Item - item in the node (string or index).
+'@Description Selects or clicks an item in a tree.
+'@Documentat
+
+================================================================================
+FILE: 000\000\000\001\440
+OBJECT ID: 1440
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+ype> is enabled.
+Public Function VerifyIsEnabled (obj)
+	Dim enable_property
+	' Get the enabled property from the test object
+	enable_property = obj.GetROProperty("IsEnabled")
+	If enable_property <> 0 Then ' The value is True (anything but 0)
+		Reporter.ReportEvent micPass, "VerifyIsEnabled Succeeded", "The test object is enabled"
+		VerifyIsEnabled = True
+	Else
+		Reporter.ReportEvent micFail, "VerifyIsEnabled Failed", "The test object is NOT enabled"
+		VerifyIsEnabled = False
+	End If
+End Function
+
+' ******** Verify Functions - Start **************
+'--------------------------------------------------
+' In order to implement the 'VerifyValue' function for all QuickTest Professional test objects,
+' there is collection of functions that returns a specific property that represent 
+' the 'Value' of a test object.
+
+
+' Function VerifyActivePDQProperty
+' --------------------
+' Check the ActivePDQ property for a specified object
+' Returns - True - if the expected Value matches the actual value
+'Parameter: 
+'	ExpectedActivePDQ - the expected value 
+'@Description Checks the object value
+'@Documentation Check whether the <Test object name> <test object type> value matches the expected value: <ExpectedActivePDQ>
+Public Function VerifyActivePDQ (obj, ExpectedActivePDQ)
+	VerifyActivePDQ = VerifyProperty (obj, "ActivePDQ", ExpectedActivePDQ)
+End Function
+
+' Function VerifyActiveScreenProperty
+' ----------------
+
+================================================================================
+FILE: 000\000\000\001\441
+OBJECT ID: 1441
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+.
+Public Function VerifyProtected (obj)
+	Dim enable_property
+	' Get the protected property from the test pbject
+	enable_property = obj.GetROProperty("protected")
+	If enable_property = 0 Then ' The value is False (0) - Not protected - Enabled
+		Reporter.ReportEvent micPass, "VerifyProtected Succeeded", "The test object is enabled"
+		VerifyProtected = True
+	Else
+		Reporter.ReportEvent micFail, "VerifyProtected Failed", "The test object is NOT enabled"
+		VerifyProtected = False
+	End If
+End Function
+
+' *********************************************************************************************
+' *** 			Register the Functions
+' *********************************************************************************************
+
+' Register the "VerifyProperty" Function
+RegisterUserFunc "TeField" , "VerifyProperty" , "VerifyProperty"
+RegisterUserFunc "TeScreen" , "VerifyProperty" , "VerifyProperty"
+RegisterUserFunc "TeWindow" , "VerifyProperty" , "VerifyProperty"
+
+
+' Register the "OutputProperty" Function
+RegisterUserFunc "TeField" , "OutputProperty" , "OutputProperty"
+RegisterUserFunc "TeScreen" , "OutputProperty" , "OutputProperty"
+RegisterUserFunc "TeWindow" , "OutputProperty" , "OutputProperty"
+
+
+' Register the "VerifyValue" Function
+RegisterUserFunc "TeField" , "VerifyValue" , "VerifyText"
+
+' Register the "GetValue" Function
+RegisterUserFunc "TeField" , "GetValue" , "GetTextProperty"
+
+' Register the
+
+================================================================================
+FILE: 000\000\000\001\444
+OBJECT ID: 1444
+COMPONENTS: []
+SIGNATURES: ['.Set']
+
+PREVIEW
+--------------------------------------------------------------------------------
+cation") ' Get the Application object
+	' Get the Current Document object
+	If qtApp.CurrentDocumentType = "Test" Then
+		Set qtCurDocument = qtApp.Test
+	Else
+		Set qtCurDocument = qtApp.BusinessComponent
+	End If
+	Set qtWSSettings = qtCurDocument.Settings.WebServices ' Return the WS Settings object for the current test
+	' Configure the Test Web Services settings:
+	qtWSSettings.RunToolkit = ToolkitName
+	Set qtWSSettings = Nothing ' Release the WS Settings object
+	Set qtCurDocument = Nothing ' Release the Current Document object
+	Set qtApp = Nothing ' Release the Application object
+End Sub
+
+
+
+'----------------------------------------------
+' Attachments API
+
+'@Description Adds the specified file as an attachment to the next Web service communication.
+Public Sub AddAttachment(test_object, FilePath, AttachmentType)
+	test_object.AddAttachment FilePath, AttachmentType
+End Sub
+RegisterUserFunc "WebService", "AddAttachment", "AddAttachment"
+
+'@Description Returns an array containing the paths to the attachments that were added by the Web service to the last communication.
+Public Function GetAttachments(test_object)
+	GetAttachments = test_object.GetAttachments
+End Function
+RegisterUserFunc "WebService", "GetAttachments", "GetAttachments"
+
+'@Description Returns an attachments count.
+Public Function GetAttachmentsCount(test_object)
+	GetAttachmentsCount = test_object.Attachments.Count
+End Function
+Regis
+
+================================================================================
+FILE: 000\000\000\001\446
+OBJECT ID: 1446
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\447
+OBJECT ID: 1447
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\449
+OBJECT ID: 1449
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\452
+OBJECT ID: 1452
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\454
+OBJECT ID: 1454
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\455
+OBJECT ID: 1455
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\456
+OBJECT ID: 1456
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\457
+OBJECT ID: 1457
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\458
+OBJECT ID: 1458
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+If (Parameter("Browser") = "IE") Then
+	' IE 32bit
+	strBrowserPath = "C:\Program Files (x86)\Internet Explorer\iexplore.exe"
+	'Starte InternetExplorer
+	If Check_File(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & "!"
+	End If
+End If
+
+If (Parameter("Browser") = "IE") Then
+	If Browser("about:blank").Exist(15) Then
+		With Browser("about:blank")
+			.Sync
+			.DeleteCookies
+			.Maximize
+		End With
+	ElseIf Browser("openurl:=" & sUrl).Exist(15) Then
+		With Browser("openurl:=" & sUrl)
+			.Sync
+			.DeleteCookies
+			.Maximize
+		End With
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' could not be found!"
+		ExitComponent
+	End If
+End If
+
+'Funktion zum Pruefen auf das Vorhandensein einer Datei
+'	#1 ... Dateiname mit vollst ndigem Pfad
+Function Check_File(FullPath)
+ Dim poFileSystem
+
+ CheckFile = vbFalse
+
+	Set poFileSystem = CreateObject("Scripting.FileSystemObject")
+
+	If poFileSystem.FileExists(FullPath) Then
+		CheckFile = vbTrue
+	End If
+
+	Set poFileSystem = Nothing
+End Function
+
+================================================================================
+FILE: 000\000\000\001\459
+OBJECT ID: 1459
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\462
+OBJECT ID: 1462
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\463
+OBJECT ID: 1463
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\465
+OBJECT ID: 1465
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\466
+OBJECT ID: 1466
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+If (Parameter("Browser") = "IE") Then
+	' IE 32bit
+	strBrowserPath = "C:\Program Files (x86)\Internet Explorer\iexplore.exe"
+	'Starte InternetExplorer
+	If Check_File(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & "!"
+	End If
+End If
+
+If (Parameter("Browser") = "IE") Then
+	If Browser("about:blank").Exist(15) Then
+		With Browser("about:blank")
+			.Sync
+			.DeleteCookies
+			.Maximize
+		End With
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' could not be found!"
+		ExitComponent
+	End If
+End If
+
+'Funktion zum Pruefen auf das Vorhandensein einer Datei
+'	#1 ... Dateiname mit vollst ndigem Pfad
+Function Check_File(FullPath)
+ Dim poFileSystem
+
+ Check_File = vbFalse
+
+	Set poFileSystem = CreateObject("Scripting.FileSystemObject")
+
+	If poFileSystem.FileExists(FullPath) Then
+		Check_File = vbTrue
+	End If
+
+	Set poFileSystem = Nothing
+End Function
+
+================================================================================
+FILE: 000\000\000\001\470
+OBJECT ID: 1470
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(']
+
+PREVIEW
+--------------------------------------------------------------------------------
+> t Browser("FS.NET Startseite").Page("fleetCARSFE 7.0.0.83") * fleetCARSFE 7.0.0.83 b Browser("FS.NET Startseite").Page("fleetCARSFE") fleetCARSFE : Browser("FS.NET Startseite") $ FS.NET Startseite . Browser("fleetCARSFE") fleetCARSFE @ Browser("Browser").Page("Page") 
+ Page L Browser("Browser").Page("Startseite") Startseite & Browser("Browser") Browser , Browser("Startseite") Startseite | Browser("fleetCARSFE").Page("fleetCARSFE").Link(" Anmelden") Anmelden x Browser("fleetCARSFE").Page("fleetCARSFE").Link("Anmelden") Anmelden p Browser("fleetCARSFE").Page("Object reference not set") 2 Object reference not set f Browser("fleetCARSFE").Page("ObjectNullReference") ( ObjectNullReference Browser("fleetCARSFE").Page("Zertifikatfehler: Navigation").Link("Laden dieser Website fortsetze") > Laden dieser Website fortsetze Browser("fleetCARSFE").Page("Zertifikatfehler: Navigation").Link("Laden dieser Website fortsetzen") @ Laden dieser Website fortsetzen | Browser("fleetCARSFE").Page("fleetCARSFE").Link("Anmelden_2") Anmelden_2 Browser("fleetCARSFE").Page("fleetCARSFE").Link("Anmelden_New") Anmelden_New F Br
+
+================================================================================
+FILE: 000\000\000\001\473
+OBJECT ID: 1473
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Navigate', '.Click', '.Set', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Dim strUser : strUser = "dkx2v0r"
+Dim strPassword : strPassword = "5c46fc04575b0e8800f95a631f40043b7a82e73e3419"
+
+With Browser("Browser")
+	.Navigate(Parameter("edt_URL"))
+	.Sync
+
+	If (.Dialog("Windows-Sicherheit").Exist(1)) Then
+		.Dialog("Windows-Sicherheit").WinEdit("User").Set strUser
+		.Dialog("Windows-Sicherheit").WinEdit("Password").SetSecure strPassword
+		.Dialog("Windows-Sicherheit").WinButton("OK").Click
+	End If
+
+	If (.WinObject("Benachrichtigung").WinButton("Geblockte Inhalte zulassen").Exist(5)) Then
+		.WinObject("Benachrichtigung").WinButton("Geblockte Inhalte zulassen").Click
+	End If
+
+	VWFSReportEvent_Neu Browser("Browser"), micDone, Environment("TestName"), "Navigation zu '" & Parameter("edt_URL") & "' beendet."
+End With
+
+VWFSFinishComponent
+
+================================================================================
+FILE: 000\000\000\001\541
+OBJECT ID: 1541
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Navigate', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+With Browser("Browser")
+	.Navigate(Parameter("edt_URL"))
+	.Sync
+
+	Reporter.ReportEvent micDone, Environment("TestName"), "Navigation zu '" & Parameter("edt_URL") & "' beendet."
+End With
+
+================================================================================
+FILE: 000\000\000\001\563
+OBJECT ID: 1563
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(']
+
+PREVIEW
+--------------------------------------------------------------------------------
+> t Browser("FS.NET Startseite").Page("fleetCARSFE 7.0.0.83") * fleetCARSFE 7.0.0.83 b Browser("FS.NET Startseite").Page("fleetCARSFE") fleetCARSFE : Browser("FS.NET Startseite") $ FS.NET Startseite . Browser("fleetCARSFE") fleetCARSFE @ Browser("Browser").Page("Page") 
+ Page L Browser("Browser").Page("Startseite") Startseite & Browser("Browser") Browser , Browser("Startseite") Startseite | Browser("fleetCARSFE").Page("fleetCARSFE").Link(" Anmelden") Anmelden x Browser("fleetCARSFE").Page("fleetCARSFE").Link("Anmelden") Anmelden p Browser("fleetCARSFE").Page("Object reference not set") 2 Object reference not set f Browser("fleetCARSFE").Page("ObjectNullReference") ( ObjectNullReference Browser("fleetCARSFE").Page("Zertifikatfehler: Navigation").Link("Laden dieser Website fortsetze") > Laden dieser Website fortsetze Browser("fleetCARSFE").Page("Zertifikatfehler: Navigation").Link("Laden dieser Website fortsetzen") @ Laden dieser Website fortsetzen | Browser("fleetCARSFE").Page("fleetCARSFE").Link("Anmelden_2") Anmelden_2 Browser("fleetCARSFE").Page("fleetCARSFE").Link("Anmelden_New") Anmelden_New F Br
+
+================================================================================
+FILE: 000\000\000\001\566
+OBJECT ID: 1566
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+If Browser("title:=" & Parameter("Title")).Exist(5) Then
+	Browser("title:=" & Parameter("Title")).Close
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "Bowser '" & Parameter("Title") & "' not found!"
+End If
+
+If Not Browser("title:=" & Parameter("Title")).Exist(0) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Bowser '" & Parameter("Title") & "' closed."
+Else 
+	Reporter.ReportEvent micFail, Environment("TestName"), "Bowser '" & Parameter("Title") & "' could not closed!"
+End If
+
+================================================================================
+FILE: 000\000\000\001\647
+OBJECT ID: 1647
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\650
+OBJECT ID: 1650
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\651
+OBJECT ID: 1651
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\652
+OBJECT ID: 1652
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\655
+OBJECT ID: 1655
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\658
+OBJECT ID: 1658
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\660
+OBJECT ID: 1660
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\663
+OBJECT ID: 1663
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\665
+OBJECT ID: 1665
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\666
+OBJECT ID: 1666
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Exeplit
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+End If
+
+================================================================================
+FILE: 000\000\000\001\667
+OBJECT ID: 1667
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\670
+OBJECT ID: 1670
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\673
+OBJECT ID: 1673
+COMPONENTS: ['CheckWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\674
+OBJECT ID: 1674
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+End If
+
+================================================================================
+FILE: 000\000\000\001\767
+OBJECT ID: 1767
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\770
+OBJECT ID: 1770
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\773
+OBJECT ID: 1773
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\776
+OBJECT ID: 1776
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\777
+OBJECT ID: 1777
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\779
+OBJECT ID: 1779
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\780
+OBJECT ID: 1780
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+If (Parameter("Browser") = "IE") Then
+	' IE 32bit
+	strBrowserPath = "C:\Program Files (x86)\Internet Explorer\iexplore.exe"
+	'Starte InternetExplorer
+	If Check_File(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & "!"
+	End If
+ElseIf (Parameter("Browser") = "FF") Then
+	strBrowserPath = "C:\Program Files (x86)\Mozilla Firefox\firefox.exe"
+	strBrowserPathAlternative = "C:\Program Files\Mozilla Firefox\firefox.exe"
+	'Starte Firefox
+	If CheckFile(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+	ElseIf CheckFile(strBrowserPathAlternative) Then
+		SystemUtil.Run strBrowserPathAlternative, sUrl, "", ""
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & """ and not found in """ & strBrowserPathAlternative & """!"
+	End If
+
+	If Browser("version:=Mozilla Firefox .*").Exist(30) Then
+		If (Browser("version:=Mozilla Firefox .*").Dialog("text:=Authentifizierung erforderlich","nativeclass:=MozillaDialogClass").Exist(10)) Then
+			If UIAWindow("Mozilla Firefox").UIAWindow("Authentifizierung erforderlich").UIAEdit("Benutzername").Value = "" Then
+				If LCase(Parameter("Username")) = "<skip>" Or Parameter("Username") = "" Or LCase(Parameter("Password")) = "<skip>
+
+================================================================================
+FILE: 000\000\000\001\781
+OBJECT ID: 1781
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\784
+OBJECT ID: 1784
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\785
+OBJECT ID: 1785
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\787
+OBJECT ID: 1787
+COMPONENTS: ['BrowserStart_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\788
+OBJECT ID: 1788
+COMPONENTS: []
+SIGNATURES: ['Browser(', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+If (Parameter("Browser") = "IE") Then
+	' IE 32bit
+	strBrowserPath = "C:\Program Files (x86)\Internet Explorer\iexplore.exe"
+	'Starte InternetExplorer
+	If Check_File(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & "!"
+	End If
+ElseIf (Parameter("Browser") = "FF") Then
+	strBrowserPath = "C:\Program Files (x86)\Mozilla Firefox\firefox.exe"
+	strBrowserPathAlternative = "C:\Program Files\Mozilla Firefox\firefox.exe"
+	'Starte Firefox
+	If Check_File(strBrowserPath) Then
+		SystemUtil.Run strBrowserPath, sUrl, "", ""
+	ElseIf Check_File(strBrowserPathAlternative) Then
+		SystemUtil.Run strBrowserPathAlternative, sUrl, "", ""
+	Else
+		Reporter.ReportEvent micFail, Environment("TestName"), "Browser '" & Parameter("Browser") & "' not found in """ & strBrowserPath & """ and not found in """ & strBrowserPathAlternative & """!"
+	End If
+
+	If Browser("version:=Mozilla Firefox .*").Exist(30) Then
+		If (Browser("version:=Mozilla Firefox .*").Dialog("text:=Authentifizierung erforderlich","nativeclass:=MozillaDialogClass").Exist(10)) Then
+			If UIAWindow("Mozilla Firefox").UIAWindow("Authentifizierung erforderlich").UIAEdit("Benutzername").Value = "" Then
+				If LCase(Parameter("Username")) = "<skip>" Or Parameter("Username") = "" Or LCase(Parameter("Password")) = "<ski
+
+================================================================================
+FILE: 000\000\000\001\789
+OBJECT ID: 1789
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\790
+OBJECT ID: 1790
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\792
+OBJECT ID: 1792
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\795
+OBJECT ID: 1795
+COMPONENTS: ['CheckWebsite_QWERTZ', 'LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\798
+OBJECT ID: 1798
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\799
+OBJECT ID: 1799
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\800
+OBJECT ID: 1800
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\802
+OBJECT ID: 1802
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\803
+OBJECT ID: 1803
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(', 'WebButton(', 'WebElement(', '.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+Dim sUser, sPassword
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+	ExitTest(-1)
+End If
+
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("username_WebEdit").Set "Admin" Parameter("Input_User")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("password_WebEdit").SetSecure Parameter("Input_Password")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login_WebButton").Click
+
+================================================================================
+FILE: 000\000\000\001\804
+OBJECT ID: 1804
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\807
+OBJECT ID: 1807
+COMPONENTS: ['CheckWebsite_QWERTZ', 'LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\808
+OBJECT ID: 1808
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\810
+OBJECT ID: 1810
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\811
+OBJECT ID: 1811
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(', 'WebButton(', 'WebElement(', '.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+Dim sUser, sPassword
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+	ExitTest(-1)
+End If
+
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("username_WebEdit").Set Parameter("Input_User")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("password_WebEdit").SetSecure Parameter("Input_Password")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login_WebButton").Click
+
+================================================================================
+FILE: 000\000\000\001\812
+OBJECT ID: 1812
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\815
+OBJECT ID: 1815
+COMPONENTS: ['CheckWebsite_QWERTZ', 'LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\816
+OBJECT ID: 1816
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\819
+OBJECT ID: 1819
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\820
+OBJECT ID: 1820
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(', 'WebButton(', 'WebElement(', '.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+Dim sUser, sPassword
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+	ExitTest(-1)
+End If
+
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("username_WebEdit").Set Parameter("Input_User")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("password_WebEdit").SetSecure Parameter("Input_Password")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login_WebButton").Click
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM").WebElement("Dashboard").Exist(30) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+End If
+
+================================================================================
+FILE: 000\000\000\001\821
+OBJECT ID: 1821
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\822
+OBJECT ID: 1822
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\824
+OBJECT ID: 1824
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\827
+OBJECT ID: 1827
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\829
+OBJECT ID: 1829
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\830
+OBJECT ID: 1830
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\831
+OBJECT ID: 1831
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\832
+OBJECT ID: 1832
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\833
+OBJECT ID: 1833
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent', 'Environment.']
+
+PREVIEW
+--------------------------------------------------------------------------------
+'Parameterpruefung
+If Len(Parameter("Path")) <= 0 Then
+	Reporter.ReportEvent micFail, Environment.Value("TestName") & "-Init", "Parameter 'DataTable' darf nicht leer sein!"
+	ExitTest(-1)
+Else
+	Dim sResourcePath, sResourceFileName
+
+	sResourcePath = Left(CStr(Parameter("Path")), InStrRev(CStr(Parameter("Path")), "\") - 1)
+	sResourceFileName = Right(CStr(Parameter("Path")), Len(CStr(Parameter("Path"))) - InStrRev(CStr(Parameter("Path")), "\"))
+End If
+
+'Laden der angeforderten Resource aus dem HP ALM
+Dim sFullFileName : sFullFileName = LoadTestResource(sResourcePath, sResourceFileName, GetSpecialDirectory(2))
+
+If Len(sFullFileName) = 0 Then
+	Reporter.ReportEvent micFail, Environment.Value("TestName"), "Die im Parameter 'DataTable' angegebene Excel-Datei konnte nicht geladen werden!"
+	ExitTest(-1)
+End If
+
+Dim max,max_Real,min,rand,sValue, iRandom
+max=101
+max_Real = 11
+min=2
+
+If Parameter("Reale_Daten") = False Then
+	Randomize
+	iRandom = Int((max-min+1)*Rnd+min)
+	sValue = Excel_ReadValue(sFullFileName, Parameter("Sheet"), "#" + CStr(iRandom), "#1")
+	Parameter("Anrede") = sValue
+	sValue = Excel_ReadValue(sFullFileName, Parameter("Sheet"), "#" + CStr(iRandom), "#2")
+	Parameter("Vorname") = sValue
+	Randomize
+	sValue
+
+================================================================================
+FILE: 000\000\000\001\834
+OBJECT ID: 1834
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\837
+OBJECT ID: 1837
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\838
+OBJECT ID: 1838
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\840
+OBJECT ID: 1840
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\841
+OBJECT ID: 1841
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\842
+OBJECT ID: 1842
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\844
+OBJECT ID: 1844
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\845
+OBJECT ID: 1845
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\847
+OBJECT ID: 1847
+COMPONENTS: ['ReadExcelAddressData_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\848
+OBJECT ID: 1848
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent', 'Environment.']
+
+PREVIEW
+--------------------------------------------------------------------------------
+'Parameterpruefung
+If Len(Parameter("Path")) <= 0 Then
+	Reporter.ReportEvent micFail, Environment.Value("TestName") & "-Init", "Parameter 'DataTable' darf nicht leer sein!"
+	ExitTest(-1)
+Else
+	Dim sResourcePath, sResourceFileName
+
+	sResourcePath = Left(CStr(Parameter("Path")), InStrRev(CStr(Parameter("Path")), "\") - 1)
+	sResourceFileName = Right(CStr(Parameter("Path")), Len(CStr(Parameter("Path"))) - InStrRev(CStr(Parameter("Path")), "\"))
+End If
+
+'Laden der angeforderten Resource aus dem HP ALM
+Dim sFullFileName : sFullFileName = LoadTestResource(sResourcePath, sResourceFileName, GetSpecialDirectory(2))
+
+If Len(sFullFileName) = 0 Then
+	Reporter.ReportEvent micFail, Environment.Value("TestName"), "Die im Parameter 'DataTable' angegebene Excel-Datei konnte nicht geladen werden!"
+	ExitTest(-1)
+End If
+
+Dim max,max_Real,min,rand,sValue, iRandom
+max=101
+max_Real = 11
+min=2
+
+If Parameter("Reale_Daten") = False Then
+	Randomize
+	iRandom = Int((max-min+1)*Rnd+min)
+	sValue = Excel_ReadValue(sFullFileName, Parameter("Sheet"), "#" + CStr(iRandom), "#1")
+	Parameter("Anrede") = sValue
+	sValue = Excel_ReadValue(sFullFileName, Parameter("Sheet"), "#" + CStr(iRandom), "#2")
+	Parameter("Vorname") = sValue
+	Randomize
+	sValue
+
+================================================================================
+FILE: 000\000\000\001\849
+OBJECT ID: 1849
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+bLineMode = vbFalse
+
+	'define function default value
+	Excel_Value = True
+
+	'deactivate error handling
+	On Error Resume Next
+
+	'create excel object
+	Set oApplication = CreateObject("Excel.Application")
+	If Not isObject(oApplication) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Excel", "Die Anwendung Excel konnte nicht gestartet werden!"
+		Excel_Value = False
+		Exit Function
+	End If
+
+	'set app properties (invisible, non-Interactive)
+	oApplication.Visible = False
+	oApplication.DisplayAlerts = False
+
+	'open excel file
+	Set oWorkBook = oApplication.Workbooks.Open(sFile, , False)
+	If Not isObject(oWorkBook) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Lade Datei", "Die Excel-Datei konnte nicht verarbeitet werden!"
+		Excel_Value = False
+		Call Excel_DestroyApplication(oApplication)
+		Exit Function
+	End If
+
+	'set default shett to 1 if not empty
+	If Len(sWorksheet) = 0 Then
+		sWorksheet = "#1"
+	End If
+	'select and activate sheet
+	If CheckNumeric(sWorksheet) Then
+		Set oSheet = oWorkBook.Sheets(CInt(Right(sWorksheet, Len(sWorksheet) - 1)))
+	Else
+		Set oSheet = oWorkBook.Sheets(sWorksheet)
+	End If
+	If Not isObject(oSheet) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Aktiviere Tabellenblatt", "Das angeforderte Tabellenblatt konte in der Excel-Datei nicht gefunden werden!"
+		Excel_Value = False
+		Call Excel_DestroyWorkbook(oWorkBook)
+		Call Excel_Des
+
+================================================================================
+FILE: 000\000\000\001\850
+OBJECT ID: 1850
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+bLineMode = vbFalse
+
+	'define function default value
+	Excel_Value = True
+
+	'deactivate error handling
+	On Error Resume Next
+
+	'create excel object
+	Set oApplication = CreateObject("Excel.Application")
+	If Not isObject(oApplication) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Excel", "Die Anwendung Excel konnte nicht gestartet werden!"
+		Excel_Value = False
+		Exit Function
+	End If
+
+	'set app properties (invisible, non-Interactive)
+	oApplication.Visible = False
+	oApplication.DisplayAlerts = False
+
+	'open excel file
+	Set oWorkBook = oApplication.Workbooks.Open(sFile, , False)
+	If Not isObject(oWorkBook) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Lade Datei", "Die Excel-Datei konnte nicht verarbeitet werden!"
+		Excel_Value = False
+		Call Excel_DestroyApplication(oApplication)
+		Exit Function
+	End If
+
+	'set default shett to 1 if not empty
+	If Len(sWorksheet) = 0 Then
+		sWorksheet = "#1"
+	End If
+	'select and activate sheet
+	If CheckNumeric(sWorksheet) Then
+		Set oSheet = oWorkBook.Sheets(CInt(Right(sWorksheet, Len(sWorksheet) - 1)))
+	Else
+		Set oSheet = oWorkBook.Sheets(sWorksheet)
+	End If
+	If Not isObject(oSheet) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Aktiviere Tabellenblatt", "Das angeforderte Tabellenblatt konte in der Excel-Datei nicht gefunden werden!"
+		Excel_Value = False
+		Call Excel_DestroyWorkbook(oWorkBook)
+		Call Excel_Des
+
+================================================================================
+FILE: 000\000\000\001\851
+OBJECT ID: 1851
+COMPONENTS: []
+SIGNATURES: ['Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+bLineMode = vbFalse
+
+	'define function default value
+	Excel_Value = True
+
+	'deactivate error handling
+	On Error Resume Next
+
+	'create excel object
+	Set oApplication = CreateObject("Excel.Application")
+	If Not isObject(oApplication) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Excel", "Die Anwendung Excel konnte nicht gestartet werden!"
+		Excel_Value = False
+		Exit Function
+	End If
+
+	'set app properties (invisible, non-Interactive)
+	oApplication.Visible = False
+	oApplication.DisplayAlerts = False
+
+	'open excel file
+	Set oWorkBook = oApplication.Workbooks.Open(sFile, , False)
+	If Not isObject(oWorkBook) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Lade Datei", "Die Excel-Datei konnte nicht verarbeitet werden!"
+		Excel_Value = False
+		Call Excel_DestroyApplication(oApplication)
+		Exit Function
+	End If
+
+	'set default shett to 1 if not empty
+	If Len(sWorksheet) = 0 Then
+		sWorksheet = "#1"
+	End If
+	'select and activate sheet
+	If CheckNumeric(sWorksheet) Then
+		Set oSheet = oWorkBook.Sheets(CInt(Right(sWorksheet, Len(sWorksheet) - 1)))
+	Else
+		Set oSheet = oWorkBook.Sheets(sWorksheet)
+	End If
+	If Not isObject(oSheet) Then
+		Reporter.ReportEvent micFail, "Function Excel_Value - Aktiviere Tabellenblatt", "Das angeforderte Tabellenblatt konte in der Excel-Datei nicht gefunden werden!"
+		Excel_Value = False
+		Call Excel_DestroyWorkbook(oWorkBook)
+		Call Excel_Des
+
+================================================================================
+FILE: 000\000\000\001\864
+OBJECT ID: 1864
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\867
+OBJECT ID: 1867
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\868
+OBJECT ID: 1868
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\869
+OBJECT ID: 1869
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\877
+OBJECT ID: 1877
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\880
+OBJECT ID: 1880
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\882
+OBJECT ID: 1882
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\883
+OBJECT ID: 1883
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+If Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("-- Select --_WebElement").Exist(20) Then
+	Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("-- Select --_WebElement").Click
+	Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Admin_ESS_WebElement").Click
+End If
+
+================================================================================
+FILE: 000\000\000\001\884
+OBJECT ID: 1884
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\891
+OBJECT ID: 1891
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\892
+OBJECT ID: 1892
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+If Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("-- Select --_WebElement").Exist(20) Then
+	Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Select_WebElement").Click
+	Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Admin_ESS_WebElement").Click
+End If
+
+================================================================================
+FILE: 000\000\000\001\893
+OBJECT ID: 1893
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\899
+OBJECT ID: 1899
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\900
+OBJECT ID: 1900
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+If Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Select_WebElement").Exist(20) Then
+	Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Select_WebElement").Click
+	Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Admin_ESS_WebElement").Click
+End If
+
+================================================================================
+FILE: 000\000\000\001\901
+OBJECT ID: 1901
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\908
+OBJECT ID: 1908
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\909
+OBJECT ID: 1909
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+
+If Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebElement("-- Select --_2").Exist(10) Then
+	Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebElement("-- Select --_2").Click @@ script infofile_;_ZIP::ssf3.xml_;_
+	Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebList("-- Select --AdminESS").Select "Admin" @@ script infofile_;_ZIP::ssf4.xml_;_
+End If
+
+================================================================================
+FILE: 000\000\000\001\910
+OBJECT ID: 1910
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\916
+OBJECT ID: 1916
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(']
+
+PREVIEW
+--------------------------------------------------------------------------------
+D MN_TYPE 
+ j Browser("OrangeHRM").Page("OrangeHRM").Link("Admin") Admin r Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_ESS") Admin_ESS r Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_ESS") Admin_ESS | Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_ESS_Link") Admin_ESS_Link Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("-- Select --") -- Select -- Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("-- Select --_WebElement") 0 -- Select --_WebElement | Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_ESS_Link") Admin_ESS_Link t Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link") Admin_Link z Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Admin") Admin Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Admin_ESS_WebElement") * Admin_ESS_WebElement Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("WebElement") WebElement Browser("OrangeHRM").Page("OrangeHRM_2").WebElement("Select_WebElement") $ Select_WebElement R Browser("OrangeHRM").Page("OrangeHRM_2") OrangeHRM_2 d Browser("OrangeHRM").Page("OrangeHRM_Admin_Page") * OrangeHRM_Admin_Page Browser("OrangeHRM").Page("OrangeH
+
+================================================================================
+FILE: 000\000\000\001\917
+OBJECT ID: 1917
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\918
+OBJECT ID: 1918
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+
+If Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebElement("-- Select --_WebElement").Exist(10) Then
+	Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebElement("-- Select --_WebElement").Click @@ script infofile_;_ZIP::ssf3.xml_;_
+	Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebList("-- Select --AdminESS_WebList").Select "Admin" @@ script infofile_;_ZIP::ssf4.xml_;_
+End If
+
+================================================================================
+FILE: 000\000\000\001\919
+OBJECT ID: 1919
+COMPONENTS: ['AdminWebsiteCheckUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\928
+OBJECT ID: 1928
+COMPONENTS: ['AdminWebsiteCheckUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\933
+OBJECT ID: 1933
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\934
+OBJECT ID: 1934
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+
+If Browser("OrangeHRM").Page("OrangeHRM").WebElement("Admin").GetTOProperty("innertext") = Parameter("Input_UserRole") Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Select hat funktioniert."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "Select hat nicht funktioniert!"
+End If
+
+================================================================================
+FILE: 000\000\000\001\935
+OBJECT ID: 1935
+COMPONENTS: ['AdminWebsiteCheckUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\941
+OBJECT ID: 1941
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\942
+OBJECT ID: 1942
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+If Browser("OrangeHRM").Page("OrangeHRM").WebElement("Admin").GetTOProperty("innertext") = Parameter("Input_UserRole") Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Select hat funktioniert."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "Select hat nicht funktioniert!"
+End If
+
+================================================================================
+FILE: 000\000\000\001\943
+OBJECT ID: 1943
+COMPONENTS: ['AdminWebsiteCheckUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\950
+OBJECT ID: 1950
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\951
+OBJECT ID: 1951
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+If Browser("OrangeHRM").Page("OrangeHRM").WebElement("Admin").GetTOProperty("innertext") = Parameter("Input_UserRole") Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Select hat funktioniert."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "Select hat nicht funktioniert!"
+End If
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Dashboard").Click
+
+================================================================================
+FILE: 000\000\000\001\952
+OBJECT ID: 1952
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\964
+OBJECT ID: 1964
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\965
+OBJECT ID: 1965
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', '.Exist']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Admin_Link").Click
+
+If Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebElement("-- Select --_WebElement").Exist(10) Then
+	Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebElement("-- Select --_WebElement").Click @@ script infofile_;_ZIP::ssf3.xml_;_
+	Browser("OrangeHRM").Page("OrangeHRM_Admin_Page").WebList("-- Select --AdminESS_WebList").Select Parameter("Input_Select") @@ script infofile_;_ZIP::ssf4.xml_;_
+End If
+
+================================================================================
+FILE: 000\000\000\001\967
+OBJECT ID: 1967
+COMPONENTS: ['AdminWebsiteCheckUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\968
+OBJECT ID: 1968
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\979
+OBJECT ID: 1979
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\980
+OBJECT ID: 1980
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebElement(', '.Click', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+
+If Browser("OrangeHRM").Page("OrangeHRM").WebElement("Admin").GetROProperty("innertext") = Parameter("Input_UserRole") Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Select hat funktioniert."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "Select hat nicht funktioniert!"
+End If
+
+Browser("OrangeHRM").Page("OrangeHRM").Link("Dashboard").Click
+
+================================================================================
+FILE: 000\000\000\001\981
+OBJECT ID: 1981
+COMPONENTS: ['AdminWebsiteCheckUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\994
+OBJECT ID: 1994
+COMPONENTS: ['AdminWebsiteSelectUserRole_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\001\998
+OBJECT ID: 1998
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\001
+OBJECT ID: 2001
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\004
+OBJECT ID: 2004
+COMPONENTS: ['CheckWebsite_QWERTZ', 'LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\008
+OBJECT ID: 2008
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\010
+OBJECT ID: 2010
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\011
+OBJECT ID: 2011
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(', 'WebButton(', 'WebElement(', '.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+Dim sUser, sPassword
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+	ExitTest(-1)
+End If
+
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("username_WebEdit").Set Parameter("Input_User")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("password_WebEdit").SetSecure Parameter("Input_Password")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login_WebButton").Click
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM").WebElement("Dashboard").Exist(30) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+End If
+
+If Parameter("Input_Test_Outputparameter") != "" Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Der Outputparameter wurde erfolgreich gelesen."
+Else
+	Re
+
+================================================================================
+FILE: 000\000\000\002\012
+OBJECT ID: 2012
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\015
+OBJECT ID: 2015
+COMPONENTS: ['CheckWebsite_QWERTZ', 'LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\016
+OBJECT ID: 2016
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\018
+OBJECT ID: 2018
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\019
+OBJECT ID: 2019
+COMPONENTS: []
+SIGNATURES: ['Browser(', 'Page(', 'WebEdit(', 'WebButton(', 'WebElement(', '.Click', '.Set', '.Exist', 'Reporter.ReportEvent']
+
+PREVIEW
+--------------------------------------------------------------------------------
+Option Explicit
+Dim sUser, sPassword
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebElement("Innertext_WebElement").Exist(10) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+	ExitTest(-1)
+End If
+
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("username_WebEdit").Set Parameter("Input_User")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebEdit("password_WebEdit").SetSecure Parameter("Input_Password")
+Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login_WebButton").Click
+
+If Browser("OrangeHRM_BrowserObject").Page("OrangeHRM").WebElement("Dashboard").Exist(30) Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "URL wurde im Browser erfolgreich geladen."
+Else
+	Reporter.ReportEvent micFail, Environment("TestName"), "URL wurde im Browser nicht erfolgreich geladen!"
+End If
+
+If Parameter("Input_Test_Outputparameter") <> "" Then
+	Reporter.ReportEvent micPass, Environment("TestName"), "Der Outputparameter wurde erfolgreich gelesen."
+Else
+	Re
+
+================================================================================
+FILE: 000\000\000\002\020
+OBJECT ID: 2020
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\023
+OBJECT ID: 2023
+COMPONENTS: ['CheckWebsite_QWERTZ', 'LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\024
+OBJECT ID: 2024
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
+
+================================================================================
+FILE: 000\000\000\002\026
+OBJECT ID: 2026
+COMPONENTS: ['LoginWebsite_QWERTZ']
+SIGNATURES: []
+
+PREVIEW
+--------------------------------------------------------------------------------
+
