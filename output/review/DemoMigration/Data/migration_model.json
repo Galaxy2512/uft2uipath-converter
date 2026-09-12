@@ -1,0 +1,150 @@
+{
+  "format_version": 1,
+  "stage": "review_scaffold",
+  "notes": [
+    "Review scaffold only: Studio compatibility and execution are unverified.",
+    "PTD decoding, VBScript conversion, selectors and arguments are not connected.",
+    "Main.xaml invokes components across all tests; independent test cases are not generated.",
+    "ALM descriptive steps are not executable UFT code; generated steps are TODOs.",
+    "Unreferenced component definitions remain in source_tables, without workflows."
+  ],
+  "project": {
+    "name": "DemoMigration",
+    "source_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\examples\\decoded_alm_demo.json",
+    "tests": [
+      {
+        "name": "Login test",
+        "id": 1,
+        "alm_status": null,
+        "test_type": null,
+        "execution_status": null,
+        "description": null,
+        "components": [
+          {
+            "name": "LoginComponent",
+            "id": 10,
+            "alm_status": null,
+            "script_type": null,
+            "component_type": null,
+            "description": null,
+            "parameters": [],
+            "variables": [],
+            "steps": [
+              {
+                "name": "Enter username",
+                "type": "unknown",
+                "id": 1,
+                "order": 1,
+                "action": null,
+                "target": null,
+                "value": null,
+                "description": null,
+                "expected_result": null,
+                "parameters": [],
+                "variables": [],
+                "children": [],
+                "issues": [],
+                "status": "unsupported",
+                "raw": {
+                  "CS_STEP_ID": "1",
+                  "CS_COMPONENT_ID": "10",
+                  "CS_STEP_ORDER": "1",
+                  "CS_STEP_NAME": "Enter username"
+                }
+              },
+              {
+                "name": "Check login result",
+                "type": "unknown",
+                "id": 2,
+                "order": 2,
+                "action": null,
+                "target": null,
+                "value": null,
+                "description": null,
+                "expected_result": null,
+                "parameters": [],
+                "variables": [],
+                "children": [],
+                "issues": [],
+                "status": "unsupported",
+                "raw": {
+                  "CS_STEP_ID": "2",
+                  "CS_COMPONENT_ID": "10",
+                  "CS_STEP_ORDER": "2",
+                  "CS_STEP_NAME": "Check login result"
+                }
+              }
+            ],
+            "issues": [],
+            "status": "partial",
+            "raw": {
+              "CO_ID": "10",
+              "CO_NAME": "LoginComponent",
+              "_bpt_relation": {
+                "BC_ID": "1",
+                "BC_BPT_ID": "1",
+                "BC_CO_ID": "10",
+                "BC_ORDER": "1"
+              }
+            }
+          }
+        ],
+        "parameters": [],
+        "variables": [],
+        "data_tables": [],
+        "issues": [],
+        "status": "partial",
+        "raw": {
+          "TS_TEST_ID": "1",
+          "TS_NAME": "Login test"
+        }
+      }
+    ],
+    "shared_resources": [],
+    "object_repository": [],
+    "data_tables": [],
+    "issues": [],
+    "metadata": {
+      "test_count": 1,
+      "component_definition_count": 1,
+      "component_step_count": 2,
+      "test_component_relation_count": 1
+    }
+  },
+  "source_tables": {
+    "TEST": [
+      {
+        "TS_TEST_ID": "1",
+        "TS_NAME": "Login test"
+      }
+    ],
+    "COMPONENT": [
+      {
+        "CO_ID": "10",
+        "CO_NAME": "LoginComponent"
+      }
+    ],
+    "COMPONENT_STEP": [
+      {
+        "CS_STEP_ID": "2",
+        "CS_COMPONENT_ID": "10",
+        "CS_STEP_ORDER": "2",
+        "CS_STEP_NAME": "Check login result"
+      },
+      {
+        "CS_STEP_ID": "1",
+        "CS_COMPONENT_ID": "10",
+        "CS_STEP_ORDER": "1",
+        "CS_STEP_NAME": "Enter username"
+      }
+    ],
+    "BPTEST_TO_COMPONENTS": [
+      {
+        "BC_ID": "1",
+        "BC_BPT_ID": "1",
+        "BC_CO_ID": "10",
+        "BC_ORDER": "1"
+      }
+    ]
+  }
+}

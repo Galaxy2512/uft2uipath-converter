@@ -1,0 +1,234 @@
+{
+  "summary": {
+    "stage": "script_analysis",
+    "unique_component_count": 2,
+    "analyzed_source_count": 2,
+    "test_count": 2,
+    "component_instance_count": 3,
+    "component_statuses": {
+      "blocked": 2
+    },
+    "issue_counts": {
+      "unsupported_statement": 3,
+      "exist_mapping_required": 1,
+      "selector_mapping_required": 5,
+      "assertion_mapping_required": 2,
+      "environment_binding_required": 2,
+      "exit_mapping_required": 1,
+      "parameter_binding_required": 2,
+      "secure_value_mapping_required": 1,
+      "unsupported_expression": 1
+    },
+    "relationship_issue_count": 0,
+    "has_blockers": true,
+    "generation_ready": false,
+    "executable_verified": false,
+    "limitations": [
+      "Analysis only: no executable UiPath workflows are produced.",
+      "Manifest mappings must be supplied from verified ALM relationships; names and ProjRep numbers are not guessed.",
+      "Recognition coverage is not semantic equivalence or migration success.",
+      "Source declarations, unsupported constructs and expressions remain preserved for review.",
+      "Argument definitions, instance values, selectors and full UFT semantics are not resolved.",
+      "Reference inventories cover parsed nodes; references inside unsupported expressions remain in raw source."
+    ]
+  },
+  "relationship_issues": [],
+  "tests": [
+    {
+      "test_id": 1,
+      "name": "Login scenario",
+      "status": "blocked",
+      "component_instances": [
+        {
+          "component_id": 10,
+          "relation": {
+            "BC_ID": "1",
+            "BC_BPT_ID": "1",
+            "BC_CO_ID": "10",
+            "BC_ORDER": "1"
+          },
+          "analysis": "Components/component_10.json",
+          "status": "blocked",
+          "blocker_count": 15
+        },
+        {
+          "component_id": 20,
+          "relation": {
+            "BC_ID": "2",
+            "BC_BPT_ID": "1",
+            "BC_CO_ID": "20",
+            "BC_ORDER": "2"
+          },
+          "analysis": "Components/component_20.json",
+          "status": "blocked",
+          "blocker_count": 3
+        }
+      ],
+      "generation_ready": false,
+      "executable_verified": false
+    },
+    {
+      "test_id": 2,
+      "name": "Repeat login scenario",
+      "status": "blocked",
+      "component_instances": [
+        {
+          "component_id": 10,
+          "relation": {
+            "BC_ID": "3",
+            "BC_BPT_ID": "2",
+            "BC_CO_ID": "10",
+            "BC_ORDER": "1"
+          },
+          "analysis": "Components/component_10.json",
+          "status": "blocked",
+          "blocker_count": 15
+        }
+      ],
+      "generation_ready": false,
+      "executable_verified": false
+    }
+  ],
+  "components": [
+    {
+      "component_id": 10,
+      "name": "Shared login",
+      "status": "blocked",
+      "issues": [
+        {
+          "code": "unsupported_statement",
+          "message": "Unsupported UFT/VBScript statement",
+          "line_number": 1,
+          "raw": "Option Explicit",
+          "severity": "blocker"
+        },
+        {
+          "code": "unsupported_statement",
+          "message": "Unsupported UFT/VBScript statement",
+          "line_number": 2,
+          "raw": "Dim userName",
+          "severity": "blocker"
+        },
+        {
+          "code": "exist_mapping_required",
+          "message": "Exist timeout and Boolean result need equivalent UiPath behavior.",
+          "line_number": 4,
+          "raw": "If Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then",
+          "severity": "blocker"
+        },
+        {
+          "code": "selector_mapping_required",
+          "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+          "line_number": 4,
+          "raw": "Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "assertion_mapping_required",
+          "message": "Preserve report severity and test outcome; logging alone is insufficient.",
+          "line_number": 5,
+          "raw": "    Reporter.ReportEvent micPass, Environment(\"TestName\"), \"Page ready\"",
+          "severity": "blocker"
+        },
+        {
+          "code": "environment_binding_required",
+          "message": "Environment reference requires target mapping.",
+          "line_number": 5,
+          "raw": "Environment(\"TestName\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "assertion_mapping_required",
+          "message": "Preserve report severity and test outcome; logging alone is insufficient.",
+          "line_number": 7,
+          "raw": "    Reporter.ReportEvent micFail, Environment(\"TestName\"), \"Page missing\"",
+          "severity": "blocker"
+        },
+        {
+          "code": "environment_binding_required",
+          "message": "Environment reference requires target mapping.",
+          "line_number": 7,
+          "raw": "Environment(\"TestName\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "exit_mapping_required",
+          "message": "ExitTest scope and outcome need explicit target semantics.",
+          "line_number": 8,
+          "raw": "    ExitTest(-1)",
+          "severity": "blocker"
+        },
+        {
+          "code": "selector_mapping_required",
+          "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+          "line_number": 11,
+          "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "parameter_binding_required",
+          "message": "Reference preserved; argument direction, type and call binding are not resolved.",
+          "line_number": 11,
+          "raw": "Parameter(\"Input_User\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "secure_value_mapping_required",
+          "message": "UFT secure values need an explicit UiPath credential mapping.",
+          "line_number": 12,
+          "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\").SetSecure Parameter(\"Input_Password\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "selector_mapping_required",
+          "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+          "line_number": 12,
+          "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "parameter_binding_required",
+          "message": "Reference preserved; argument direction, type and call binding are not resolved.",
+          "line_number": 12,
+          "raw": "Parameter(\"Input_Password\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "selector_mapping_required",
+          "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+          "line_number": 13,
+          "raw": "Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\")",
+          "severity": "blocker"
+        }
+      ]
+    },
+    {
+      "component_id": 20,
+      "name": "Additional check",
+      "status": "blocked",
+      "issues": [
+        {
+          "code": "selector_mapping_required",
+          "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+          "line_number": 2,
+          "raw": "Browser(\"Application\").Page(\"Home\").WebEdit(\"Search\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "unsupported_expression",
+          "message": "Unsupported or malformed value expression",
+          "line_number": 2,
+          "raw": "prefix & Parameter(\"SearchTerm\")",
+          "severity": "blocker"
+        },
+        {
+          "code": "unsupported_statement",
+          "message": "Unsupported UFT/VBScript statement",
+          "line_number": 3,
+          "raw": "CustomValidation Parameter(\"Expected_Result\")",
+          "severity": "blocker"
+        }
+      ]
+    }
+  ]
+}

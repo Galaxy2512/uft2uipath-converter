@@ -1,0 +1,101 @@
+{
+  "component_id": 20,
+  "name": "Additional check",
+  "source_row": {
+    "CO_ID": "20",
+    "CO_NAME": "Additional check"
+  },
+  "binding": {
+    "component_id": "20",
+    "script": "check.vbs",
+    "encoding": "auto"
+  },
+  "status": "blocked",
+  "issues": [
+    {
+      "code": "selector_mapping_required",
+      "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+      "line_number": 2,
+      "raw": "Browser(\"Application\").Page(\"Home\").WebEdit(\"Search\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "unsupported_expression",
+      "message": "Unsupported or malformed value expression",
+      "line_number": 2,
+      "raw": "prefix & Parameter(\"SearchTerm\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "unsupported_statement",
+      "message": "Unsupported UFT/VBScript statement",
+      "line_number": 3,
+      "raw": "CustomValidation Parameter(\"Expected_Result\")",
+      "severity": "blocker"
+    }
+  ],
+  "generation_ready": false,
+  "executable_verified": false,
+  "source_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\examples\\script_analysis\\check.vbs",
+  "source_copy": "Sources/component_20.source",
+  "sha256": "a30a4998104b78f036d2a0febcb80d4213d84985712b8f579e42c4cffe7ec0e8",
+  "source_text": "' Deliberately unsupported expression: preserve it for review.\r\nBrowser(\"Application\").Page(\"Home\").WebEdit(\"Search\").Set prefix & Parameter(\"SearchTerm\")\r\nCustomValidation Parameter(\"Expected_Result\")\r\n",
+  "encoding": "utf-8-sig",
+  "operations": [
+    {
+      "node_type": "SetTextOperation",
+      "raw": "Browser(\"Application\").Page(\"Home\").WebEdit(\"Search\").Set prefix & Parameter(\"SearchTerm\")",
+      "line_number": 2,
+      "target": {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Home",
+        "object_type": "WebEdit",
+        "logical_name": "Search",
+        "raw": "Browser(\"Application\").Page(\"Home\").WebEdit(\"Search\")"
+      },
+      "value": {
+        "node_type": "UnknownValueExpression",
+        "raw": "prefix & Parameter(\"SearchTerm\")",
+        "reason": "Unsupported or malformed value expression"
+      }
+    },
+    {
+      "node_type": "UnknownScriptOperation",
+      "raw": "CustomValidation Parameter(\"Expected_Result\")",
+      "line_number": 3,
+      "reason": "Unsupported UFT/VBScript statement"
+    }
+  ],
+  "source_lines": [
+    "' Deliberately unsupported expression: preserve it for review.",
+    "Browser(\"Application\").Page(\"Home\").WebEdit(\"Search\").Set prefix & Parameter(\"SearchTerm\")",
+    "CustomValidation Parameter(\"Expected_Result\")",
+    ""
+  ],
+  "references": {
+    "parameters": [],
+    "environment": [],
+    "objects": [
+      {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Home",
+        "object_type": "WebEdit",
+        "logical_name": "Search",
+        "raw": "Browser(\"Application\").Page(\"Home\").WebEdit(\"Search\")"
+      }
+    ]
+  },
+  "coverage": {
+    "operation_count": 2,
+    "recognized_operation_count": 1,
+    "unsupported_statement_count": 1,
+    "unsupported_expression_count": 1,
+    "operation_kinds": {
+      "SetTextOperation": 1,
+      "UnknownScriptOperation": 1
+    },
+    "definition": "Recognition of parser nodes, not migration or execution success."
+  }
+}

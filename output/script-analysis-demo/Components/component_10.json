@@ -1,0 +1,334 @@
+{
+  "component_id": 10,
+  "name": "Shared login",
+  "source_row": {
+    "CO_ID": "10",
+    "CO_NAME": "Shared login"
+  },
+  "binding": {
+    "component_id": "10",
+    "script": "login.vbs",
+    "encoding": "auto"
+  },
+  "status": "blocked",
+  "issues": [
+    {
+      "code": "unsupported_statement",
+      "message": "Unsupported UFT/VBScript statement",
+      "line_number": 1,
+      "raw": "Option Explicit",
+      "severity": "blocker"
+    },
+    {
+      "code": "unsupported_statement",
+      "message": "Unsupported UFT/VBScript statement",
+      "line_number": 2,
+      "raw": "Dim userName",
+      "severity": "blocker"
+    },
+    {
+      "code": "exist_mapping_required",
+      "message": "Exist timeout and Boolean result need equivalent UiPath behavior.",
+      "line_number": 4,
+      "raw": "If Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then",
+      "severity": "blocker"
+    },
+    {
+      "code": "selector_mapping_required",
+      "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+      "line_number": 4,
+      "raw": "Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "assertion_mapping_required",
+      "message": "Preserve report severity and test outcome; logging alone is insufficient.",
+      "line_number": 5,
+      "raw": "    Reporter.ReportEvent micPass, Environment(\"TestName\"), \"Page ready\"",
+      "severity": "blocker"
+    },
+    {
+      "code": "environment_binding_required",
+      "message": "Environment reference requires target mapping.",
+      "line_number": 5,
+      "raw": "Environment(\"TestName\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "assertion_mapping_required",
+      "message": "Preserve report severity and test outcome; logging alone is insufficient.",
+      "line_number": 7,
+      "raw": "    Reporter.ReportEvent micFail, Environment(\"TestName\"), \"Page missing\"",
+      "severity": "blocker"
+    },
+    {
+      "code": "environment_binding_required",
+      "message": "Environment reference requires target mapping.",
+      "line_number": 7,
+      "raw": "Environment(\"TestName\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "exit_mapping_required",
+      "message": "ExitTest scope and outcome need explicit target semantics.",
+      "line_number": 8,
+      "raw": "    ExitTest(-1)",
+      "severity": "blocker"
+    },
+    {
+      "code": "selector_mapping_required",
+      "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+      "line_number": 11,
+      "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "parameter_binding_required",
+      "message": "Reference preserved; argument direction, type and call binding are not resolved.",
+      "line_number": 11,
+      "raw": "Parameter(\"Input_User\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "secure_value_mapping_required",
+      "message": "UFT secure values need an explicit UiPath credential mapping.",
+      "line_number": 12,
+      "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\").SetSecure Parameter(\"Input_Password\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "selector_mapping_required",
+      "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+      "line_number": 12,
+      "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "parameter_binding_required",
+      "message": "Reference preserved; argument direction, type and call binding are not resolved.",
+      "line_number": 12,
+      "raw": "Parameter(\"Input_Password\")",
+      "severity": "blocker"
+    },
+    {
+      "code": "selector_mapping_required",
+      "message": "Logical UFT object reference preserved; UiPath selector is unresolved.",
+      "line_number": 13,
+      "raw": "Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\")",
+      "severity": "blocker"
+    }
+  ],
+  "generation_ready": false,
+  "executable_verified": false,
+  "source_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\examples\\script_analysis\\login.vbs",
+  "source_copy": "Sources/component_10.source",
+  "sha256": "5e3bb51528d2ed3cae4ad825bef8ea1cedc15f4e1534e20ffaa0856ad7a6809c",
+  "source_text": "Option Explicit\r\nDim userName\r\n\r\nIf Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then\r\n    Reporter.ReportEvent micPass, Environment(\"TestName\"), \"Page ready\"\r\nElse\r\n    Reporter.ReportEvent micFail, Environment(\"TestName\"), \"Page missing\"\r\n    ExitTest(-1)\r\nEnd  If\r\n\r\nBrowser(\"Application\").Page(\"Login\").WebEdit(\"Username\").Set Parameter(\"Input_User\")\r\nBrowser(\"Application\").Page(\"Login\").WebEdit(\"Password\").SetSecure Parameter(\"Input_Password\")\r\nBrowser(\"Application\").Page(\"Login\").WebButton(\"Submit\").Click\r\n",
+  "encoding": "utf-8-sig",
+  "operations": [
+    {
+      "node_type": "UnknownScriptOperation",
+      "raw": "Option Explicit",
+      "line_number": 1,
+      "reason": "Unsupported UFT/VBScript statement"
+    },
+    {
+      "node_type": "UnknownScriptOperation",
+      "raw": "Dim userName",
+      "line_number": 2,
+      "reason": "Unsupported UFT/VBScript statement"
+    },
+    {
+      "node_type": "IfOperation",
+      "raw": "If Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then",
+      "line_number": 4,
+      "condition": {
+        "node_type": "ExistCondition",
+        "target": {
+          "node_type": "ObjectReference",
+          "browser": "Application",
+          "page": "Login",
+          "object_type": "WebElement",
+          "logical_name": "Ready",
+          "raw": "Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\")"
+        },
+        "timeout": {
+          "node_type": "LiteralValue",
+          "raw": "10",
+          "value": 10
+        },
+        "raw": "If Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then"
+      },
+      "then_operations": [
+        {
+          "node_type": "ReportEventOperation",
+          "raw": "    Reporter.ReportEvent micPass, Environment(\"TestName\"), \"Page ready\"",
+          "line_number": 5,
+          "status": "micPass",
+          "title": {
+            "node_type": "EnvironmentReference",
+            "raw": "Environment(\"TestName\")",
+            "name": "TestName"
+          },
+          "message": {
+            "node_type": "LiteralValue",
+            "raw": "\"Page ready\"",
+            "value": "Page ready"
+          }
+        }
+      ],
+      "else_operations": [
+        {
+          "node_type": "ReportEventOperation",
+          "raw": "    Reporter.ReportEvent micFail, Environment(\"TestName\"), \"Page missing\"",
+          "line_number": 7,
+          "status": "micFail",
+          "title": {
+            "node_type": "EnvironmentReference",
+            "raw": "Environment(\"TestName\")",
+            "name": "TestName"
+          },
+          "message": {
+            "node_type": "LiteralValue",
+            "raw": "\"Page missing\"",
+            "value": "Page missing"
+          }
+        },
+        {
+          "node_type": "ExitTestOperation",
+          "raw": "    ExitTest(-1)",
+          "line_number": 8,
+          "code": {
+            "node_type": "LiteralValue",
+            "raw": "-1",
+            "value": -1
+          }
+        }
+      ]
+    },
+    {
+      "node_type": "SetTextOperation",
+      "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\").Set Parameter(\"Input_User\")",
+      "line_number": 11,
+      "target": {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebEdit",
+        "logical_name": "Username",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\")"
+      },
+      "value": {
+        "node_type": "ParameterReference",
+        "raw": "Parameter(\"Input_User\")",
+        "name": "Input_User"
+      }
+    },
+    {
+      "node_type": "SetSecureTextOperation",
+      "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\").SetSecure Parameter(\"Input_Password\")",
+      "line_number": 12,
+      "target": {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebEdit",
+        "logical_name": "Password",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\")"
+      },
+      "value": {
+        "node_type": "ParameterReference",
+        "raw": "Parameter(\"Input_Password\")",
+        "name": "Input_Password"
+      }
+    },
+    {
+      "node_type": "ClickOperation",
+      "raw": "Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\").Click",
+      "line_number": 13,
+      "target": {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebButton",
+        "logical_name": "Submit",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\")"
+      }
+    }
+  ],
+  "source_lines": [
+    "Option Explicit",
+    "Dim userName",
+    "",
+    "If Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then",
+    "    Reporter.ReportEvent micPass, Environment(\"TestName\"), \"Page ready\"",
+    "Else",
+    "    Reporter.ReportEvent micFail, Environment(\"TestName\"), \"Page missing\"",
+    "    ExitTest(-1)",
+    "End  If",
+    "",
+    "Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\").Set Parameter(\"Input_User\")",
+    "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\").SetSecure Parameter(\"Input_Password\")",
+    "Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\").Click",
+    ""
+  ],
+  "references": {
+    "parameters": [
+      "Input_Password",
+      "Input_User"
+    ],
+    "environment": [
+      "TestName"
+    ],
+    "objects": [
+      {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebElement",
+        "logical_name": "Ready",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\")"
+      },
+      {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebEdit",
+        "logical_name": "Username",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\")"
+      },
+      {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebEdit",
+        "logical_name": "Password",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebEdit(\"Password\")"
+      },
+      {
+        "node_type": "ObjectReference",
+        "browser": "Application",
+        "page": "Login",
+        "object_type": "WebButton",
+        "logical_name": "Submit",
+        "raw": "Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\")"
+      }
+    ]
+  },
+  "coverage": {
+    "operation_count": 9,
+    "recognized_operation_count": 7,
+    "unsupported_statement_count": 2,
+    "unsupported_expression_count": 0,
+    "operation_kinds": {
+      "ClickOperation": 1,
+      "ExitTestOperation": 1,
+      "IfOperation": 1,
+      "ReportEventOperation": 2,
+      "SetSecureTextOperation": 1,
+      "SetTextOperation": 1,
+      "UnknownScriptOperation": 2
+    },
+    "definition": "Recognition of parser nodes, not migration or execution success."
+  }
+}

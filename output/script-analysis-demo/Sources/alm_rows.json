@@ -1,0 +1,17 @@
+{
+  "project_name": "ScriptAnalysisDemo",
+  "TEST": [
+    {"TS_TEST_ID": "1", "TS_NAME": "Login scenario"},
+    {"TS_TEST_ID": "2", "TS_NAME": "Repeat login scenario"}
+  ],
+  "COMPONENT": [
+    {"CO_ID": "10", "CO_NAME": "Shared login"},
+    {"CO_ID": "20", "CO_NAME": "Additional check"}
+  ],
+  "COMPONENT_STEP": [],
+  "BPTEST_TO_COMPONENTS": [
+    {"BC_ID": "1", "BC_BPT_ID": "1", "BC_CO_ID": "10", "BC_ORDER": "1"},
+    {"BC_ID": "2", "BC_BPT_ID": "1", "BC_CO_ID": "20", "BC_ORDER": "2"},
+    {"BC_ID": "3", "BC_BPT_ID": "2", "BC_CO_ID": "10", "BC_ORDER": "1"}
+  ]
+}

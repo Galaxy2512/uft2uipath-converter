@@ -32,9 +32,20 @@ def main():
     rows_cmd.add_argument("source")
     rows_cmd.add_argument("--out", required=True)
 
+    scripts_cmd = sub.add_parser("analyze-scripts", help="Analyze UFT scripts by component ID")
+    scripts_cmd.add_argument("manifest")
+    scripts_cmd.add_argument("--out", required=True)
+    scripts_cmd.add_argument("--fail-on-blockers", action="store_true")
+
     args = parser.parse_args()
 
-    if args.command == "convert-rows":
+    if args.command == "analyze-scripts":
+        from uft2uipath.script_analysis.batch import main as scripts_main
+        options = [args.manifest, "--out", args.out]
+        if args.fail_on_blockers:
+            options.append("--fail-on-blockers")
+        scripts_main(options)
+    elif args.command == "convert-rows":
         from uft2uipath.convert_rows import main as convert_rows_main
         convert_rows_main([args.source, "--out", args.out])
     elif args.command == "build-model":

@@ -1,0 +1,7 @@
+{
+  "rows": "rows.json",
+  "bindings": [
+    {"component_id": "10", "script": "login.vbs", "encoding": "auto"},
+    {"component_id": "20", "script": "check.vbs", "encoding": "auto"}
+  ]
+}
