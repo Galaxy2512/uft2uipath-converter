@@ -200,13 +200,29 @@ class UftVbScriptParser:
                 if "else" in expected_terminators:
                     return operations, index, "else"
 
-                return operations, index, "unexpected_else"
+                operations.append(
+                    UnknownScriptOperation(
+                        raw=line,
+                        line_number=index + 1,
+                        reason="Unexpected block terminator: else",
+                    )
+                )
+                index += 1
+                continue
 
             if normalized in {"end if", "endif"}:
                 if "end_if" in expected_terminators:
                     return operations, index, "end_if"
 
-                return operations, index, "unexpected_end_if"
+                operations.append(
+                    UnknownScriptOperation(
+                        raw=line,
+                        line_number=index + 1,
+                        reason="Unexpected block terminator: end_if",
+                    )
+                )
+                index += 1
+                continue
 
             if_match = self.IF_EXIST_PATTERN.match(line)
 
