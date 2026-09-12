@@ -1,5 +1,6 @@
+from xml.sax.saxutils import quoteattr
 import json
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 from uft2uipath.ast import Project
 from uft2uipath.generator.workflow_generator import WorkflowGenerator
@@ -51,7 +52,7 @@ class UiPathProjectGenerator:
         for test in project.tests:
             for component in test.components:
                 invoke_lines.append(
-                    f'    <InvokeWorkflowFile DisplayName="{component.name}" WorkflowFileName="Workflows\\\\{component.name}.xaml" />'
+                    f'    <ui:InvokeWorkflowFile DisplayName={quoteattr(str(component.name))} WorkflowFileName={quoteattr(str(PureWindowsPath("Workflows", component.name + ".xaml")))} />'
                 )
 
         invokes = "\n".join(invoke_lines)
@@ -64,7 +65,7 @@ class UiPathProjectGenerator:
  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
  xmlns:ui="http://schemas.uipath.com/workflow/activities"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Sequence DisplayName="{project.name}">
+  <Sequence DisplayName={quoteattr(str(project.name))}>
 {invokes}
   </Sequence>
 </Activity>

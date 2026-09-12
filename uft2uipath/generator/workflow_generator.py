@@ -1,3 +1,4 @@
+from xml.sax.saxutils import quoteattr
 from pathlib import Path
 
 from uft2uipath.ast import BusinessComponent
@@ -31,7 +32,7 @@ class WorkflowGenerator:
  xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation"
  xmlns:ui="http://schemas.uipath.com/workflow/activities"
  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Sequence DisplayName="{component.name}">
+  <Sequence DisplayName={quoteattr(str(component.name))}>
 {activities}
   </Sequence>
 </Activity>
