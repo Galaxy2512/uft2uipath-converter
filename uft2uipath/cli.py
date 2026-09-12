@@ -28,9 +28,16 @@ def main():
     model_cmd.add_argument("source")
     model_cmd.add_argument("--out", required=True)
 
+    rows_cmd = sub.add_parser("convert-rows", help="Generate review scaffold from decoded ALM JSON")
+    rows_cmd.add_argument("source")
+    rows_cmd.add_argument("--out", required=True)
+
     args = parser.parse_args()
 
-    if args.command == "build-model":
+    if args.command == "convert-rows":
+        from uft2uipath.convert_rows import main as convert_rows_main
+        convert_rows_main([args.source, "--out", args.out])
+    elif args.command == "build-model":
         from uft2uipath.rows_cli import main as build_model_main
         build_model_main([args.source, "--out", args.out])
     elif args.command == "inspect":
