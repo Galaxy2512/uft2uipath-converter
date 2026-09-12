@@ -46,6 +46,7 @@ from uft2uipath.parser.uft_script_nodes import (
     SetSecureTextOperation,
     SetTextOperation,
     UnknownScriptOperation,
+    UnknownValueExpression,
     ValueExpression,
 )
 
@@ -125,7 +126,7 @@ class UftVbScriptParser:
     )
 
     STRING_LITERAL_PATTERN = re.compile(
-        r'^"(?P<value>.*)"$',
+        r'^"(?P<value>(?:[^"]|"")*)"$',
         re.DOTALL,
     )
 
@@ -210,7 +211,7 @@ class UftVbScriptParser:
                 index += 1
                 continue
 
-            if normalized in {"end if", "endif"}:
+            if re.fullmatch(r"end[ \t]*if", normalized):
                 if "end_if" in expected_terminators:
                     return operations, index, "end_if"
 
@@ -448,7 +449,7 @@ class UftVbScriptParser:
         if string_match:
             return LiteralValue(
                 raw=value,
-                value=string_match.group("value"),
+                value=string_match.group("value").replace('""', '"'),
             )
 
         if self.INTEGER_PATTERN.match(value):
@@ -457,11 +458,8 @@ class UftVbScriptParser:
                 value=int(value),
             )
 
-        # Preserve unsupported expressions as raw literal-like values.
-        return LiteralValue(
-            raw=value,
-            value=value,
-        )
+        # Do not turn unparsed expressions into literal text.
+        return UnknownValueExpression(raw=value)
 
     def _normalize_lines(self, source: str) -> list[str]:
         """

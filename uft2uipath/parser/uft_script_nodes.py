@@ -47,6 +47,12 @@ class ValueExpression:
 
 
 @dataclass
+class UnknownValueExpression(ValueExpression):
+    """Preserve an expression that has not been interpreted."""
+    reason: str = "Unsupported or malformed value expression"
+
+
+@dataclass
 class LiteralValue(ValueExpression):
     """
     Represents a literal value such as:
