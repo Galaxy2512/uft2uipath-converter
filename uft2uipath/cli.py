@@ -24,9 +24,16 @@ def main():
     )
     convert_cmd.add_argument("project")
 
+    model_cmd = sub.add_parser("build-model", help="Build model from decoded ALM JSON")
+    model_cmd.add_argument("source")
+    model_cmd.add_argument("--out", required=True)
+
     args = parser.parse_args()
 
-    if args.command == "inspect":
+    if args.command == "build-model":
+        from uft2uipath.rows_cli import main as build_model_main
+        build_model_main([args.source, "--out", args.out])
+    elif args.command == "inspect":
         _run_inspect(args.project)
     elif args.command == "convert":
         print(f"Converting: {args.project}")
