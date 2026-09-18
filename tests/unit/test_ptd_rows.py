@@ -1,9 +1,13 @@
 import pytest
 
-from ptd_fixtures import NULL, TEST_COLUMNS, encode_rows, write_export
+from ptd_fixtures import NULL, encode_rows, write_export
 from uft2uipath.alm.ptd_reader import PtdFormatError, PtdReader
 from uft2uipath.alm.schema import AlmColumn
 from uft2uipath.alm.tables import AlmTables
+
+
+TEST_COLUMNS = [("TS_TEST_ID", "int"), ("TS_NAME", "varchar"), ("TS_TYPE", "varchar"),
+                ("TS_CREATION_DATE", "timestamp"), ("TS_DESCRIPTION", "clob")]
 
 
 def columns(spec):

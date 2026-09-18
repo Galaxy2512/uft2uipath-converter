@@ -5,7 +5,9 @@ import zipfile
 
 import pytest
 
-from ptd_fixtures import minimal_bpt_export
+from ole_fixtures import action_resource
+from ptd_fixtures import (COMPONENT_COLUMNS, RELATION_COLUMNS, STEP_COLUMNS, TEST_COLUMNS,
+                          minimal_bpt_export, repository_tables, write_export)
 from uft2uipath import cli
 from uft2uipath.pipeline import PENDING_STAGES, ConversionPipeline
 
@@ -29,14 +31,16 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
     assert result.project.name == "SYNTHETIC_ALM"
     test = next(t for t in result.project.tests if t.id == 7)
     assert [c.name for c in test.components] == ["Login", "Logout"]
-    assert set(result.artifacts) == {"decoded-tables", "resolved-project", "pipeline-report"}
+    assert set(result.artifacts) == {"decoded-tables", "resolved-project", "resolved-scripts", "pipeline-report"}
 
     decoded = read(result.artifacts["decoded-tables"])
     assert decoded["tables"]["TEST"] == {"row_count": 2}
     assert decoded["rows"]["TEST"][0]["TS_DESCRIPTION"] == "<html>Zürich</html>"
 
     report = read(result.artifacts["pipeline-report"])
-    assert [s["name"] for s in report["stages"]] == ["extract", "decode", "model", *PENDING_STAGES]
+    assert [s["name"] for s in report["stages"]] == [
+        "extract", "decode", "model", "resolve_scripts", *PENDING_STAGES,
+    ]
     assert report["uipath_project_generated"] is False
 
 
@@ -94,6 +98,49 @@ def test_pipeline_fails_when_a_model_table_cannot_be_decoded(tmp_path):
 
     with pytest.raises(ValueError, match="Required table TEST"):
         ConversionPipeline(source, tmp_path / "out").run()
+
+
+def test_pipeline_resolves_scripts_and_copies_sources(tmp_path):
+    root = tmp_path / "export"
+    files = {
+        "tests\\5\\Action0\\Script.mts": b'RunAction "Sign On", oneIteration',
+        "tests\\5\\Action0\\Resource.mtr": action_resource("Action0"),
+        "tests\\5\\Action1\\Script.mts": "' Zürich\r\nBrowser(\"B\").Page(\"P\").WebEdit(\"u\").Set \"x\"".encode(),
+        "tests\\5\\Action1\\Resource.mtr": action_resource("Sign On"),
+    }
+    tables = repository_tables(root, files)
+    tables.update({
+        "TEST": (TEST_COLUMNS, [{"TS_TEST_ID": 5, "TS_NAME": "Login", "TS_TYPE": "QUICKTEST_TEST", "TS_PATH": "5"}]),
+        "COMPONENT": (COMPONENT_COLUMNS, []),
+        "COMPONENT_STEP": (STEP_COLUMNS, []),
+        "BPTEST_TO_COMPONENTS": (RELATION_COLUMNS, []),
+    })
+    write_export(root, tables)
+
+    result = ConversionPipeline(root, tmp_path / "out").run()
+
+    scripts = read(result.artifacts["resolved-scripts"])
+    assert scripts["tests"][0]["status"] == "resolved"
+    assert [u["action_name"] for u in scripts["tests"][0]["execution"]] == ["Sign On"]
+    action = scripts["assets"]["test:5"]["actions"]["Action1"]
+    assert "text" not in action
+    copy = tmp_path / "out" / "artifacts" / action["source_copy"]
+    assert copy.read_bytes() == files["tests\\5\\Action1\\Script.mts"]
+    stage = read(result.artifacts["pipeline-report"])["stages"][3]
+    assert stage == {"name": "resolve_scripts", "status": "done",
+                     "artifact": "artifacts/resolved-scripts.json", "test_statuses": {"resolved": 1}}
+
+
+def test_pipeline_reports_missing_repository_tables(tmp_path):
+    source = minimal_bpt_export(tmp_path / "export")
+    for name in ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL_FILE"):
+        (source / "tables" / f"{name}_!000001.ptd").unlink()
+
+    result = ConversionPipeline(source, tmp_path / "out").run()
+
+    stage = read(result.artifacts["pipeline-report"])["stages"][3]
+    assert (stage["name"], stage["status"]) == ("resolve_scripts", "failed")
+    assert "resolved-scripts" not in result.artifacts
 
 
 def test_convert_command_runs_pipeline(tmp_path, monkeypatch, capsys):

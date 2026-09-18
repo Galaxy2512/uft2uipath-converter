@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Any
 
 from uft2uipath.alm.ptd_reader import PtdFormatError
+from uft2uipath.alm.repository import SmartRepository
+from uft2uipath.alm.script_resolver import ScriptResolver
 from uft2uipath.alm.tables import AlmTables
 from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.ast import Project
@@ -28,7 +30,6 @@ REPOSITORY_TABLES = ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL
 EXPORTED_TABLES = MODEL_TABLES + REPOSITORY_TABLES
 
 PENDING_STAGES = (
-    "resolve_scripts",
     "resolve_objects",
     "analyze",
     "bind",
@@ -100,6 +101,8 @@ class ConversionPipeline:
                 "test_count": len(project.tests),
             })
 
+            stages.append(self._resolve_scripts(tables, decoded["rows"], project, staging))
+
             stages.extend({"name": name, "status": "pending"} for name in PENDING_STAGES)
             _write(artifacts_dir / "pipeline-report.json", {
                 "format_version": FORMAT_VERSION,
@@ -115,9 +118,46 @@ class ConversionPipeline:
 
         artifacts = {
             name: self.output_dir / "artifacts" / f"{name}.json"
-            for name in ("decoded-tables", "resolved-project", "pipeline-report")
+            for name in ("decoded-tables", "resolved-project", "resolved-scripts", "pipeline-report")
         }
+        artifacts = {name: path for name, path in artifacts.items() if path.is_file()}
         return PipelineResult(self.output_dir, project, artifacts, table_errors)
+
+    def _resolve_scripts(self, tables, rows, project, staging: Path) -> dict[str, Any]:
+        missing = [name for name in REPOSITORY_TABLES if name not in rows]
+        if missing or not tables.has(REPOSITORY_TABLES[0]):
+            reason = f"Repository tables unavailable: {missing or [REPOSITORY_TABLES[0]]}"
+            return {"name": "resolve_scripts", "status": "failed", "detail": reason}
+
+        resolver = ScriptResolver(SmartRepository(tables), rows)
+        resolved = resolver.resolve([test.id for test in project.tests])
+        referenced = {unit.asset for test in resolved for unit in test.execution}
+        referenced |= {key for key, asset in resolver.assets.items() if asset.issues}
+        assets = {}
+        for key in sorted(referenced):
+            asset = resolver.assets[key]
+            actions = {}
+            for folder, action in asset.actions.items():
+                source = f"sources/{asset.kind}_{asset.entity_id}/{folder}/Script.mts"
+                target = staging / "artifacts" / source
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_text(action.text, encoding="utf-8", newline="")
+                entry = asdict(action)
+                entry.pop("text")
+                entry["source_copy"] = source
+                actions[folder] = entry
+            assets[key] = {"kind": asset.kind, "entity_id": asset.entity_id, "root": asset.root,
+                           "actions": actions, "issues": asset.issues}
+        _write(staging / "artifacts" / "resolved-scripts.json", {
+            "format_version": FORMAT_VERSION,
+            "tests": [asdict(test) for test in resolved],
+            "assets": assets,
+        })
+        statuses: dict[str, int] = {}
+        for test in resolved:
+            statuses[test.status] = statuses.get(test.status, 0) + 1
+        return {"name": "resolve_scripts", "status": "done",
+                "artifact": "artifacts/resolved-scripts.json", "test_statuses": statuses}
 
     def _extract(self, workspace: Path) -> tuple[Path, bool]:
         if self.source.is_dir():

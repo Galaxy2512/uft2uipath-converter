@@ -6,6 +6,8 @@ NULL = object()
 
 
 def encode_value(datatype, value):
+    if value is None:
+        value = NULL
     if datatype == "timestamp":
         return b"\xff" * 8 if value is NULL else struct.pack(">q", value)
     if value is NULL:
@@ -34,13 +36,17 @@ def schema_xml(tables):
 
 
 TEST_COLUMNS = [("TS_TEST_ID", "int"), ("TS_NAME", "varchar"), ("TS_TYPE", "varchar"),
-                ("TS_CREATION_DATE", "timestamp"), ("TS_DESCRIPTION", "clob")]
-COMPONENT_COLUMNS = [("CO_ID", "int"), ("CO_NAME", "varchar"), ("CO_SCRIPT_TYPE", "varchar")]
+                ("TS_CREATION_DATE", "timestamp"), ("TS_DESCRIPTION", "clob"), ("TS_PATH", "varchar")]
+COMPONENT_COLUMNS = [("CO_ID", "int"), ("CO_NAME", "varchar"), ("CO_SCRIPT_TYPE", "varchar"),
+                     ("CO_SUBTYPE_ID", "varchar"), ("CO_PHYSICAL_PATH", "varchar"),
+                     ("CO_BPTA_FLOW_TEST_ID", "int")]
 STEP_COLUMNS = [("CS_STEP_ID", "int"), ("CS_COMPONENT_ID", "int"), ("CS_STEP_ORDER", "int"),
                 ("CS_STEP_NAME", "varchar")]
-RELATION_COLUMNS = [("BC_ID", "int"), ("BC_BPT_ID", "int"), ("BC_CO_ID", "int"), ("BC_ORDER", "int")]
+RELATION_COLUMNS = [("BC_ID", "int"), ("BC_BPT_ID", "int"), ("BC_CO_ID", "int"), ("BC_ORDER", "int"),
+                    ("BC_PARENT_ID", "int"), ("BC_PARENT_TYPE", "varchar"), ("BC_SUBTYPE_ID", "varchar"),
+                    ("BC_NAME", "varchar"), ("BC_BPTA_CONDITION", "clob")]
 LOGICAL_COLUMNS = [("SRLF_ID", "int"), ("SRLF_PARENT_PATH", "varchar"), ("SRLF_NAME", "varchar"),
-                   ("SRLF_PHYSICAL_ID", "int")]
+                   ("SRLF_PHYSICAL_ID", "int"), ("SRLF_IS_DIRECTORY", "varchar")]
 PHYSICAL_COLUMNS = [("SRPF_ID", "int"), ("SRPF_PATH", "varchar")]
 
 
@@ -59,6 +65,23 @@ def write_export(root: Path, tables: dict, project_name="SYNTHETIC_ALM"):
     for name, (columns, rows) in tables.items():
         (root / "tables" / f"{name}_!000001.ptd").write_bytes(encode_rows(columns, rows))
     return root
+
+
+def repository_tables(root: Path, files: dict[str, bytes]):
+    """Stores files as ProjRep blobs; returns SMART_REPOSITORY_* table entries."""
+    logical, physical = [], []
+    for number, (path, data) in enumerate(sorted(files.items()), 1):
+        blob = f"ProjRep\\000\\{number:03d}"
+        (root / "ProjRep" / "000").mkdir(parents=True, exist_ok=True)
+        (root / "ProjRep" / "000" / f"{number:03d}").write_bytes(data)
+        parent, _, name = ("." + "\\" + path).rpartition("\\")
+        logical.append({"SRLF_ID": number, "SRLF_PARENT_PATH": parent + "\\", "SRLF_NAME": name,
+                        "SRLF_PHYSICAL_ID": number, "SRLF_IS_DIRECTORY": "N"})
+        physical.append({"SRPF_ID": number, "SRPF_PATH": ".\\" + blob})
+    return {
+        "SMART_REPOSITORY_LOGICAL_FILE": (LOGICAL_COLUMNS, logical),
+        "SMART_REPOSITORY_PHYSICAL_FILE": (PHYSICAL_COLUMNS, physical),
+    }
 
 
 def minimal_bpt_export(root: Path):
