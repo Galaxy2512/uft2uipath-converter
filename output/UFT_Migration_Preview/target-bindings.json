@@ -1,0 +1,88 @@
+{
+  "profile": "windows-csharp-classic",
+  "fixture_only": true,
+  "components": {
+    "10": {
+      "parameters": {
+        "Input_User": {
+          "name": "in_User",
+          "type": "String",
+          "direction": "In"
+        }
+      },
+      "objects": [
+        {
+          "uft": {
+            "browser": "Application",
+            "page": "Login",
+            "object_type": "WebElement",
+            "logical_name": "Ready"
+          },
+          "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='DIV' id='Ready' />",
+          "verified": true,
+          "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
+          "input_method": "Simulate",
+          "timeout_ms": 30000
+        },
+        {
+          "uft": {
+            "browser": "Application",
+            "page": "Login",
+            "object_type": "WebEdit",
+            "logical_name": "Username"
+          },
+          "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='INPUT' id='Username' />",
+          "verified": true,
+          "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
+          "input_method": "Simulate",
+          "timeout_ms": 30000
+        },
+        {
+          "uft": {
+            "browser": "Application",
+            "page": "Login",
+            "object_type": "WebButton",
+            "logical_name": "Submit"
+          },
+          "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='BUTTON' id='Submit' />",
+          "verified": true,
+          "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
+          "input_method": "Simulate",
+          "timeout_ms": 30000
+        },
+        {
+          "uft": {
+            "browser": "Application",
+            "page": "Login",
+            "object_type": "WebButton",
+            "logical_name": "Retry"
+          },
+          "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='BUTTON' id='Retry' />",
+          "verified": true,
+          "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
+          "input_method": "Simulate",
+          "timeout_ms": 30000
+        }
+      ]
+    },
+    "20": {}
+  },
+  "calls": {
+    "1": {
+      "1": {
+        "in_User": {
+          "argument": "in_User_Test1",
+          "type": "String"
+        }
+      }
+    },
+    "2": {
+      "3": {
+        "in_User": {
+          "argument": "in_User_Test2",
+          "type": "String"
+        }
+      }
+    }
+  }
+}

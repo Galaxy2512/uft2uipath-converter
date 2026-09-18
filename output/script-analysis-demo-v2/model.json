@@ -1,0 +1,246 @@
+{
+  "format_version": 1,
+  "stage": "script_analysis",
+  "project": {
+    "name": "ScriptAnalysisDemo",
+    "source_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\examples\\script_analysis\\rows.json",
+    "tests": [
+      {
+        "name": "Login scenario",
+        "id": 1,
+        "alm_status": null,
+        "test_type": null,
+        "execution_status": null,
+        "description": null,
+        "components": [
+          {
+            "name": "Shared login",
+            "id": 10,
+            "alm_status": null,
+            "script_type": null,
+            "component_type": null,
+            "description": null,
+            "parameters": [],
+            "variables": [],
+            "steps": [],
+            "issues": [],
+            "status": "partial",
+            "raw": {
+              "CO_ID": "10",
+              "CO_NAME": "Shared login",
+              "_bpt_relation": {
+                "BC_ID": "1",
+                "BC_BPT_ID": "1",
+                "BC_CO_ID": "10",
+                "BC_ORDER": "1"
+              },
+              "_script_analysis": "Components/component_10.json"
+            }
+          },
+          {
+            "name": "Additional check",
+            "id": 20,
+            "alm_status": null,
+            "script_type": null,
+            "component_type": null,
+            "description": null,
+            "parameters": [],
+            "variables": [],
+            "steps": [],
+            "issues": [],
+            "status": "partial",
+            "raw": {
+              "CO_ID": "20",
+              "CO_NAME": "Additional check",
+              "_bpt_relation": {
+                "BC_ID": "2",
+                "BC_BPT_ID": "1",
+                "BC_CO_ID": "20",
+                "BC_ORDER": "2"
+              },
+              "_script_analysis": "Components/component_20.json"
+            }
+          }
+        ],
+        "parameters": [],
+        "variables": [],
+        "data_tables": [],
+        "issues": [],
+        "status": "partial",
+        "raw": {
+          "TS_TEST_ID": "1",
+          "TS_NAME": "Login scenario"
+        }
+      },
+      {
+        "name": "Repeat login scenario",
+        "id": 2,
+        "alm_status": null,
+        "test_type": null,
+        "execution_status": null,
+        "description": null,
+        "components": [
+          {
+            "name": "Shared login",
+            "id": 10,
+            "alm_status": null,
+            "script_type": null,
+            "component_type": null,
+            "description": null,
+            "parameters": [],
+            "variables": [],
+            "steps": [],
+            "issues": [],
+            "status": "partial",
+            "raw": {
+              "CO_ID": "10",
+              "CO_NAME": "Shared login",
+              "_bpt_relation": {
+                "BC_ID": "3",
+                "BC_BPT_ID": "2",
+                "BC_CO_ID": "10",
+                "BC_ORDER": "1"
+              },
+              "_script_analysis": "Components/component_10.json"
+            }
+          }
+        ],
+        "parameters": [],
+        "variables": [],
+        "data_tables": [],
+        "issues": [],
+        "status": "partial",
+        "raw": {
+          "TS_TEST_ID": "2",
+          "TS_NAME": "Repeat login scenario"
+        }
+      }
+    ],
+    "shared_resources": [],
+    "object_repository": [],
+    "data_tables": [],
+    "issues": [],
+    "metadata": {
+      "test_count": 2,
+      "component_definition_count": 2,
+      "component_step_count": 0,
+      "test_component_relation_count": 3
+    }
+  },
+  "source_tables": {
+    "TEST": [
+      {
+        "TS_TEST_ID": "1",
+        "TS_NAME": "Login scenario"
+      },
+      {
+        "TS_TEST_ID": "2",
+        "TS_NAME": "Repeat login scenario"
+      }
+    ],
+    "COMPONENT": [
+      {
+        "CO_ID": "10",
+        "CO_NAME": "Shared login"
+      },
+      {
+        "CO_ID": "20",
+        "CO_NAME": "Additional check"
+      }
+    ],
+    "COMPONENT_STEP": [],
+    "BPTEST_TO_COMPONENTS": [
+      {
+        "BC_ID": "1",
+        "BC_BPT_ID": "1",
+        "BC_CO_ID": "10",
+        "BC_ORDER": "1"
+      },
+      {
+        "BC_ID": "2",
+        "BC_BPT_ID": "1",
+        "BC_CO_ID": "20",
+        "BC_ORDER": "2"
+      },
+      {
+        "BC_ID": "3",
+        "BC_BPT_ID": "2",
+        "BC_CO_ID": "10",
+        "BC_ORDER": "1"
+      }
+    ]
+  },
+  "source_payload": {
+    "project_name": "ScriptAnalysisDemo",
+    "TEST": [
+      {
+        "TS_TEST_ID": "1",
+        "TS_NAME": "Login scenario"
+      },
+      {
+        "TS_TEST_ID": "2",
+        "TS_NAME": "Repeat login scenario"
+      }
+    ],
+    "COMPONENT": [
+      {
+        "CO_ID": "10",
+        "CO_NAME": "Shared login"
+      },
+      {
+        "CO_ID": "20",
+        "CO_NAME": "Additional check"
+      }
+    ],
+    "COMPONENT_STEP": [],
+    "BPTEST_TO_COMPONENTS": [
+      {
+        "BC_ID": "1",
+        "BC_BPT_ID": "1",
+        "BC_CO_ID": "10",
+        "BC_ORDER": "1"
+      },
+      {
+        "BC_ID": "2",
+        "BC_BPT_ID": "1",
+        "BC_CO_ID": "20",
+        "BC_ORDER": "2"
+      },
+      {
+        "BC_ID": "3",
+        "BC_BPT_ID": "2",
+        "BC_CO_ID": "10",
+        "BC_ORDER": "1"
+      }
+    ]
+  },
+  "source_manifest": {
+    "rows": "rows.json",
+    "bindings": [
+      {
+        "component_id": "10",
+        "script": "login.vbs",
+        "encoding": "auto"
+      },
+      {
+        "component_id": "20",
+        "script": "check.vbs",
+        "encoding": "auto"
+      }
+    ]
+  },
+  "manifest_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\examples\\script_analysis\\manifest.json",
+  "component_analyses": {
+    "10": "Components/component_10.json",
+    "20": "Components/component_20.json"
+  },
+  "generation_ready": false,
+  "limitations": [
+    "Analysis only: no executable UiPath workflows are produced.",
+    "Manifest mappings must be supplied from verified ALM relationships; names and ProjRep numbers are not guessed.",
+    "Recognition coverage is not semantic equivalence or migration success.",
+    "Source declarations, unsupported constructs and expressions remain preserved for review.",
+    "Argument definitions, instance values, selectors and full UFT semantics are not resolved.",
+    "Reference inventories cover parsed nodes; references inside unsupported expressions remain in raw source."
+  ]
+}

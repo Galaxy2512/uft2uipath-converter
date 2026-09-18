@@ -1,0 +1,145 @@
+{
+  "stage": "workflow_candidates",
+  "component_count": 2,
+  "test_count": 2,
+  "blocked_component_count": 2,
+  "blocked_test_count": 2,
+  "components": {
+    "10": {
+      "component_id": "10",
+      "status": "blocked",
+      "arguments": {
+        "in_User": "String"
+      },
+      "issues": [
+        {
+          "code": "fixture_only",
+          "message": "Synthetic example selectors, not live verification."
+        }
+      ],
+      "trace": [
+        {
+          "component_id": "10",
+          "line_number": 1,
+          "raw": "If Browser(\"Application\").Page(\"Login\").WebElement(\"Ready\").Exist(10) Then",
+          "node_type": "IfOperation",
+          "status": "mapped_unverified",
+          "activity": "UiElementExists + If"
+        },
+        {
+          "component_id": "10",
+          "line_number": 2,
+          "raw": "    Browser(\"Application\").Page(\"Login\").WebEdit(\"Username\").Set Parameter(\"Input_User\")",
+          "node_type": "SetTextOperation",
+          "status": "mapped_unverified",
+          "activity": "TypeInto (replace)"
+        },
+        {
+          "component_id": "10",
+          "line_number": 3,
+          "raw": "    Browser(\"Application\").Page(\"Login\").WebButton(\"Submit\").Click",
+          "node_type": "ClickOperation",
+          "status": "mapped_unverified",
+          "activity": "Click"
+        },
+        {
+          "component_id": "10",
+          "line_number": 5,
+          "raw": "    Browser(\"Application\").Page(\"Login\").WebButton(\"Retry\").Click",
+          "node_type": "ClickOperation",
+          "status": "mapped_unverified",
+          "activity": "Click"
+        }
+      ],
+      "executable_verified": false,
+      "equivalent_verified": false
+    },
+    "20": {
+      "component_id": "20",
+      "status": "blocked",
+      "arguments": {},
+      "issues": [
+        {
+          "code": "unsupported_statement",
+          "message": "Unsupported UFT/VBScript statement",
+          "line_number": 1,
+          "raw": "CustomValidation Parameter(\"Expected_Result\")",
+          "component_id": "20"
+        },
+        {
+          "code": "unsupported_mapping",
+          "message": "UnknownScriptOperation has no validated semantic mapping; source preserved.",
+          "line_number": 1,
+          "raw": "CustomValidation Parameter(\"Expected_Result\")",
+          "component_id": "20"
+        },
+        {
+          "code": "fixture_only",
+          "message": "Synthetic example selectors, not live verification."
+        }
+      ],
+      "trace": [
+        {
+          "component_id": "20",
+          "line_number": 1,
+          "raw": "CustomValidation Parameter(\"Expected_Result\")",
+          "node_type": "UnknownScriptOperation",
+          "status": "blocked"
+        }
+      ],
+      "executable_verified": false,
+      "equivalent_verified": false
+    }
+  },
+  "tests": [
+    {
+      "test_id": 1,
+      "status": "blocked",
+      "arguments": {
+        "in_User_Test1": "String"
+      },
+      "issues": [
+        {
+          "message": "Component 10 is blocked."
+        },
+        {
+          "message": "Component 20 is blocked."
+        }
+      ],
+      "executable_verified": false,
+      "equivalent_verified": false
+    },
+    {
+      "test_id": 2,
+      "status": "blocked",
+      "arguments": {
+        "in_User_Test2": "String"
+      },
+      "issues": [
+        {
+          "message": "Component 10 is blocked."
+        }
+      ],
+      "executable_verified": false,
+      "equivalent_verified": false
+    }
+  ],
+  "executable_verified": false,
+  "equivalent_verified": false,
+  "limitations": [
+    "Windows C# / Classic UI activity candidates; Studio load, compilation and execution are unverified.",
+    "Mapped does not mean equivalent: validate live selectors, input methods, timeouts and application state.",
+    "Click/Set use Attach Browser with explicit browser_type and partial selectors. Attachment adds its own timeout wait; timing equivalence remains unverified.",
+    "Reporter.ReportEvent, ExitTest, SetSecure, declarations and other unsupported operations block before any UI action.",
+    "Caller arguments are explicitly mapped per ALM relation ID; original dataset/value bindings still need verification.",
+    "Test registration uses Studio project metadata; actual discovery, validation and execution must be checked in Studio."
+  ],
+  "studio_project": {
+    "project_file": "project.json",
+    "target": "Windows",
+    "language": "CSharp",
+    "registered_test_count": 2,
+    "studio_load_verified": false,
+    "dependency_profile": "official-sample-23.10-baseline"
+  }
+}

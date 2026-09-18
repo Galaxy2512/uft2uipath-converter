@@ -1,0 +1,62 @@
+[
+  {
+    "relative_path": ".",
+    "file_count": 2095,
+    "total_size_bytes": 68594835
+  },
+  {
+    "relative_path": "ProjRep",
+    "file_count": 1896,
+    "total_size_bytes": 56941592
+  },
+  {
+    "relative_path": "ProjRep/000",
+    "file_count": 1896,
+    "total_size_bytes": 56941592
+  },
+  {
+    "relative_path": "ProjRep/000/000",
+    "file_count": 1896,
+    "total_size_bytes": 56941592
+  },
+  {
+    "relative_path": "ProjRep/000/000/000",
+    "file_count": 1896,
+    "total_size_bytes": 56941592
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/000",
+    "file_count": 1,
+    "total_size_bytes": 0
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/001",
+    "file_count": 952,
+    "total_size_bytes": 29136152
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/002",
+    "file_count": 411,
+    "total_size_bytes": 9798481
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/003",
+    "file_count": 436,
+    "total_size_bytes": 16205987
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/004",
+    "file_count": 96,
+    "total_size_bytes": 1800972
+  },
+  {
+    "relative_path": "ProjRep/000/000/000/005",
+    "file_count": 0,
+    "total_size_bytes": 0
+  },
+  {
+    "relative_path": "tables",
+    "file_count": 197,
+    "total_size_bytes": 11215524
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "component_id": 20,
+  "name": "Additional check",
+  "source_row": {
+    "CO_ID": "20",
+    "CO_NAME": "Additional check"
+  },
+  "binding": {
+    "component_id": "20",
+    "script": "component20.vbs"
+  },
+  "status": "blocked",
+  "issues": [
+    {
+      "code": "unsupported_statement",
+      "message": "Unsupported UFT/VBScript statement",
+      "line_number": 1,
+      "raw": "CustomValidation Parameter(\"Expected_Result\")",
+      "severity": "blocker"
+    }
+  ],
+  "generation_ready": false,
+  "executable_verified": false,
+  "source_path": "C:\\Users\\KristinaŠeparović\\Documents\\uft2uipath-converter\\examples\\workflow_generation\\component20.vbs",
+  "source_copy": "Sources/component_20.source",
+  "sha256": "279dc8d46560823e01f60c4af7d4ab56b982f4d1162983251f545ff1d3eb0384",
+  "source_text": "CustomValidation Parameter(\"Expected_Result\")\r\n",
+  "encoding": "utf-8-sig",
+  "operations": [
+    {
+      "node_type": "UnknownScriptOperation",
+      "raw": "CustomValidation Parameter(\"Expected_Result\")",
+      "line_number": 1,
+      "reason": "Unsupported UFT/VBScript statement"
+    }
+  ],
+  "source_lines": [
+    "CustomValidation Parameter(\"Expected_Result\")",
+    ""
+  ],
+  "references": {
+    "parameters": [],
+    "environment": [],
+    "objects": []
+  },
+  "coverage": {
+    "operation_count": 1,
+    "recognized_operation_count": 0,
+    "unsupported_statement_count": 1,
+    "unsupported_expression_count": 0,
+    "operation_kinds": {
+      "UnknownScriptOperation": 1
+    },
+    "definition": "Recognition of parser nodes, not migration or execution success."
+  }
+}
