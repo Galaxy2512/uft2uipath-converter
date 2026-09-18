@@ -1,3 +1,7 @@
+# Unit tests for ActivityMappingRegistry (uft2uipath/mapper/activity_mapping.py):
+# covers resolving a known UFT action to its UiPath activity with SUCCESS status,
+# and falling back to a "Manual Action Placeholder" with UNSUPPORTED status for
+# unrecognized actions.
 from uft2uipath.ast import ConversionStatus
 from uft2uipath.mapper.activity_mapping import ActivityMappingRegistry
 

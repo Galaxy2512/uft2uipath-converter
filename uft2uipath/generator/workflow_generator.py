@@ -1,3 +1,7 @@
+# Generates one UiPath XAML workflow file per UFT BusinessComponent by
+# rendering each of its Steps via ActivityGenerator and wrapping the results
+# in a Sequence activity.
+
 from xml.sax.saxutils import quoteattr
 from pathlib import Path
 

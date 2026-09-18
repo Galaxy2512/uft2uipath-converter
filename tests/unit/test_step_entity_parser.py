@@ -1,3 +1,5 @@
+# Tests StepEntityParser.parse, which converts a raw ALM COMPONENT_STEP row
+# (CS_STEP_ID, CS_STEP_ORDER, CS_STEP_NAME, etc.) into a typed Step entity.
 from uft2uipath.parser.step_entity_parser import StepEntityParser
 
 

@@ -1,3 +1,5 @@
+# Tests XmlInspector.inspect, which reads an XML file and reports its root
+# tag name, root attributes, and total element count.
 from uft2uipath.discovery.xml_inspector import XmlInspector
 
 

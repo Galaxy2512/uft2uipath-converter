@@ -1,3 +1,7 @@
+# Unit tests for UiPathProjectGenerator (uft2uipath/generator/project_generator.py):
+# covers generating a full UiPath project structure (project.json, Main.xaml,
+# per-component workflow XAML files) from a Project AST and checking that
+# file contents and cross-references (e.g. InvokeWorkflowFile) are correct.
 import json
 
 from uft2uipath.ast import BusinessComponent, Project, Step, UftTestCase

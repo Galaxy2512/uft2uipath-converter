@@ -1,3 +1,6 @@
+# Leftover PyCharm "New Project" scaffold file.
+# Not part of the uft2uipath package or the conversion pipeline; safe to ignore/delete.
+#
 # This is a sample Python script.
 
 # Press Shift+F10 to execute it or replace it with your code.

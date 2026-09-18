@@ -1,3 +1,6 @@
+# Unit tests for AlmSchemaReader (uft2uipath/alm/schema.py): covers parsing an
+# ALM db_xmlmap.xml schema definition into table/column metadata, including
+# column nullability flags and declared sizes.
 from uft2uipath.alm.schema import AlmSchemaReader
 
 

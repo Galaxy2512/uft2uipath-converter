@@ -1,3 +1,7 @@
+# Command-line entry point for the uft2uipath converter. Wires up subcommands
+# (inspect, convert, build-model, convert-rows, analyze-scripts,
+# emit-workflows, migrate-project) that drive the extraction, ALM decoding,
+# script analysis and UiPath project/workflow generation stages.
 import argparse
 from pathlib import Path
 from uft2uipath.archive.extractor import ArchiveExtractor
@@ -37,9 +41,32 @@ def main():
     scripts_cmd.add_argument("--out", required=True)
     scripts_cmd.add_argument("--fail-on-blockers", action="store_true")
 
+    emit_cmd = sub.add_parser("emit-workflows", help="Generate workflow candidates from script analysis")
+    emit_cmd.add_argument("analysis")
+    emit_cmd.add_argument("--bindings", required=True)
+    emit_cmd.add_argument("--out", required=True)
+
+    project_cmd = sub.add_parser("migrate-project", help="Generate a complete UiPath test project")
+    project_cmd.add_argument("manifest")
+    project_cmd.add_argument("--bindings", required=True)
+    project_cmd.add_argument("--out", required=True)
+    project_cmd.add_argument("--project-template")
+    project_cmd.add_argument("--zip", action="store_true")
+
     args = parser.parse_args()
 
-    if args.command == "analyze-scripts":
+    if args.command == "migrate-project":
+        from uft2uipath.script_generation.project import main as project_main
+        options = [args.manifest, "--bindings", args.bindings, "--out", args.out]
+        if args.project_template:
+            options.extend(["--project-template", args.project_template])
+        if args.zip:
+            options.append("--zip")
+        project_main(options)
+    elif args.command == "emit-workflows":
+        from uft2uipath.script_generation.batch import main as emit_main
+        emit_main([args.analysis, "--bindings", args.bindings, "--out", args.out])
+    elif args.command == "analyze-scripts":
         from uft2uipath.script_analysis.batch import main as scripts_main
         options = [args.manifest, "--out", args.out]
         if args.fail_on_blockers:

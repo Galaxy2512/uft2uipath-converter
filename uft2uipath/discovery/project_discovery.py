@@ -1,3 +1,7 @@
+# Walks an extracted UFT project directory and classifies every file into a
+# coarse category (xml, vbscript, data_table, object_repository, component,
+# test, unknown) based on extension and path keywords, for discovery reports.
+
 from dataclasses import dataclass, field
 from pathlib import Path
 

@@ -1,3 +1,6 @@
+# Tests TestEntityParser.parse, which converts a raw ALM TEST row
+# (TS_TEST_ID, TS_NAME, TS_STATUS, etc.) into a typed TestCase entity,
+# retaining the original row as `raw`.
 from uft2uipath.parser.test_entity_parser import TestEntityParser
 
 

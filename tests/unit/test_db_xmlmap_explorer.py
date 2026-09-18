@@ -1,3 +1,6 @@
+# Unit tests for DbXmlMapExplorer (uft2uipath/analyzer/db_xmlmap_explorer.py):
+# covers analyzing a db_xmlmap.xml file to report its root tag, total element
+# count, per-tag frequency, and per-attribute-name frequency.
 from uft2uipath.analyzer.db_xmlmap_explorer import DbXmlMapExplorer
 
 

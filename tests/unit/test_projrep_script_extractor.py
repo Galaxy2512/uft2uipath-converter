@@ -1,3 +1,7 @@
+# Unit tests for ProjRepScriptExtractor (uft2uipath/parser/projrep_script_extractor.py):
+# covers extracting decoded UFT script text, object id, encoding, and
+# signatures from a ProjRep binary object file, and confirming extraction
+# returns None when a file contains no recognizable UFT code.
 from uft2uipath.parser.projrep_script_extractor import (
     ProjRepScriptExtractor,
 )

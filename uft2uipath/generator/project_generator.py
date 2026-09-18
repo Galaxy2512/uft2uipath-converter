@@ -1,3 +1,7 @@
+# Builds a complete UiPath Studio project folder from a neutral Project model:
+# writes project.json, a Main.xaml that invokes one workflow per component,
+# and delegates the per-component XAML generation to WorkflowGenerator.
+
 from xml.sax.saxutils import quoteattr
 import json
 from pathlib import Path, PureWindowsPath

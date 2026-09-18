@@ -1,3 +1,7 @@
+# Lightweight diagnostic utility: given a project folder path, reports its
+# name plus a count of contained directories and files. Used for a quick
+# sanity check of an extracted project before running the full parser chain.
+
 from pathlib import Path
 
 

@@ -1,3 +1,8 @@
+# Converts a raw, generic nested dict describing a UFT business component
+# (name/description/parameters/steps) into a BusinessComponent AST object,
+# delegating each raw step to StepParser. Unlike ComponentEntityParser, this
+# operates on ad-hoc nested dicts rather than flat ALM COMPONENT table rows.
+
 from uft2uipath.ast import BusinessComponent, Parameter
 from uft2uipath.parser.step_parser import StepParser
 

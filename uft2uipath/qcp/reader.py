@@ -1,3 +1,7 @@
+# Reads an extracted ALM/QCP archive (via AlmDatabase) into a MigrationModel:
+# discovers likely BPT component names and test flows from the raw text,
+# classifies each component's operations, and records unmapped items as issues.
+
 from __future__ import annotations
 import re
 from pathlib import Path

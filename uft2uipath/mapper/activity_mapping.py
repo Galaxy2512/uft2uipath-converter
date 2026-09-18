@@ -1,3 +1,7 @@
+# Registry mapping UFT action names (e.g. "Click", "Set", "Wait") to their
+# UiPath activity equivalents, with a ConversionStatus and optional notes;
+# unknown actions resolve to an unsupported "Manual Action Placeholder".
+
 from dataclasses import dataclass
 
 from uft2uipath.ast import ConversionStatus

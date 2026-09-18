@@ -1,3 +1,8 @@
+# Converts a raw, generic nested dict describing a UFT test (name/description/
+# parameters/components) into a UftTestCase AST object, delegating each raw
+# component to ComponentParser. Counterpart to TestEntityParser/ProjectBuilder,
+# but for ad-hoc nested dicts rather than flat ALM TEST table rows.
+
 from uft2uipath.ast import Parameter, UftTestCase
 from uft2uipath.parser.component_parser import ComponentParser
 

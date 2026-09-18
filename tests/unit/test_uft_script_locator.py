@@ -1,3 +1,6 @@
+# Tests UftScriptLocator.search, which scans binary-ish UFT files for
+# embedded VBScript object-model signatures (e.g. Browser(, Page(,
+# WebButton(, .Click) mixed in with non-text bytes.
 from uft2uipath.analyzer.uft.script_locator import UftScriptLocator
 
 

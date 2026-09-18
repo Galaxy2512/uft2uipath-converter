@@ -1,3 +1,6 @@
+# Unpacks a UFT/ALM ".qcp" or ".zip" archive into a fresh temporary directory
+# so the rest of the pipeline can read its contents as plain files.
+
 from pathlib import Path
 import tempfile
 import zipfile

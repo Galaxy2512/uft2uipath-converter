@@ -1,3 +1,5 @@
+# Reverse-engineering helper that dumps the first bytes of a .ptd file as a
+# hex/ASCII view, used to manually study the binary PTD table format.
 from pathlib import Path
 
 

@@ -1,3 +1,6 @@
+# Reverse-engineering helper that inspects db_xmlmap.xml (the ALM/QCP database
+# schema file) to list tables, tag/attribute frequencies, and column details,
+# independent of the production AlmSchemaReader.
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path

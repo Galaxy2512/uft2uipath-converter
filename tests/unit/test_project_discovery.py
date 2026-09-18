@@ -1,3 +1,6 @@
+# Unit tests for ProjectDiscovery (uft2uipath/discovery/project_discovery.py):
+# covers scanning a project folder and categorizing discovered files (e.g.
+# xml vs data_table) along with a total file count.
 from uft2uipath.discovery.project_discovery import ProjectDiscovery
 
 

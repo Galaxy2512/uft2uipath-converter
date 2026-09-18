@@ -1,3 +1,6 @@
+# Extracts UFT/ALM archive packages (.qcp or .zip files) into a temporary
+# directory, tolerating corrupt zip "extra field" metadata that would
+# otherwise make Python's zipfile module refuse to read the archive.
 from pathlib import Path
 import tempfile
 import zipfile

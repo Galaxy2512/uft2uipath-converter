@@ -1,3 +1,7 @@
+# Tests the `build-model` CLI subcommand: it orders component steps
+# correctly, preserves the original row data alongside the built model,
+# refuses to overwrite an existing output file, and rejects input rows
+# that are missing required tables.
 import json
 import subprocess
 import sys

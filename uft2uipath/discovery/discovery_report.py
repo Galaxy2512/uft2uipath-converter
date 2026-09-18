@@ -1,3 +1,7 @@
+# Combines ProjectDiscovery's file categorization with XmlInspector's per-file
+# XML inspection into a single DiscoveryReport summarizing an extracted UFT
+# project folder (total files, counts per category, and inspected XML files).
+
 from dataclasses import dataclass, field
 from pathlib import Path
 

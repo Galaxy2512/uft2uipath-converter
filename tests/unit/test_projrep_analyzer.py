@@ -1,3 +1,7 @@
+# Unit tests for ProjRepAnalyzer (uft2uipath/analyzer/uft/projrep_analyzer.py):
+# covers scanning UFT ProjRep binary object folders for embedded UFT script
+# signatures (e.g. Browser/Page/WebButton chains) and correlating the found
+# object with known component names and a text preview.
 from uft2uipath.analyzer.uft.projrep_analyzer import ProjRepAnalyzer
 
 

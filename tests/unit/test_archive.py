@@ -1,3 +1,6 @@
+# Unit tests for ArchiveExtractor (uft2uipath/qcp/extractor.py): covers
+# extracting a .qcp archive (a zip file) into a folder and verifying its
+# contained files are unpacked to disk.
 import zipfile
 
 from uft2uipath.qcp.extractor import ArchiveExtractor

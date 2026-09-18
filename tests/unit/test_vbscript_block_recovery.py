@@ -1,3 +1,7 @@
+# Tests UftVbScriptParser's recovery from malformed VBScript block structure:
+# stray/unexpected block terminators (Else, End If outside an If) and
+# duplicate Else clauses, verifying they're preserved as UnknownScriptOperation
+# nodes without dropping the surrounding statements.
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.parser.uft_script_nodes import (
     ClickOperation, IfOperation, UnknownScriptOperation,

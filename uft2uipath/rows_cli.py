@@ -1,3 +1,6 @@
+# CLI ("build-model") that turns decoded ALM JSON rows (TEST, COMPONENT,
+# COMPONENT_STEP, BPTEST_TO_COMPONENTS) into the neutral Project model via
+# ProjectBuilder, and saves the result plus the original rows as JSON.
 import argparse
 import json
 from dataclasses import asdict

@@ -1,3 +1,9 @@
+# Unit tests for the XML/XAML output of ActivityGenerator and
+# UiPathProjectGenerator (uft2uipath/generator/): covers that generated
+# activity XAML properly escapes/preserves special characters and falsy
+# values (0, False, "") in attributes, and that a generated project's
+# Main.xaml correctly references workflow files even when names contain
+# special characters.
 import xml.etree.ElementTree as ET
 
 from uft2uipath.ast import (

@@ -1,3 +1,7 @@
+# Unit tests for ComponentParser (uft2uipath/parser/component_parser.py):
+# covers parsing a raw component dict into a BusinessComponent with its
+# parameters and steps, and confirming steps with unrecognized actions are
+# marked UNSUPPORTED and recorded as component issues.
 from uft2uipath.ast import ConversionStatus
 from uft2uipath.parser.component_parser import ComponentParser
 

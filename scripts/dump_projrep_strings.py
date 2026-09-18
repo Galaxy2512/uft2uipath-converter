@@ -1,4 +1,9 @@
 
+# Investigation/reverse-engineering script (not part of the converter pipeline).
+# Scans a raw ProjRep binary file for contiguous runs of printable-looking bytes
+# ("text regions") and prints them with their byte offsets, optionally filtered
+# by a --contains substring, to help locate embedded VBScript content.
+
 from __future__ import annotations
 
 import argparse

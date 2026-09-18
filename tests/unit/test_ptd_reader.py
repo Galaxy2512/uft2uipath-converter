@@ -1,3 +1,6 @@
+# Tests PtdReader.read_strings, which scans binary ALM .ptd files (containing
+# null bytes and binary separators mixed with text) and extracts the
+# printable ASCII substrings embedded in them.
 from uft2uipath.alm.ptd_reader import PtdReader
 
 

@@ -1,3 +1,6 @@
+# Public exports for the neutral intermediate representation (AST/model)
+# used to decouple UFT parsing from UiPath generation; re-exports the
+# dataclasses and enums defined in nodes.py.
 from .nodes import (
     BusinessComponent,
     ConversionIssue,

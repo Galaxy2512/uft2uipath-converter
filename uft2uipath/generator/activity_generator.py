@@ -1,3 +1,7 @@
+# Renders a single neutral Step into its equivalent UiPath activity as a raw
+# XAML string snippet (Click, TypeInto, Delay, LogMessage), falling back to a
+# WriteLine TODO placeholder for unsupported or unrecognized UFT actions.
+
 from xml.sax.saxutils import quoteattr
 
 from uft2uipath.ast import ConversionStatus, Step

@@ -1,3 +1,7 @@
+# Tests UftVbScriptParser against VBScript quirks seen in real UFT scripts:
+# tolerant "End If" matching (spacing/casing/no-space variants), values that
+# can't be parsed as literals (falling back to UnknownValueExpression), and
+# correct decoding of doubled-quote string literals.
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.parser.uft_script_nodes import (
     ClickOperation, IfOperation, LiteralValue, ParameterReference,

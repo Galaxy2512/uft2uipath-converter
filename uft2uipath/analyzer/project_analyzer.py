@@ -1,3 +1,5 @@
+# Reverse-engineering helper that walks an extracted UFT/ALM project folder
+# and summarizes file counts, extensions, largest files and XML root tags.
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path

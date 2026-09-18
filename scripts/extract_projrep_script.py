@@ -1,3 +1,8 @@
+# Investigation/reverse-engineering script (not part of the converter pipeline).
+# Extracts the raw VBScript/UFT text embedded in a single ProjRep binary object
+# file and writes it out as a standalone .vbs file, printing basic diagnostics
+# about known UFT/VBScript markers found in the decoded text.
+
 from __future__ import annotations
 
 import argparse

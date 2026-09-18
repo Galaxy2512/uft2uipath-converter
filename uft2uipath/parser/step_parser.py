@@ -1,3 +1,8 @@
+# Converts one raw UFT action (name/action/target/value) into a Step AST
+# object by resolving the action name through ActivityMappingRegistry to its
+# UiPath activity equivalent, recording a ConversionIssue when the mapping
+# carries caveats. Used by ComponentParser for the generic nested-dict path.
+
 from uft2uipath.ast import ConversionIssue, IssueSeverity, Step, StepType
 from uft2uipath.mapper.activity_mapping import ActivityMappingRegistry
 

@@ -1,3 +1,7 @@
+# Aggregates per-test ConversionStatus outcomes (success/partial/failed/
+# unsupported) into a ConversionReport with a computed success rate, used to
+# summarize how a UFT project migrated to UiPath.
+
 from dataclasses import dataclass, field
 
 from uft2uipath.ast import ConversionIssue, ConversionStatus

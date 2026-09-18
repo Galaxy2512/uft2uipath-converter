@@ -1,3 +1,7 @@
+# Unit tests for ActivityGenerator (uft2uipath/generator/activity_generator.py):
+# covers generating UiPath XAML for a supported UFT action (Click) and for an
+# unsupported action, which should render as a TODO placeholder that preserves
+# the original UFT action name.
 from uft2uipath.ast import ConversionStatus, Step
 from uft2uipath.generator.activity_generator import ActivityGenerator
 

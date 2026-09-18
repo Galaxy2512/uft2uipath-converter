@@ -1,3 +1,6 @@
+# Unit tests for DiscoveryReportBuilder (uft2uipath/discovery/discovery_report.py):
+# covers building a summary report of a project folder, categorizing files
+# (e.g. xml, data_table), and capturing the root tag of discovered XML files.
 from uft2uipath.discovery.discovery_report import DiscoveryReportBuilder
 
 

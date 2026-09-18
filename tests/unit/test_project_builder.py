@@ -1,3 +1,9 @@
+# Unit tests for ProjectBuilder (uft2uipath/parser/project_builder.py): covers
+# assembling a Project AST from raw ALM table rows (TEST, COMPONENT,
+# COMPONENT_STEP, BPTEST_TO_COMPONENTS), verifying components/steps are
+# ordered by BC_ORDER/CS_STEP_ORDER, metadata counts are correct, and that a
+# component shared across multiple tests is copied into a separate instance
+# per test rather than shared by reference.
 from uft2uipath.parser.project_builder import ProjectBuilder
 
 

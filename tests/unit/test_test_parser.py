@@ -1,3 +1,6 @@
+# Tests TestParser.parse, which builds a TestCase (with its parameters and
+# components) from a raw dict, and propagates unsupported-step issues from a
+# component's steps up onto the parent test case.
 from uft2uipath.ast import ConversionStatus
 from uft2uipath.parser.test_parser import TestParser
 

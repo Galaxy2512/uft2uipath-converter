@@ -1,3 +1,7 @@
+# Tests UftVbScriptParser.parse end-to-end on a realistic login-component
+# script (If/Exist condition, ReportEvent, Set/SetSecure with parameters,
+# Click), verifying the typed operation nodes it produces, plus handling of
+# unknown statements and plain string-literal Set values.
 from uft2uipath.parser.uft_script_nodes import (
     ClickOperation,
     EnvironmentReference,

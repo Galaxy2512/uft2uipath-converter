@@ -1,3 +1,6 @@
+# Tests UftComponentExplorer.inspect, which walks a UFT test folder and
+# classifies its files into categories (script, action_resource,
+# object_repository, configuration, data_table) by extension/location.
 from uft2uipath.analyzer.uft.component_explorer import UftComponentExplorer
 
 

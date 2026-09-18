@@ -1,3 +1,7 @@
+# Minimal filesystem helper wrapping an extracted project folder: exposes
+# its root path, an existence check, and a recursive glob-based file finder.
+# Used by AlmReader (and other loaders) as a thin base for locating files.
+
 from pathlib import Path
 
 

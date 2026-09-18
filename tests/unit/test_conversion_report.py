@@ -1,3 +1,6 @@
+# Unit tests for ConversionReport (uft2uipath/report/conversion_report.py):
+# covers aggregating per-test conversion statuses (success/partial/failed)
+# into counts and computing the overall success rate percentage.
 from uft2uipath.ast import ConversionStatus
 from uft2uipath.report.conversion_report import ConversionReport
 

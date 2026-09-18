@@ -1,3 +1,6 @@
+# Unit tests for ProjectInspector (uft2uipath/parser/project_inspector.py):
+# covers inspecting a folder and reporting its project name plus directory
+# and file counts.
 from uft2uipath.parser.project_inspector import ProjectInspector
 
 

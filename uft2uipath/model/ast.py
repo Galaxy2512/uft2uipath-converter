@@ -1,3 +1,7 @@
+# Neutral intermediate-representation dataclasses for the QCP/ALM reading
+# pipeline: OperationType/Operation, Component, TestCase, ConversionIssue,
+# and the top-level MigrationModel that the generator consumes.
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import Enum

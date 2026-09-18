@@ -1,3 +1,8 @@
+# Tests script_analysis.analyzer.analyze_source and script_analysis.batch.run_batch:
+# batch analysis of VBScript components linked to ALM rows/manifests, including
+# identity resolution by ID (not name), per-component error isolation, missing
+# or ambiguous bindings, encoding edge cases, output-protection, and scaling to
+# thousands of test instances sharing one component definition.
 import hashlib
 import json
 import subprocess

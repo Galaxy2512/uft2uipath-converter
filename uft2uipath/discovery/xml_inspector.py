@@ -1,3 +1,7 @@
+# Parses a single XML file (e.g. from a UFT project) and reports basic
+# structural facts about it: root tag, root attributes, and total element
+# count, for use in discovery reports.
+
 from dataclasses import dataclass, field
 from pathlib import Path
 import xml.etree.ElementTree as ET

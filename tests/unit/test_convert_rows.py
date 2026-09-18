@@ -1,3 +1,10 @@
+# Unit tests for uft2uipath/convert_rows.py (exercised both directly and via
+# the `python -m uft2uipath convert-rows` CLI): covers end-to-end conversion
+# of decoded ALM row JSON into a UiPath review project scaffold (valid XAML,
+# migration model, conversion report), plus guardrails such as refusing to
+# overwrite existing output, rejecting invalid/colliding project or component
+# names, and reusing one workflow file for a component referenced by multiple
+# test steps.
 import json
 import subprocess
 import sys

@@ -1,3 +1,7 @@
+# Unit tests for the core AST dataclasses (uft2uipath/ast.py): covers building
+# a Project/UftTestCase/BusinessComponent/Step object hierarchy and checking
+# that fields (e.g. step type) and default status values wire together
+# correctly.
 from uft2uipath.ast import (
     BusinessComponent,
     ConversionStatus,

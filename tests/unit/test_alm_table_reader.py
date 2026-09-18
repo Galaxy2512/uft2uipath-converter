@@ -1,3 +1,7 @@
+# Unit tests for AlmTableReader (uft2uipath/alm/table_reader.py): covers reading
+# a binary ALM .ptd data file against a schema produced by AlmSchemaReader,
+# confirming the resulting table exposes its name, ordered column names, and
+# decoded string values pulled from the .ptd bytes.
 from uft2uipath.alm.schema import AlmSchemaReader
 from uft2uipath.alm.table_reader import AlmTableReader
 

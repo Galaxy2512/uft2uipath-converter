@@ -1,3 +1,6 @@
+# Tests WorkflowGenerator.generate_component_workflow (the legacy ast-based
+# generator), which writes a .xaml file for a BusinessComponent's steps and
+# checks the file exists with the component name and mapped UI activity tags.
 from uft2uipath.ast import BusinessComponent, Step
 from uft2uipath.generator.workflow_generator import WorkflowGenerator
 

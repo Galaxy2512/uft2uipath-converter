@@ -1,3 +1,6 @@
+# Unit tests for ProjectAnalyzer (uft2uipath/analyzer/project_analyzer.py):
+# covers summarizing a folder's files by extension, counting XML root tag
+# occurrences, and listing the largest files.
 from uft2uipath.analyzer.project_analyzer import ProjectAnalyzer
 
 

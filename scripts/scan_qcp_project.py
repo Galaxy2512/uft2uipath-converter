@@ -1,4 +1,9 @@
 
+# Investigation/reverse-engineering script (not part of the converter pipeline).
+# Walks an entire extracted QCP/ProjRep project tree, classifies every file
+# (text vs. binary, UFT script candidate, object-repository/parameter refs,
+# control flow, etc.) and writes a JSON/CSV inventory manifest for analysis.
+
 from __future__ import annotations
 
 import argparse

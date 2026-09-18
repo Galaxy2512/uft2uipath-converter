@@ -1,3 +1,7 @@
+# Defines the neutral intermediate model for a migrated UFT/ALM project:
+# dataclasses for tests, business components, steps, parameters, variables,
+# object repository items and conversion issues/status, shared by the
+# parser and the UiPath generator so they don't depend on each other.
 from __future__ import annotations
 
 from dataclasses import dataclass, field

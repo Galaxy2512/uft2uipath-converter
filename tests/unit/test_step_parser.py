@@ -1,3 +1,6 @@
+# Tests StepParser.parse_action, which maps a known UFT action (e.g. Click) to
+# a successful ACTION step, and falls back an unrecognized action to an
+# unsupported "Manual Action Placeholder" step with a recorded issue.
 from uft2uipath.ast import ConversionStatus, StepType
 from uft2uipath.parser.step_parser import StepParser
 
