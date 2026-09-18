@@ -24,9 +24,12 @@ def main():
 
     convert_cmd = sub.add_parser(
         "convert",
-        help="Convert a UFT/ALM project to UiPath",
+        help="Run the conversion pipeline on a .qcp/.zip export or extracted folder",
     )
     convert_cmd.add_argument("project")
+    convert_cmd.add_argument("--out", required=True, help="New output directory")
+    convert_cmd.add_argument("--test-id", type=int, action="append", dest="test_ids",
+                             help="ALM TS_TEST_ID to convert; repeat for several (default: all)")
 
     model_cmd = sub.add_parser("build-model", help="Build model from decoded ALM JSON")
     model_cmd.add_argument("source")
@@ -81,9 +84,25 @@ def main():
     elif args.command == "inspect":
         _run_inspect(args.project)
     elif args.command == "convert":
-        print(f"Converting: {args.project}")
+        _run_convert(parser, args)
     else:
         parser.print_help()
+
+
+def _run_convert(parser, args) -> None:
+    from uft2uipath.pipeline import PENDING_STAGES, ConversionPipeline
+
+    try:
+        result = ConversionPipeline(args.project, args.out, args.test_ids).run()
+    except (OSError, ValueError) as exc:
+        parser.error(str(exc))
+    print(f"Project: {result.project.name}")
+    print(f"Tests selected: {len(result.project.tests)}")
+    for name, path in result.artifacts.items():
+        print(f"  {name}: {path}")
+    if result.table_errors:
+        print(f"Tables that failed to decode: {', '.join(sorted(result.table_errors))}")
+    print(f"Not yet implemented: {', '.join(PENDING_STAGES)}. No UiPath project generated.")
 
 
 def _run_inspect(project_path: str) -> None:
