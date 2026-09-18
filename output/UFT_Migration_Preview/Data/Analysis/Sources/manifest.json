@@ -1,7 +1,0 @@
-{
-  "rows": "../script_analysis/rows.json",
-  "bindings": [
-    {"component_id": "10", "script": "component10.vbs"},
-    {"component_id": "20", "script": "component20.vbs"}
-  ]
-}

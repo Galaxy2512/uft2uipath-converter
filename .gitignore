@@ -16,3 +16,4 @@ Thumbs.db
 samples/qcp/*.qcp
 *.zip
 samples/extracted/
+output/
