@@ -21,7 +21,11 @@ from uft2uipath.alm.script_resolver import ScriptResolver
 from uft2uipath.alm.tables import AlmTables
 from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.ast import Project
+from uft2uipath.mapping.acceptance import AcceptanceSettings, build_binding, decide, review_template
 from uft2uipath.parser.project_builder import ProjectBuilder
+from uft2uipath.script_analysis.analyzer import analyze_source
+from uft2uipath.script_generation.project_emitter import (ActionPlan, TestPlan, generate,
+                                                          workflow_name)
 from uft2uipath.uft.object_repository import read_object_repository
 from uft2uipath.uft.object_resolution import resolve_objects
 
@@ -32,12 +36,7 @@ REPOSITORY_TABLES = ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL
 RESOURCE_TABLES = ("RESOURCES", "RESOURCE_FOLDERS")
 EXPORTED_TABLES = MODEL_TABLES + REPOSITORY_TABLES + RESOURCE_TABLES
 
-PENDING_STAGES = (
-    "analyze",
-    "bind",
-    "emit",
-    "validate",
-)
+PENDING_STAGES = ("validate",)
 
 
 @dataclass
@@ -54,10 +53,12 @@ class ConversionPipeline:
         source: str | Path,
         output_dir: str | Path,
         test_ids: list[int] | None = None,
+        acceptance: AcceptanceSettings | None = None,
     ):
         self.source = Path(source).resolve()
         self.output_dir = Path(output_dir).resolve()
         self.test_ids = list(dict.fromkeys(test_ids)) if test_ids else None
+        self.acceptance = acceptance or AcceptanceSettings()
 
     def run(self) -> PipelineResult:
         if not self.source.exists():
@@ -106,10 +107,14 @@ class ConversionPipeline:
             stage, resolution = self._resolve_scripts(tables, decoded["rows"], project, staging)
             stages.append(stage)
             if resolution is None:
-                stages.append({"name": "resolve_objects", "status": "skipped",
-                               "detail": "Script resolution did not run."})
+                stages.extend({"name": name, "status": "skipped",
+                               "detail": "Script resolution did not run."}
+                              for name in ("resolve_objects", "analyze", "bind", "emit"))
             else:
-                stages.append(self._resolve_objects(*resolution, staging))
+                repository, resolver, referenced, resolved = resolution
+                object_stage, resolutions = self._resolve_objects(repository, resolver, referenced, staging)
+                stages.append(object_stage)
+                stages.extend(self._generate(resolver, resolutions, resolved, staging, project_name))
 
             stages.extend({"name": name, "status": "pending"} for name in PENDING_STAGES)
             _write(artifacts_dir / "pipeline-report.json", {
@@ -119,7 +124,7 @@ class ConversionPipeline:
                 "selection": self.test_ids,
                 "stages": stages,
                 "table_errors": table_errors,
-                "uipath_project_generated": False,
+                "uipath_project_generated": (staging / "project" / "project.json").is_file(),
             })
 
             shutil.copytree(staging, self.output_dir)
@@ -127,7 +132,8 @@ class ConversionPipeline:
         artifacts = {
             name: self.output_dir / "artifacts" / f"{name}.json"
             for name in ("decoded-tables", "resolved-project", "resolved-scripts",
-                         "selector-candidates", "pipeline-report")
+                         "selector-candidates", "script-analysis", "conversion-plan",
+                         "selector-review.template", "pipeline-report")
         }
         artifacts = {name: path for name, path in artifacts.items() if path.is_file()}
         return PipelineResult(self.output_dir, project, artifacts, table_errors)
@@ -168,7 +174,7 @@ class ConversionPipeline:
             statuses[test.status] = statuses.get(test.status, 0) + 1
         stage = {"name": "resolve_scripts", "status": "done",
                  "artifact": "artifacts/resolved-scripts.json", "test_statuses": statuses}
-        return stage, (repository, resolver, sorted(referenced))
+        return stage, (repository, resolver, sorted(referenced), resolved)
 
     def _resolve_objects(self, repository, resolver, referenced, staging: Path) -> dict[str, Any]:
         cache: dict[str, tuple[Any, str | None]] = {}
@@ -201,8 +207,69 @@ class ConversionPipeline:
             "note": "Candidates are proposals derived from UFT identification properties; none is verified.",
             "actions": actions,
         })
-        return {"name": "resolve_objects", "status": "done",
-                "artifact": "artifacts/selector-candidates.json", "reference_statuses": statuses}
+        stage = {"name": "resolve_objects", "status": "done",
+                 "artifact": "artifacts/selector-candidates.json", "reference_statuses": statuses}
+        return stage, {key: value["objects"] for key, value in actions.items()}
+
+    def _generate(self, resolver, resolutions, resolved, staging: Path, project_name: str):
+        # Only actions a test actually executes become workflows; Action0 is the main flow.
+        executed = {f"{unit.asset}/{unit.action}" for test in resolved for unit in test.execution}
+        analyses, decisions = {}, {}
+        for key, objects in sorted(resolutions.items()):
+            if key not in executed:
+                continue
+            asset_key, folder = key.rsplit("/", 1)
+            analyses[key] = analyze_source(resolver.assets[asset_key].actions[folder].text)
+            decisions[key] = [decide(entry, self.acceptance) for entry in objects]
+        _write(staging / "artifacts" / "script-analysis.json", {
+            "format_version": FORMAT_VERSION,
+            "actions": {key: {"coverage": analysis["coverage"], "issues": analysis["issues"],
+                              "references": analysis["references"]}
+                        for key, analysis in analyses.items()},
+        })
+        coverage = {"operation_count": 0, "recognized_operation_count": 0}
+        for analysis in analyses.values():
+            for name in coverage:
+                coverage[name] += analysis["coverage"][name]
+        analyze_stage = {"name": "analyze", "status": "done",
+                         "artifact": "artifacts/script-analysis.json", **coverage}
+
+        actions = {}
+        for key, analysis in analyses.items():
+            actions[key] = ActionPlan(key, workflow_name(key), analysis,
+                                      build_binding(analysis, decisions[key]))
+        accepted = sum(d["accepted"] for entries in decisions.values() for d in entries)
+        _write(staging / "artifacts" / "conversion-plan.json", {
+            "format_version": FORMAT_VERSION,
+            "acceptance": {"threshold": self.acceptance.threshold,
+                           "review_entries": len(self.acceptance.review),
+                           "browser_type": self.acceptance.browser_type,
+                           "timeout_ms": self.acceptance.timeout_ms},
+            "actions": {key: {"workflow": plan.workflow, "binding": plan.binding,
+                              "decisions": decisions[key]}
+                        for key, plan in actions.items()},
+        })
+        _write(staging / "artifacts" / "selector-review.template.json", review_template(decisions))
+        bind_stage = {"name": "bind", "status": "done", "artifact": "artifacts/conversion-plan.json",
+                      "accepted_selectors": accepted,
+                      "proposed_selectors": sum(bool(d["proposed"]) for e in decisions.values() for d in e)}
+
+        tests = [TestPlan(test.test_id, test.name, test.status,
+                          [asdict(unit) for unit in test.execution],
+                          [dict(issue) for issue in test.issues])
+                 for test in resolved]
+        report = generate(staging / "project", project_name, actions, tests)
+        report.update(format_version=FORMAT_VERSION, project_name=project_name,
+                      studio_load_verified=False, executable_verified=False,
+                      equivalent_verified=False)
+        _write(staging / "project" / "generation-report.json", report)
+        statuses: dict[str, int] = {}
+        for entry in report["tests"]:
+            statuses[entry["status"]] = statuses.get(entry["status"], 0) + 1
+        emit_stage = {"name": "emit", "status": "done", "artifact": "project/project.json",
+                      "test_statuses": statuses,
+                      "registered_test_count": report["registered_test_count"]}
+        return [analyze_stage, bind_stage, emit_stage]
 
     @staticmethod
     def _load_repository(repository, logical: str):

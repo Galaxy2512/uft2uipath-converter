@@ -64,8 +64,9 @@ def target_key(target):
 
 
 class ComponentEmitter:
-    def __init__(self, component_id, analysis, bindings):
+    def __init__(self, component_id, analysis, bindings, workflow_name=None):
         self.component_id = component_id
+        self.workflow_name = workflow_name or f"Component_{component_id}"
         self.analysis = analysis
         self.bindings = bindings
         self.arguments = {}
@@ -231,7 +232,7 @@ class ComponentEmitter:
             parent.append(throw(f"Component {self.component_id}, line {line}: migration incomplete."))
 
     def generate(self):
-        root, seq = document(f"Component_{self.component_id}", self.arguments)
+        root, seq = document(self.workflow_name, self.arguments)
         operations = self.analysis.get("operations")
         if not isinstance(operations, list) or not operations:
             self.problem({}, "no_operations", "No parsed script operations available.")

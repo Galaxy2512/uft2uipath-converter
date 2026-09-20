@@ -11,6 +11,7 @@ from ptd_fixtures import (COMPONENT_COLUMNS, RELATION_COLUMNS, RESOURCE_COLUMNS,
                           RESOURCE_FOLDER_COLUMNS, STEP_COLUMNS, TEST_COLUMNS,
                           minimal_bpt_export, repository_tables, write_export)
 from uft2uipath import cli
+from uft2uipath.mapping.acceptance import AcceptanceSettings, load_review
 from uft2uipath.pipeline import PENDING_STAGES, ConversionPipeline
 
 
@@ -34,7 +35,8 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
     test = next(t for t in result.project.tests if t.id == 7)
     assert [c.name for c in test.components] == ["Login", "Logout"]
     assert set(result.artifacts) == {"decoded-tables", "resolved-project", "resolved-scripts",
-                                     "selector-candidates", "pipeline-report"}
+                                     "selector-candidates", "script-analysis", "conversion-plan",
+                                     "selector-review.template", "pipeline-report"}
 
     decoded = read(result.artifacts["decoded-tables"])
     assert decoded["tables"]["TEST"] == {"row_count": 2}
@@ -42,9 +44,14 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
 
     report = read(result.artifacts["pipeline-report"])
     assert [s["name"] for s in report["stages"]] == [
-        "extract", "decode", "model", "resolve_scripts", "resolve_objects", *PENDING_STAGES,
+        "extract", "decode", "model", "resolve_scripts", "resolve_objects",
+        "analyze", "bind", "emit", *PENDING_STAGES,
     ]
-    assert report["uipath_project_generated"] is False
+    assert report["uipath_project_generated"] is True
+    # Manual tests are not registered as UiPath test cases.
+    assert {t["test_id"]: t["status"] for t in read(tmp_path / "out" / "project" /
+                                                   "generation-report.json")["tests"]} == {
+        7: "blocked", 8: "not_automated"}
 
 
 def test_pipeline_reads_qcp_archive_and_never_copies_connection_details(tmp_path):
@@ -183,6 +190,114 @@ def test_pipeline_proposes_selectors_from_local_and_shared_repositories(tmp_path
     assert stage["reference_statuses"] == {"resolved": 1}
 
 
+def web_export(tmp_path, script):
+    """A one-test export whose action uses two objects from its own repository."""
+    root = tmp_path / "export"
+    tree = [("Browser", [("B", "1", "Browser", [("Page", [("P", "2", "Page", [
+        ("WebEdit", [("userName", "3", "WebEdit", [])]),
+        ("WebButton", [("Sign-In", "4", "WebButton", [])])])])])])]
+    repository = object_repository(tree, {
+        "1": object_stream([("micclass", VT_BSTR, "Browser")], ["micclass"]),
+        "2": object_stream([("micclass", VT_BSTR, "Page"), ("title", VT_BSTR, "Welcome")], ["micclass"]),
+        "3": object_stream([("micclass", VT_BSTR, "WebEdit"), ("name", VT_BSTR, "userName"),
+                            ("html tag", VT_BSTR, "INPUT"), ("html id", VT_BSTR, "user")],
+                           ["micclass", "name", "html tag", "html id"]),
+        "4": object_stream([("micclass", VT_BSTR, "WebButton"), ("name", VT_BSTR, "login"),
+                            ("html tag", VT_BSTR, "INPUT")], ["micclass", "name", "html tag"]),
+    })
+    tables = repository_tables(root, {
+        "tests\\5\\Action0\\Script.mts": b'RunAction "Sign On", oneIteration',
+        "tests\\5\\Action0\\Resource.mtr": action_resource("Action0"),
+        "tests\\5\\Action1\\Script.mts": script.encode("utf-8"),
+        "tests\\5\\Action1\\Resource.mtr": action_resource("Sign On"),
+        "tests\\5\\Action1\\ObjectRepository.bdb": repository,
+    })
+    tables.update({
+        "TEST": (TEST_COLUMNS, [{"TS_TEST_ID": 5, "TS_NAME": "Login",
+                                 "TS_TYPE": "QUICKTEST_TEST", "TS_PATH": "5"}]),
+        "COMPONENT": (COMPONENT_COLUMNS, []),
+        "COMPONENT_STEP": (STEP_COLUMNS, []),
+        "BPTEST_TO_COMPONENTS": (RELATION_COLUMNS, []),
+    })
+    return write_export(root, tables)
+
+
+SUPPORTED_SCRIPT = (
+    'If Browser("B").Page("P").WebEdit("userName").Exist(10) Then\n'
+    'Browser("B").Page("P").WebEdit("userName").Set "admin"\n'
+    'Browser("B").Page("P").WebButton("Sign-In").Click\n'
+    'End If'
+)
+
+
+def test_pipeline_generates_a_studio_project_from_accepted_selectors(tmp_path):
+    source = web_export(tmp_path, SUPPORTED_SCRIPT)
+
+    result = ConversionPipeline(source, tmp_path / "out", acceptance=AcceptanceSettings(
+        threshold=0.3, browser_type="Edge", timeout_ms=15000)).run()
+
+    project = tmp_path / "out" / "project"
+    report = read(project / "generation-report.json")
+    assert [w["status"] for w in report["workflows"].values()] == ["mapped_unverified"]
+    assert [(t["test_id"], t["status"], t["step_count"]) for t in report["tests"]] == [(5, "mapped_unverified", 1)]
+    assert report["studio_load_verified"] is False and report["executable_verified"] is False
+
+    # Action0 is the main flow, not an executed step.
+    assert sorted(p.name for p in (project / "Workflows").glob("*.xaml")) == ["Action_test_5_Action1.xaml"]
+    workflow = (project / "Workflows" / "Action_test_5_Action1.xaml").read_text(encoding="utf-8")
+    assert "ui:TypeInto" in workflow and "ui:Click" in workflow and "ui:BrowserScope" in workflow
+    assert 'TimeoutMS="15000"' in workflow and "Throw" not in workflow
+    assert "id=&quot;user&quot;" in workflow or "id='user'" in workflow
+
+    metadata = read(project / "project.json")
+    assert metadata["designOptions"]["outputType"] == "Tests"
+    assert [f["fileName"] for f in metadata["designOptions"]["fileInfoCollection"]] == ["Tests\\Test_5.xaml"]
+    # Main must not invoke private test cases (Workflow Analyzer SY-USG-013).
+    assert "InvokeWorkflowFile" not in (project / "Main.xaml").read_text(encoding="utf-8")
+
+    stages = {s["name"]: s for s in read(result.artifacts["pipeline-report"])["stages"]}
+    assert stages["analyze"]["recognized_operation_count"] == 3
+    assert stages["bind"]["accepted_selectors"] == 2
+    assert stages["emit"]["registered_test_count"] == 1
+    assert read(result.artifacts["pipeline-report"])["uipath_project_generated"] is True
+
+
+def test_without_accepted_selectors_the_project_is_generated_but_blocked(tmp_path):
+    source = web_export(tmp_path, SUPPORTED_SCRIPT)
+
+    result = ConversionPipeline(source, tmp_path / "out").run()
+
+    report = read(tmp_path / "out" / "project" / "generation-report.json")
+    assert [w["status"] for w in report["workflows"].values()] == ["blocked"]
+    assert report["tests"][0]["status"] == "blocked"
+    assert "Throw" in (tmp_path / "out" / "project" / "Tests" / "Test_5.xaml").read_text(encoding="utf-8")
+
+    template = read(result.artifacts["selector-review.template"])
+    assert [(o["uft"]["logical_name"], o["accepted"]) for o in template["objects"]] == [
+        ("userName", False), ("Sign-In", False),
+    ]
+    assert all(o["selector"] for o in template["objects"])
+
+
+def test_review_file_selectors_are_used_for_generation(tmp_path):
+    source = web_export(tmp_path, SUPPORTED_SCRIPT)
+    review = load_review({"objects": [
+        {"uft": {"browser": "B", "page": "P", "object_type": "WebEdit", "logical_name": "userName"},
+         "selector": '<html title="Welcome" /><webctrl id="reviewed" />', "accepted": True,
+         "browser_type": "Chrome", "timeout_ms": 9000},
+    ]})
+
+    ConversionPipeline(source, tmp_path / "out",
+                       acceptance=AcceptanceSettings(review=review)).run()
+
+    workflow = (tmp_path / "out" / "project" / "Workflows" /
+                "Action_test_5_Action1.xaml").read_text(encoding="utf-8")
+    assert "reviewed" in workflow and 'TimeoutMS="9000"' in workflow
+    assert 'BrowserType="Chrome"' in workflow
+    # The click target was never accepted, so that step stays blocked.
+    assert "Throw" in workflow
+
+
 def test_pipeline_reports_missing_repository_tables(tmp_path):
     source = minimal_bpt_export(tmp_path / "export")
     for name in ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL_FILE"):
@@ -208,5 +323,5 @@ def test_convert_command_runs_pipeline(tmp_path, monkeypatch, capsys):
 
     printed = capsys.readouterr().out
     assert "Tests selected: 1" in printed
-    assert "No UiPath project generated" in printed
+    assert "Studio load, execution and UFT equivalence are unverified." in printed
     assert (out / "artifacts" / "resolved-project.json").is_file()

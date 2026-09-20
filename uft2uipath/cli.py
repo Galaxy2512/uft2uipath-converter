@@ -6,6 +6,7 @@ import argparse
 from pathlib import Path
 from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.discovery.discovery_report import DiscoveryReportBuilder
+from uft2uipath.script_generation.browser_scopes import BROWSER_TYPES
 
 
 def main():
@@ -30,6 +31,14 @@ def main():
     convert_cmd.add_argument("--out", required=True, help="New output directory")
     convert_cmd.add_argument("--test-id", type=int, action="append", dest="test_ids",
                              help="ALM TS_TEST_ID to convert; repeat for several (default: all)")
+    convert_cmd.add_argument("--accept-selectors", type=float, metavar="MIN_CONFIDENCE",
+                             help="Generate with selector candidates at or above this confidence (0-1)")
+    convert_cmd.add_argument("--selector-review", metavar="FILE",
+                             help="Review file whose accepted selectors are used (see selector-review.template.json)")
+    convert_cmd.add_argument("--browser-type", choices=sorted(BROWSER_TYPES),
+                             help="Browser the generated web activities attach to")
+    convert_cmd.add_argument("--timeout-ms", type=int, default=30000,
+                             help="Activity timeout in milliseconds (default: 30000)")
 
     model_cmd = sub.add_parser("build-model", help="Build model from decoded ALM JSON")
     model_cmd.add_argument("source")
@@ -90,10 +99,26 @@ def main():
 
 
 def _run_convert(parser, args) -> None:
+    import json
+
+    from uft2uipath.mapping.acceptance import AcceptanceSettings, load_review
     from uft2uipath.pipeline import PENDING_STAGES, ConversionPipeline
 
+    if args.accept_selectors is not None and not 0 <= args.accept_selectors <= 1:
+        parser.error("--accept-selectors takes a confidence between 0 and 1.")
+    review = {}
+    if args.selector_review:
+        try:
+            review = load_review(json.loads(Path(args.selector_review).read_text(encoding="utf-8-sig")))
+        except (OSError, ValueError) as exc:
+            parser.error(f"--selector-review: {exc}")
+    acceptance = AcceptanceSettings(
+        threshold=args.accept_selectors, browser_type=args.browser_type,
+        timeout_ms=args.timeout_ms, review=review,
+    )
+
     try:
-        result = ConversionPipeline(args.project, args.out, args.test_ids).run()
+        result = ConversionPipeline(args.project, args.out, args.test_ids, acceptance).run()
     except (OSError, ValueError) as exc:
         parser.error(str(exc))
     print(f"Project: {result.project.name}")
@@ -102,7 +127,8 @@ def _run_convert(parser, args) -> None:
         print(f"  {name}: {path}")
     if result.table_errors:
         print(f"Tables that failed to decode: {', '.join(sorted(result.table_errors))}")
-    print(f"Not yet implemented: {', '.join(PENDING_STAGES)}. No UiPath project generated.")
+    print(f"Not yet implemented: {', '.join(PENDING_STAGES)}.")
+    print("Studio load, execution and UFT equivalence are unverified.")
 
 
 def _run_inspect(project_path: str) -> None:
