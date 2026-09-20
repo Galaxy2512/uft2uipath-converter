@@ -48,6 +48,9 @@ RELATION_COLUMNS = [("BC_ID", "int"), ("BC_BPT_ID", "int"), ("BC_CO_ID", "int"),
 LOGICAL_COLUMNS = [("SRLF_ID", "int"), ("SRLF_PARENT_PATH", "varchar"), ("SRLF_NAME", "varchar"),
                    ("SRLF_PHYSICAL_ID", "int"), ("SRLF_IS_DIRECTORY", "varchar")]
 PHYSICAL_COLUMNS = [("SRPF_ID", "int"), ("SRPF_PATH", "varchar")]
+RESOURCE_COLUMNS = [("RSC_ID", "int"), ("RSC_NAME", "varchar"), ("RSC_FILE_NAME", "varchar"),
+                    ("RSC_TYPE", "varchar"), ("RSC_PARENT_ID", "int")]
+RESOURCE_FOLDER_COLUMNS = [("RFO_ID", "int"), ("RFO_NAME", "varchar"), ("RFO_PARENT_ID", "int")]
 
 
 def write_export(root: Path, tables: dict, project_name="SYNTHETIC_ALM"):

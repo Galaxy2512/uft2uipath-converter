@@ -25,6 +25,7 @@ class ActionResource:
     description: str
     reusable: bool
     document_type: str
+    shared_repositories: list[str]
 
 
 def read_action_resource(data: bytes) -> ActionResource:
@@ -52,4 +53,6 @@ def read_action_resource(data: bytes) -> ActionResource:
         description=root.findtext("Description") or "",
         reusable=(root.findtext("IsReusable") or "").strip() == "1",
         document_type=(root.findtext("DocumentType") or "").strip(),
+        shared_repositories=[(node.text or "").strip() for node in root.findall("SORs/SOR")
+                             if (node.text or "").strip()],
     )

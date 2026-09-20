@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from uft2uipath.alm.repository import SmartRepository, normalize
+from uft2uipath.alm.resources import ResourceIndex, parse_reference
 from uft2uipath.uft.action_resource import ActionResourceError, read_action_resource
 
 SCRIPTED_TEST_TYPES = {"QUICKTEST_TEST"}
@@ -65,6 +66,7 @@ class ActionScript:
     encoding: str
     text: str
     object_repository: str | None
+    shared_repositories: list[dict[str, Any]]
     snapshot_infos: list[str]
     calls: list[ActionCall] = field(default_factory=list)
 
@@ -145,6 +147,10 @@ class ScriptResolver:
         for siblings in self.children.values():
             siblings.sort(key=lambda r: (_sort_int(r.get("BC_ORDER")), _sort_int(r.get("BC_ID"))))
         self.assets: dict[str, ScriptAsset] = {}
+        self.resources = (
+            ResourceIndex(rows["RESOURCES"], rows.get("RESOURCE_FOLDERS", []))
+            if "RESOURCES" in rows else None
+        )
 
     def resolve(self, test_ids: list[int]) -> list[ResolvedTest]:
         return [self._resolve_test(test_id) for test_id in test_ids]
@@ -285,10 +291,12 @@ class ScriptResolver:
             asset.issues.append({"code": "unreadable_script", "message": str(exc)})
             return
         text, encoding = decode_script(data)
-        name = None
+        name, shared = None, []
         resource = f"{base}\\Resource.mtr"
         try:
-            name = read_action_resource(self.repository.read_bytes(resource)).name
+            metadata = read_action_resource(self.repository.read_bytes(resource))
+            name = metadata.name
+            shared = [self._shared_repository(reference) for reference in metadata.shared_repositories]
         except (FileNotFoundError, ActionResourceError) as exc:
             asset.issues.append({"code": "unreadable_action_resource", "message": f"{resource}: {exc}"})
         repository_file = f"{base}\\ObjectRepository.bdb"
@@ -298,9 +306,25 @@ class ScriptResolver:
             physical_path=str(self.repository.physical_path(script).relative_to(self.repository.root)),
             sha256=hashlib.sha256(data).hexdigest(), encoding=encoding, text=text,
             object_repository=repository_file if self.repository.exists(repository_file) else None,
+            shared_repositories=shared,
             snapshot_infos=[f for f in files if f.lower().startswith(snapshots) and f.lower().endswith(".inf")],
             calls=parse_run_actions(text),
         )
+
+    def _shared_repository(self, reference: str) -> dict[str, Any]:
+        entry: dict[str, Any] = {"reference": reference, "path": None, "issue": None}
+        parts = parse_reference(reference)
+        if parts is None:
+            entry["issue"] = "unsupported_reference_format"
+        elif self.resources is None:
+            entry["issue"] = "resource_tables_unavailable"
+        else:
+            entry["path"] = self.resources.find(*parts)
+            if entry["path"] is None:
+                entry["issue"] = "resource_not_found"
+            elif not self.repository.exists(entry["path"]):
+                entry["issue"] = "resource_file_missing"
+        return entry
 
     def _link_calls(self, asset: ScriptAsset) -> None:
         for action in asset.actions.values():

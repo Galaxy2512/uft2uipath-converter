@@ -5,8 +5,10 @@ import zipfile
 
 import pytest
 
+from bdb_fixtures import VT_BSTR, object_repository, object_stream
 from ole_fixtures import action_resource
-from ptd_fixtures import (COMPONENT_COLUMNS, RELATION_COLUMNS, STEP_COLUMNS, TEST_COLUMNS,
+from ptd_fixtures import (COMPONENT_COLUMNS, RELATION_COLUMNS, RESOURCE_COLUMNS,
+                          RESOURCE_FOLDER_COLUMNS, STEP_COLUMNS, TEST_COLUMNS,
                           minimal_bpt_export, repository_tables, write_export)
 from uft2uipath import cli
 from uft2uipath.pipeline import PENDING_STAGES, ConversionPipeline
@@ -31,7 +33,8 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
     assert result.project.name == "SYNTHETIC_ALM"
     test = next(t for t in result.project.tests if t.id == 7)
     assert [c.name for c in test.components] == ["Login", "Logout"]
-    assert set(result.artifacts) == {"decoded-tables", "resolved-project", "resolved-scripts", "pipeline-report"}
+    assert set(result.artifacts) == {"decoded-tables", "resolved-project", "resolved-scripts",
+                                     "selector-candidates", "pipeline-report"}
 
     decoded = read(result.artifacts["decoded-tables"])
     assert decoded["tables"]["TEST"] == {"row_count": 2}
@@ -39,7 +42,7 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
 
     report = read(result.artifacts["pipeline-report"])
     assert [s["name"] for s in report["stages"]] == [
-        "extract", "decode", "model", "resolve_scripts", *PENDING_STAGES,
+        "extract", "decode", "model", "resolve_scripts", "resolve_objects", *PENDING_STAGES,
     ]
     assert report["uipath_project_generated"] is False
 
@@ -131,6 +134,55 @@ def test_pipeline_resolves_scripts_and_copies_sources(tmp_path):
                      "artifact": "artifacts/resolved-scripts.json", "test_statuses": {"resolved": 1}}
 
 
+def test_pipeline_proposes_selectors_from_local_and_shared_repositories(tmp_path):
+    root = tmp_path / "export"
+    tree = [("Browser", [("B", "1", "Browser", [
+        ("Page", [("P", "2", "Page", [("WebEdit", [("userName", "3", "WebEdit", [])])])])])])]
+    shared = object_repository(tree, {
+        "1": object_stream([("micclass", VT_BSTR, "Browser")], ["micclass"]),
+        "2": object_stream([("micclass", VT_BSTR, "Page"), ("title", VT_BSTR, "Welcome")], ["micclass"]),
+        "3": object_stream([("micclass", VT_BSTR, "WebEdit"), ("name", VT_BSTR, "userName"),
+                            ("html tag", VT_BSTR, "INPUT")], ["micclass", "name", "html tag"]),
+    })
+    reference = "[QC-RESOURCE];;Resources\\Object Repositories;;\\Shared.tsr"
+    files = {
+        "tests\\5\\Action0\\Script.mts": b'RunAction "Sign On", oneIteration',
+        "tests\\5\\Action0\\Resource.mtr": action_resource("Action0"),
+        "tests\\5\\Action1\\Script.mts": b'Browser("B").Page("P").WebEdit("userName").Set "admin"',
+        "tests\\5\\Action1\\Resource.mtr": action_resource("Sign On", shared_repositories=[reference]),
+        "resources\\7\\Shared.tsr": shared,
+    }
+    tables = repository_tables(root, files)
+    tables.update({
+        "TEST": (TEST_COLUMNS, [{"TS_TEST_ID": 5, "TS_NAME": "Login",
+                                 "TS_TYPE": "QUICKTEST_TEST", "TS_PATH": "5"}]),
+        "COMPONENT": (COMPONENT_COLUMNS, []),
+        "COMPONENT_STEP": (STEP_COLUMNS, []),
+        "BPTEST_TO_COMPONENTS": (RELATION_COLUMNS, []),
+        "RESOURCES": (RESOURCE_COLUMNS, [{"RSC_ID": 7, "RSC_NAME": "Shared.tsr",
+                                          "RSC_FILE_NAME": "Shared.tsr", "RSC_PARENT_ID": 2}]),
+        "RESOURCE_FOLDERS": (RESOURCE_FOLDER_COLUMNS, [
+            {"RFO_ID": 1, "RFO_NAME": "Resources", "RFO_PARENT_ID": 0},
+            {"RFO_ID": 2, "RFO_NAME": "Object Repositories", "RFO_PARENT_ID": 1}]),
+    })
+    write_export(root, tables)
+
+    result = ConversionPipeline(root, tmp_path / "out").run()
+
+    candidates = read(result.artifacts["selector-candidates"])
+    action = candidates["actions"]["test:5/Action1"]
+    assert [source["path"] for source in action["repositories"]] == ["resources\\7\\Shared.tsr"]
+    assert action["unresolved_repository_references"] == []
+    [entry] = action["objects"]
+    assert entry["status"] == "resolved" and entry["repository"] == "resources\\7\\Shared.tsr"
+    assert entry["candidate"]["selector"] == (
+        '<html title="Welcome" /><webctrl name="userName" tag="INPUT" />'
+    )
+    assert entry["candidate"]["verified"] is False
+    stage = read(result.artifacts["pipeline-report"])["stages"][4]
+    assert stage["reference_statuses"] == {"resolved": 1}
+
+
 def test_pipeline_reports_missing_repository_tables(tmp_path):
     source = minimal_bpt_export(tmp_path / "export")
     for name in ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL_FILE"):
@@ -138,9 +190,12 @@ def test_pipeline_reports_missing_repository_tables(tmp_path):
 
     result = ConversionPipeline(source, tmp_path / "out").run()
 
-    stage = read(result.artifacts["pipeline-report"])["stages"][3]
-    assert (stage["name"], stage["status"]) == ("resolve_scripts", "failed")
+    stages = read(result.artifacts["pipeline-report"])["stages"]
+    assert [(s["name"], s["status"]) for s in stages[3:5]] == [
+        ("resolve_scripts", "failed"), ("resolve_objects", "skipped"),
+    ]
     assert "resolved-scripts" not in result.artifacts
+    assert "selector-candidates" not in result.artifacts
 
 
 def test_convert_command_runs_pipeline(tmp_path, monkeypatch, capsys):

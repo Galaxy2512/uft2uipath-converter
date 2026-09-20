@@ -35,7 +35,11 @@ class AlmTables:
         if key not in self._cache:
             table = self.schema.get_table(key)
             if table is None:
-                raise PtdFormatError(f"Table {key} has data files but no schema definition.")
+                if key in self._files:
+                    raise PtdFormatError(f"Table {key} has data files but no schema definition.")
+                # A table the export does not contain at all reads as empty.
+                self._cache[key] = []
+                return self._cache[key]
             rows = []
             for path in self._files.get(key, []):
                 rows.extend(self._reader.read_rows(path, table.columns))

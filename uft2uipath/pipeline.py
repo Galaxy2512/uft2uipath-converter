@@ -22,15 +22,17 @@ from uft2uipath.alm.tables import AlmTables
 from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.ast import Project
 from uft2uipath.parser.project_builder import ProjectBuilder
+from uft2uipath.uft.object_repository import read_object_repository
+from uft2uipath.uft.object_resolution import resolve_objects
 
 FORMAT_VERSION = 1
 
 MODEL_TABLES = ("TEST", "COMPONENT", "COMPONENT_STEP", "BPTEST_TO_COMPONENTS")
 REPOSITORY_TABLES = ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL_FILE")
-EXPORTED_TABLES = MODEL_TABLES + REPOSITORY_TABLES
+RESOURCE_TABLES = ("RESOURCES", "RESOURCE_FOLDERS")
+EXPORTED_TABLES = MODEL_TABLES + REPOSITORY_TABLES + RESOURCE_TABLES
 
 PENDING_STAGES = (
-    "resolve_objects",
     "analyze",
     "bind",
     "emit",
@@ -101,7 +103,13 @@ class ConversionPipeline:
                 "test_count": len(project.tests),
             })
 
-            stages.append(self._resolve_scripts(tables, decoded["rows"], project, staging))
+            stage, resolution = self._resolve_scripts(tables, decoded["rows"], project, staging)
+            stages.append(stage)
+            if resolution is None:
+                stages.append({"name": "resolve_objects", "status": "skipped",
+                               "detail": "Script resolution did not run."})
+            else:
+                stages.append(self._resolve_objects(*resolution, staging))
 
             stages.extend({"name": name, "status": "pending"} for name in PENDING_STAGES)
             _write(artifacts_dir / "pipeline-report.json", {
@@ -118,18 +126,20 @@ class ConversionPipeline:
 
         artifacts = {
             name: self.output_dir / "artifacts" / f"{name}.json"
-            for name in ("decoded-tables", "resolved-project", "resolved-scripts", "pipeline-report")
+            for name in ("decoded-tables", "resolved-project", "resolved-scripts",
+                         "selector-candidates", "pipeline-report")
         }
         artifacts = {name: path for name, path in artifacts.items() if path.is_file()}
         return PipelineResult(self.output_dir, project, artifacts, table_errors)
 
-    def _resolve_scripts(self, tables, rows, project, staging: Path) -> dict[str, Any]:
+    def _resolve_scripts(self, tables, rows, project, staging: Path):
         missing = [name for name in REPOSITORY_TABLES if name not in rows]
         if missing or not tables.has(REPOSITORY_TABLES[0]):
             reason = f"Repository tables unavailable: {missing or [REPOSITORY_TABLES[0]]}"
-            return {"name": "resolve_scripts", "status": "failed", "detail": reason}
+            return {"name": "resolve_scripts", "status": "failed", "detail": reason}, None
 
-        resolver = ScriptResolver(SmartRepository(tables), rows)
+        repository = SmartRepository(tables)
+        resolver = ScriptResolver(repository, rows)
         resolved = resolver.resolve([test.id for test in project.tests])
         referenced = {unit.asset for test in resolved for unit in test.execution}
         referenced |= {key for key, asset in resolver.assets.items() if asset.issues}
@@ -156,8 +166,50 @@ class ConversionPipeline:
         statuses: dict[str, int] = {}
         for test in resolved:
             statuses[test.status] = statuses.get(test.status, 0) + 1
-        return {"name": "resolve_scripts", "status": "done",
-                "artifact": "artifacts/resolved-scripts.json", "test_statuses": statuses}
+        stage = {"name": "resolve_scripts", "status": "done",
+                 "artifact": "artifacts/resolved-scripts.json", "test_statuses": statuses}
+        return stage, (repository, resolver, sorted(referenced))
+
+    def _resolve_objects(self, repository, resolver, referenced, staging: Path) -> dict[str, Any]:
+        cache: dict[str, tuple[Any, str | None]] = {}
+        actions = {}
+        statuses: dict[str, int] = {}
+        for key in referenced:
+            for folder, action in resolver.assets[key].actions.items():
+                # UFT looks in the action's own repository first, then the shared ones in order.
+                wanted = [action.object_repository] if action.object_repository else []
+                wanted += [shared["path"] for shared in action.shared_repositories if shared["path"]]
+                repositories, sources = [], []
+                for path in wanted:
+                    if path not in cache:
+                        cache[path] = self._load_repository(repository, path)
+                    loaded, issue = cache[path]
+                    if loaded is not None:
+                        repositories.append((path, loaded))
+                    sources.append({"path": path, "issue": issue,
+                                    "object_count": len(loaded.objects) if loaded else 0})
+                objects = resolve_objects(action.text, repositories)
+                for entry in objects:
+                    statuses[entry["status"]] = statuses.get(entry["status"], 0) + 1
+                actions[f"{key}/{folder}"] = {
+                    "repositories": sources,
+                    "unresolved_repository_references": [s for s in action.shared_repositories if not s["path"]],
+                    "objects": objects,
+                }
+        _write(staging / "artifacts" / "selector-candidates.json", {
+            "format_version": FORMAT_VERSION,
+            "note": "Candidates are proposals derived from UFT identification properties; none is verified.",
+            "actions": actions,
+        })
+        return {"name": "resolve_objects", "status": "done",
+                "artifact": "artifacts/selector-candidates.json", "reference_statuses": statuses}
+
+    @staticmethod
+    def _load_repository(repository, logical: str):
+        try:
+            return read_object_repository(repository.read_bytes(logical)), None
+        except (OSError, ValueError) as exc:
+            return None, str(exc)
 
     def _extract(self, workspace: Path) -> tuple[Path, bool]:
         if self.source.is_dir():

@@ -30,9 +30,11 @@ def ole_file(stream_name: str, data: bytes) -> bytes:
     return header + struct.pack("<128I", *fat) + directory + data.ljust(count * SECTOR, b"\x00")
 
 
-def action_resource(name: str, reusable=True) -> bytes:
+def action_resource(name: str, reusable=True, shared_repositories=()) -> bytes:
+    sors = "".join(f"<SOR ORDER_ID=\"{index}\"><![CDATA[{reference}]]></SOR>"
+                   for index, reference in enumerate(shared_repositories))
     xml = ('<?xml version="1.0"?><Component_Root><Name><![CDATA[' + name + ']]></Name>'
            '<Description><![CDATA[]]></Description><DocumentType><![CDATA[Action]]></DocumentType>'
-           f'<IsReusable><![CDATA[{int(reusable)}]]></IsReusable></Component_Root>')
+           f'<IsReusable><![CDATA[{int(reusable)}]]></IsReusable><SORs>{sors}</SORs></Component_Root>')
     payload = (xml + "\x00").encode("utf-16-le")
     return ole_file("ComponentInfo", struct.pack("<HHI", 2, 2, len(payload)) + payload + b"slack")
