@@ -11,6 +11,7 @@ from uft2uipath.discovery.xml_inspector import XmlInspectionResult, XmlInspector
 
 @dataclass
 class DiscoveryReport:
+    """What an extracted project contains: file categories and the XML files inspected."""
     project_root: Path
     total_files: int
     categories: dict[str, int] = field(default_factory=dict)
@@ -18,15 +19,18 @@ class DiscoveryReport:
 
 
 class DiscoveryReportBuilder:
+    """Builds a DiscoveryReport from file discovery and XML inspection (inspect command)."""
     def __init__(
         self,
         discovery: ProjectDiscovery | None = None,
         xml_inspector: XmlInspector | None = None,
     ):
+        """Use the given discovery and XML inspection helpers, or default ones."""
         self.discovery = discovery or ProjectDiscovery()
         self.xml_inspector = xml_inspector or XmlInspector()
 
     def build(self, project_folder: str | Path) -> DiscoveryReport:
+        """Discover and categorize the files of a project folder and inspect its XML files."""
         result = self.discovery.discover(project_folder)
 
         categories: dict[str, int] = {}

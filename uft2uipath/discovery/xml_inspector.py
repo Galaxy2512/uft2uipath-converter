@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 @dataclass
 class XmlInspectionResult:
+    """Root tag, root attributes and element count of one XML file."""
     path: Path
     root_tag: str
     attributes: dict[str, str] = field(default_factory=dict)
@@ -16,7 +17,9 @@ class XmlInspectionResult:
 
 
 class XmlInspector:
+    """Reads the outline of XML files found in a project."""
     def inspect(self, xml_file: str | Path) -> XmlInspectionResult:
+        """Outline of one XML file."""
         path = Path(xml_file)
 
         if not path.exists():

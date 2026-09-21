@@ -1,3 +1,6 @@
+# Tests the static project validator (studio_validation.py): a generated project
+# structure passes, while missing registered tests, broken workflow references
+# and invalid XAML are reported. Static checks only; Studio itself is not run.
 import json
 import xml.etree.ElementTree as ET
 

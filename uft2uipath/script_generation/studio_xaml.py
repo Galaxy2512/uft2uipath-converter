@@ -14,6 +14,12 @@ for prefix, uri in (("s", S), ("sco", SCO), ("sap2010", SAP), ("mc", MC)):
 
 
 def prepare(root):
+    """Rewrite a generated workflow the way Studio saves C# XAML.
+
+    Bracketed expressions become CSharpValue (inputs) or CSharpReference
+    (outputs) with the property type Studio expects, and the namespace and
+    assembly imports C# expressions need are added.
+    """
     root = deepcopy(root)
     root.set(q("ExpressionActivityEditor.ExpressionActivityEditor", SAP), "C#")
     root.set(q("Ignorable", MC), "sap2010")

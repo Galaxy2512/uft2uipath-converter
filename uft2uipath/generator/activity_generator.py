@@ -8,7 +8,11 @@ from uft2uipath.ast import ConversionStatus, Step
 
 
 class ActivityGenerator:
+    """Legacy XAML snippets for model steps; unsupported steps become TODO placeholders. Legacy
+    path, not used by convert.
+    """
     def generate(self, step: Step) -> str:
+        """XAML snippet for one step."""
         if step.status == ConversionStatus.UNSUPPORTED:
             return self._todo(step)
 
@@ -31,6 +35,7 @@ class ActivityGenerator:
         return self._todo(step)
 
     def _todo(self, step: Step) -> str:
+        """Placeholder snippet preserving an unsupported UFT action."""
         original = step.raw.get("action", step.action or "Unknown")
         name = quoteattr(f"TODO: {step.name}")
         text = quoteattr(f"Unsupported UFT action: {original}")

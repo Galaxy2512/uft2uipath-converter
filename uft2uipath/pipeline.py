@@ -47,6 +47,7 @@ PENDING_STAGES = ("studio_runtime_validation",)
 
 @dataclass
 class PipelineResult:
+    """What a conversion produced: the model, artifact paths and tables that failed to decode."""
     output_dir: Path
     project: Project
     artifacts: dict[str, Path] = field(default_factory=dict)
@@ -54,6 +55,7 @@ class PipelineResult:
 
 
 class ConversionPipeline:
+    """Runs every stage from an ALM export to a UiPath project, writing one artifact per stage."""
     def __init__(
         self,
         source: str | Path,
@@ -61,12 +63,14 @@ class ConversionPipeline:
         test_ids: list[int] | None = None,
         acceptance: AcceptanceSettings | None = None,
     ):
+        """Configure the source, output directory, test selection and selector acceptance."""
         self.source = Path(source).resolve()
         self.output_dir = Path(output_dir).resolve()
         self.test_ids = list(dict.fromkeys(test_ids)) if test_ids else None
         self.acceptance = acceptance or AcceptanceSettings()
 
     def run(self) -> PipelineResult:
+        """Run all stages in a temporary directory, then move the result to the output directory."""
         if not self.source.exists():
             raise FileNotFoundError(self.source)
         if self.output_dir.exists() or self.output_dir.is_symlink():
@@ -172,6 +176,7 @@ class ConversionPipeline:
         return PipelineResult(self.output_dir, project, artifacts, table_errors)
 
     def _resolve_scripts(self, tables, rows, project, staging: Path):
+        """Resolve which actions and Script.mts files each test runs; copy the sources as artifacts."""
         missing = [name for name in REPOSITORY_TABLES if name not in rows]
         if missing or not tables.has(REPOSITORY_TABLES[0]):
             reason = f"Repository tables unavailable: {missing or [REPOSITORY_TABLES[0]]}"
@@ -211,6 +216,7 @@ class ConversionPipeline:
         return stage, (repository, resolver, sorted(referenced), resolved)
 
     def _resolve_objects(self, repository, resolver, referenced, staging: Path) -> dict[str, Any]:
+        """Resolve object references against local and shared repositories and propose selectors."""
         cache: dict[str, tuple[Any, str | None]] = {}
         actions = {}
         statuses: dict[str, int] = {}
@@ -265,6 +271,7 @@ class ConversionPipeline:
 
     def _generate(self, repository, resolver, resolutions, resolved, staging: Path, project_name: str):
         # Only actions a test actually executes become workflows; Action0 is the main flow.
+        """Analyze the executed actions, bind accepted selectors and emit the UiPath project and reports."""
         executed = {f"{unit.asset}/{unit.action}" for test in resolved for unit in test.execution}
         analyses, decisions, libraries = {}, {}, {}
         for key, objects in sorted(resolutions.items()):
@@ -332,12 +339,14 @@ class ConversionPipeline:
 
     @staticmethod
     def _load_repository(repository, logical: str):
+        """Read one Object Repository; a failure is returned, not raised."""
         try:
             return read_object_repository(repository.read_bytes(logical)), None
         except (OSError, ValueError) as exc:
             return None, str(exc)
 
     def _extract(self, workspace: Path) -> tuple[Path, bool]:
+        """Extract a .qcp/.zip archive, or use a directory as it is."""
         if self.source.is_dir():
             return self.source, False
         if self.source.suffix.lower() not in (".qcp", ".zip"):
@@ -350,6 +359,7 @@ class ConversionPipeline:
 
     def _project_name(self, extracted: Path) -> str:
         # dbid.xml also holds DB connection details; only the name is read.
+        """ALM project name from dbid.xml, reading nothing else from it."""
         dbid = extracted / "dbid.xml"
         if dbid.is_file():
             name = ET.parse(dbid).getroot().findtext("PROJECT_NAME")
@@ -358,6 +368,7 @@ class ConversionPipeline:
         return self.source.stem
 
     def _decode(self, tables: AlmTables) -> tuple[dict[str, Any], dict[str, str]]:
+        """Decode every ALM table; only the model tables are required."""
         summary: dict[str, dict[str, Any]] = {}
         rows: dict[str, list[dict[str, Any]]] = {}
         errors: dict[str, str] = {}
@@ -376,6 +387,7 @@ class ConversionPipeline:
         return {"summary": summary, "rows": rows}, errors
 
     def _build_model(self, project_name: str, rows: dict[str, list[dict[str, Any]]]) -> Project:
+        """Build the project/test/component model and apply the test selection."""
         project = ProjectBuilder().build(
             project_name=project_name,
             test_rows=rows["TEST"],
@@ -394,4 +406,5 @@ class ConversionPipeline:
 
 
 def _write(path: Path, value: Any) -> None:
+    """Write a JSON artifact."""
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -9,6 +9,7 @@ from uft2uipath.discovery.discovery_report import DiscoveryReportBuilder
 
 @dataclass
 class ProjectAnalysis:
+    """File counts of a project folder by extension and category."""
     project_root: Path
     total_files: int
     extensions: dict[str, int] = field(default_factory=dict)
@@ -18,7 +19,9 @@ class ProjectAnalysis:
 
 
 class ProjectAnalyzer:
+    """Exploration tool summarizing the files of an extracted project."""
     def analyze(self, project_folder: str | Path) -> ProjectAnalysis:
+        """Count the files of a project folder by extension and category."""
         root = Path(project_folder)
 
         if not root.exists():

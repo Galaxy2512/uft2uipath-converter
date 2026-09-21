@@ -42,7 +42,9 @@ Each major stage writes reviewable JSON artifacts under `<output>/artifacts`.
 - explicit blocking with `Throw` when migration semantics remain unresolved
 - migration reports and intermediate artifacts for manual review
 
-The current emitter supports a growing subset of operations, including examples such as `If ... Exist`, text input, click, select, wait/sync, delay and assignment. Unsupported or ambiguous operations remain visible as blockers.
+Which UiPath activities each UFT construct becomes is decided by one mapping registry (`uft2uipath/mapping/operation_registry.py`). The emitter currently supports UI actions (click, set, secure set, select, sync), `If` with `Exist`, comparisons and `And`/`Or`/`Not`, `GetROProperty`, typed assignments, output parameters, `Reporter.ReportEvent` (micFail logs an error and fails the test at its end), `ExitTest`, arithmetic and the common VBScript string and number functions. Unsupported or ambiguous constructs remain visible as blockers with their reason.
+
+See [docs/MAPPING_REGISTRY.md](docs/MAPPING_REGISTRY.md) for the full mapping table, semantics and how to add a mapping.
 
 ## Current verification level
 
@@ -107,6 +109,8 @@ output/
     script-analysis.json
     conversion-plan.json
     selector-review.template.json
+    migration-coverage.json
+    studio-validation.json
     pipeline-report.json
 
   project/
@@ -120,6 +124,16 @@ output/
 ```
 
 The generated test cases are registered in `project.json` and are intended to be run through UiPath Test Explorer. `Main.xaml` is not used to invoke private test cases.
+
+## Migration coverage
+
+`migration-coverage.json` counts mapped and blocked lines, blockers by reason (missing mapping, unsupported expression, library function, missing selector, ...) and coverage per test. To summarize one or more outputs:
+
+```powershell
+python -m uft2uipath inventory output\alm_demo output\bpt --out coverage.json
+```
+
+Use it to choose the next mappings by how many lines they unblock.
 
 ## Selector safety model
 
@@ -163,14 +177,24 @@ uft2uipath/
   alm/                 ALM/PTD data and repository resolution
   archive/             QCP/ZIP extraction
   ast/                 neutral project model
-  mapping/             selector acceptance and mapping decisions
-  parser/              ALM entities and VBScript parsing
-  script_analysis/     semantic/coverage analysis
+  mapping/             UFT -> UiPath mapping registry, coverage inventory,
+                       selector candidates and acceptance
+  parser/              ALM entities and VBScript parsing (neutral AST)
+  script_analysis/     references, blockers and coverage per script
   script_generation/   UiPath XAML and Test Project generation
+    emitters/          one handler per UFT construct (ui, flow, testing, functions)
   uft/                 UFT Object Repository and resource readers
   pipeline.py          end-to-end conversion orchestration
   cli.py               command-line interface
 ```
+
+Further documentation in `docs/`:
+
+- [MAPPING_REGISTRY.md](docs/MAPPING_REGISTRY.md): mappings, semantics, coverage, adding a mapping
+- [SCRIPT_ANALYSIS.md](docs/SCRIPT_ANALYSIS.md): VBScript analysis
+- [WORKFLOW_EMISSION.md](docs/WORKFLOW_EMISSION.md): workflow emission and binding contract
+- [PROJECT_MIGRATION.md](docs/PROJECT_MIGRATION.md): project-level migration
+- [MAPPING_SPEC.md](docs/MAPPING_SPEC.md): original mapping principles
 
 ## Next milestone
 

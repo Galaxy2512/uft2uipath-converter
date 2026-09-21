@@ -10,18 +10,25 @@ Supported
 - object statements over any test-object hierarchy: Set, SetSecure, Click
   (with recorded coordinates), Select, Navigate, Sync, Activate, Close, Back
 - OptionalStep. prefixed steps, and UFT's " @@ ..." step metadata
-- If / ElseIf / Else / End If, with Exist or a comparison as the condition
-- Wait, Dim, Option, assignments to variables
-- Reporter.ReportEvent, ExitTest
-- Parameter("..."), Environment("..."), DataTable("...", sheet),
-  string and numeric literals
+- If / ElseIf / Else / End If. Conditions are split by VBScript precedence
+  (Or, And, Not, then a comparison, Exist or a value), never inside string
+  literals or parentheses
+- Wait, Dim, Option, assignments to variables and to Parameter("...")
+- Reporter.ReportEvent (arguments split outside strings and calls), ExitTest
+- Values: Parameter("..."), Environment("...") and Environment.Value("..."),
+  DataTable("...", sheet), string, integer, decimal and Boolean literals,
+  variables, & concatenation, arithmetic (+ - * / \\ Mod ^ and unary minus, by
+  VBScript precedence), function calls (Len(x), Rnd) and
+  Object.GetROProperty("property")
 
 Important
 ---------
-This is intentionally not a complete VBScript parser yet.
+This is intentionally not a complete VBScript parser yet. Parsing only says
+what a line means; whether it can be migrated is decided when emitting (see
+script_generation.emitters and mapping.operation_registry).
 
-Unsupported statements are preserved as UnknownScriptOperation objects.
-Nothing is silently discarded.
+Unsupported statements are preserved as UnknownScriptOperation objects and
+unparsed values as UnknownValueExpression. Nothing is silently discarded.
 """
 
 from __future__ import annotations
@@ -427,6 +434,7 @@ class UftVbScriptParser:
         )
 
     def _terminator(self, normalized: str) -> str | None:
+        """Kind of block end (End Function/Sub, End With) a normalized line is, if any."""
         if re.fullmatch(r"end[ \t]+(function|sub)", normalized):
             return "end_function"
         if re.fullmatch(r"end[ \t]+with", normalized):
@@ -513,6 +521,7 @@ class UftVbScriptParser:
         return self._parse_value(condition)
 
     def _unwrap_all(self, expression: str) -> str:
+        """Remove every pair of parentheses that wraps the whole expression."""
         value = expression.strip()
         while (unwrapped := self._unwrap(value)) != value:
             value = unwrapped
@@ -572,6 +581,7 @@ class UftVbScriptParser:
         return operation
 
     def _parse_code(self, code: str, line: str, line_number: int) -> ScriptOperation:
+        """Parse one statement: object statement, parameter/object assignment, keyword or other."""
         steps, remainder = split_chain(code)
         if steps:
             return self._parse_object_statement(steps, remainder, code, line, line_number)
@@ -677,6 +687,7 @@ class UftVbScriptParser:
         )
 
     def _parse_keyword_statement(self, code: str, line: str, line_number: int) -> ScriptOperation:
+        """Parse Reporter.ReportEvent and ExitTest; anything else is preserved as unknown."""
         report_match = self.REPORT_EVENT_PATTERN.match(code)
 
         if report_match:
@@ -719,6 +730,7 @@ class UftVbScriptParser:
         return self._object_reference(steps, expression)
 
     def _object_reference(self, steps, expression: str) -> ObjectReference:
+        """ObjectReference from chain steps, keeping browser/page/object and the full path."""
         browser = page = object_type = logical_name = None
 
         for step in steps:

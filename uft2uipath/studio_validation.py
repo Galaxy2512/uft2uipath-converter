@@ -16,12 +16,16 @@ from uft2uipath.script_generation.project import DEPENDENCIES
 
 
 def validate_project(project_dir: str | Path) -> dict[str, Any]:
+    """Check a generated project's structure: project.json, registered tests,
+    XAML well-formedness, workflow references and Main not invoking tests.
+    """
     root = Path(project_dir)
     errors: list[dict[str, Any]] = []
     warnings: list[dict[str, Any]] = []
     checked_files: list[str] = []
 
     def error(code: str, message: str, path: str | None = None) -> None:
+        """Record a validation error."""
         entry: dict[str, Any] = {"code": code, "message": message}
         if path:
             entry["path"] = path
@@ -130,10 +134,12 @@ def validate_project(project_dir: str | Path) -> dict[str, Any]:
 
 
 def _relative(value: str) -> Path:
+    """Path of a project-relative file name, whether written with forward or back slashes."""
     return Path(*value.replace("/", "\\").split("\\"))
 
 
 def _report(errors, warnings, checked_files):
+    """Validation result; Studio load and execution always stay unverified here."""
     return {
         "format_version": 1,
         "validation_level": "static",

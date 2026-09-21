@@ -8,6 +8,7 @@ from pathlib import Path
 
 @dataclass
 class DiscoveredFile:
+    """One file of an extracted project, with its category."""
     path: Path
     relative_path: str
     suffix: str
@@ -17,19 +18,24 @@ class DiscoveredFile:
 
 @dataclass
 class DiscoveryResult:
+    """All files found in a project folder."""
     root: Path
     files: list[DiscoveredFile] = field(default_factory=list)
 
     @property
     def total_files(self) -> int:
+        """Number of files found."""
         return len(self.files)
 
     def by_category(self, category: str) -> list[DiscoveredFile]:
+        """Files of one category."""
         return [file for file in self.files if file.category == category]
 
 
 class ProjectDiscovery:
+    """Walks an extracted project folder and categorizes its files."""
     def discover(self, project_folder: str | Path) -> DiscoveryResult:
+        """Find and categorize every file below the project folder."""
         root = Path(project_folder)
 
         if not root.exists():
@@ -54,6 +60,7 @@ class ProjectDiscovery:
         return result
 
     def _categorize(self, path: Path) -> str:
+        """Category of a file from its name, extension and location."""
         name = path.name.lower()
         suffix = path.suffix.lower()
         full = str(path).lower()

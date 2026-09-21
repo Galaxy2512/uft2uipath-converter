@@ -27,6 +27,7 @@ _METHODS = {"set", "setsecure", "select", "type", "navigate", "getroproperty", "
 
 @dataclass
 class ObjectStep:
+    """One step of a test-object chain: a class with a logical name or an inline description."""
     test_object_class: str
     name: str | None = None
     description: dict[str, str] = field(default_factory=dict)
@@ -34,6 +35,7 @@ class ObjectStep:
 
 @dataclass
 class ObjectReference:
+    """A test-object chain found in a script line."""
     line: int
     path: list[ObjectStep]
     source: str
@@ -41,9 +43,11 @@ class ObjectReference:
 
     @property
     def descriptive(self) -> bool:
+        """True if any step is described inline (descriptive programming)."""
         return any(step.description for step in self.path)
 
     def key(self) -> tuple:
+        """Case-insensitive identity used to group repeated references."""
         return tuple((s.test_object_class.casefold(), (s.name or "").casefold(),
                       tuple(sorted(s.description.items()))) for s in self.path)
 
@@ -74,6 +78,7 @@ def parse_chain(expression: str) -> list[ObjectStep] | None:
 
 
 def extract_references(text: str) -> list[ObjectReference]:
+    """Every object chain in a script, per line; dynamic arguments are flagged, not resolved."""
     references = []
     for number, line in enumerate(text.splitlines(), 1):
         code = _code(line)
@@ -88,6 +93,7 @@ def extract_references(text: str) -> list[ObjectReference]:
 
 
 def _code(line: str) -> str:
+    """A script line without UFT step metadata, a trailing comment or a REM line."""
     code = line.split(" @@ ", 1)[0]
     # Strip a trailing comment that is outside string literals.
     in_string = False
@@ -102,6 +108,7 @@ def _code(line: str) -> str:
 
 
 def _chains(code: str) -> list[list[ObjectStep]]:
+    """Object chains in one line of code; methods end a chain."""
     chains, current, last_end = [], [], None
     for match in _STEP.finditer(code):
         name = match.group(1)
@@ -130,6 +137,7 @@ def _chains(code: str) -> list[list[ObjectStep]]:
 
 
 def _step(test_object_class: str, arguments: str) -> ObjectStep:
+    """An object step from its string arguments: a logical name or property:=value pairs."""
     values = [literal[1:-1].replace('""', '"') for literal in _ARGUMENT.findall(arguments)]
     if all(":=" in value for value in values):
         return ObjectStep(test_object_class, description=dict(v.split(":=", 1) for v in values))

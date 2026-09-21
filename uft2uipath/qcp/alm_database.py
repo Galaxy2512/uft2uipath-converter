@@ -11,16 +11,19 @@ TEXT_EXTENSIONS = {".xml", ".txt", ".vbs", ".mtr", ".ini", ".csv", ".html", ".ht
 
 @dataclass
 class AlmTextFile:
+    """One readable text file of an extracted export."""
     path: Path
     text: str
 
 @dataclass
 class AlmDatabase:
+    """Text of every readable file in an export, for the legacy text search."""
     root: Path
     files: list[AlmTextFile] = field(default_factory=list)
 
     @classmethod
     def load(cls, root: str | Path) -> "AlmDatabase":
+        """Read every text file below root."""
         root = Path(root)
         db = cls(root=root)
         for p in root.rglob("*"):
@@ -43,9 +46,11 @@ class AlmDatabase:
 
     @property
     def blob(self) -> str:
+        """All loaded text joined together."""
         return "\n".join(f.text for f in self.files)
 
     def snippets_for(self, token: str, radius: int = 2500) -> tuple[str, list[str]]:
+        """Text around each occurrence of a token, and the files it came from."""
         snippets: list[str] = []
         sources: list[str] = []
         if not token:

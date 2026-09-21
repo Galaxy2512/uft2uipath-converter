@@ -10,6 +10,7 @@ from typing import Any
 
 
 class ConversionStatus(str, Enum):
+    """How far an element was converted."""
     SUCCESS = "success"
     PARTIAL = "partial"
     FAILED = "failed"
@@ -17,12 +18,14 @@ class ConversionStatus(str, Enum):
 
 
 class IssueSeverity(str, Enum):
+    """Severity of a conversion issue."""
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
 
 
 class StepType(str, Enum):
+    """Kind of a UFT step."""
     ACTION = "action"
     CONDITION = "condition"
     LOOP = "loop"
@@ -34,6 +37,7 @@ class StepType(str, Enum):
 
 @dataclass
 class ConversionIssue:
+    """A problem found while converting an element, with an optional recommendation."""
     message: str
     severity: IssueSeverity = IssueSeverity.WARNING
     source: str | None = None
@@ -61,6 +65,7 @@ class Parameter:
     raw: dict[str, Any] = field(default_factory=dict)
 @dataclass
 class Variable:
+    """A UFT variable that may become a UiPath variable."""
     name: str
     datatype: str | None = None
     default_value: Any = None
@@ -70,6 +75,7 @@ class Variable:
 
 @dataclass
 class ObjectRepositoryItem:
+    """A UFT object and its selector, if one is known."""
     name: str
     object_type: str | None = None
     selector: str | None = None
@@ -79,6 +85,7 @@ class ObjectRepositoryItem:
 
 @dataclass
 class DataTable:
+    """A UFT data table and its rows."""
     name: str
     path: str | None = None
     rows: list[dict[str, Any]] = field(default_factory=list)
@@ -193,6 +200,7 @@ class SharedResource:
     raw: dict[str, Any] = field(default_factory=dict)
 @dataclass
 class Project:
+    """A migrated ALM project: its tests, shared resources, objects and data tables."""
     name: str
     source_path: str | None = None
 

@@ -19,6 +19,11 @@ STATUSES = ("supported", "no_effect", "planned", "requires_strategy", "unsupport
 
 @dataclass(frozen=True)
 class OperationMapping:
+    """Registry entry for one parser node type.
+
+    node_type is the parser class name; uft and activities describe the
+    mapping for people and reports; handler emits it (None while planned).
+    """
     node_type: str
     uft: str
     activities: tuple[str, ...]
@@ -38,6 +43,7 @@ REGISTRY: dict[str, OperationMapping] = {}
 
 
 def _register(entry: OperationMapping) -> None:
+    """Add an entry; a handler may replace a planned entry but not another handler."""
     if entry.status not in STATUSES:
         raise ValueError(f"Unknown mapping status {entry.status!r} for {entry.node_type}.")
     if (entry.handler is None) == (entry.status in ("supported", "no_effect")):
@@ -52,6 +58,7 @@ def maps(node_type: str, *, uft: str, activities: tuple[str, ...], status: str =
          returns: str | None = None, typer: Callable | None = None):
     """Register the decorated function as the emitter of one node type."""
     def decorate(handler):
+        """Register the handler and return it unchanged."""
         _register(OperationMapping(node_type, uft, tuple(activities), status,
                                    requires_selector, handler, notes, kind, returns, typer))
         return handler
@@ -59,6 +66,7 @@ def maps(node_type: str, *, uft: str, activities: tuple[str, ...], status: str =
 
 
 def lookup(node_type: str | None) -> OperationMapping | None:
+    """Entry for a node type, after the emitter modules have registered their handlers."""
     _load_emitters()
     return REGISTRY.get(node_type)
 
@@ -78,6 +86,7 @@ def capabilities() -> dict[str, list[dict]]:
 
 def _load_emitters() -> None:
     # Emitter modules register on import; imported lazily to avoid a cycle.
+    """Import the emitter modules so their @maps handlers are registered."""
     import uft2uipath.script_generation.emitters  # noqa: F401
 
 

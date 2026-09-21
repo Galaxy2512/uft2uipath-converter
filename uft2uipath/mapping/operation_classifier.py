@@ -15,6 +15,7 @@ DEFAULT_APP_URL = "https://opensource-demo.orangehrmlive.com/web/index.php/auth/
 _URL_RE = re.compile(r"https?://[^\s\"'<>\)\]]+|about:blank", re.I)
 
 def valid_urls(text: str) -> list[str]:
+    """Distinct URLs found in text, without trailing punctuation or known invalid markers."""
     found = []
     for url in _URL_RE.findall(text or ""):
         u = url.strip().rstrip(".,;)]")
@@ -26,6 +27,7 @@ def valid_urls(text: str) -> list[str]:
     return found
 
 def _contains(text: str, *patterns: str) -> bool:
+    """True if the text contains any of the patterns, case-insensitively."""
     lt = (text or "").lower()
     return any(p.lower() in lt for p in patterns)
 

@@ -9,6 +9,7 @@ from uft2uipath.ast import ConversionIssue, ConversionStatus
 
 @dataclass
 class ConversionReport:
+    """Counts of converted, partial, failed and unsupported tests of a project."""
     project_name: str
     total_tests: int = 0
     success: int = 0
@@ -18,6 +19,7 @@ class ConversionReport:
     issues: list[ConversionIssue] = field(default_factory=list)
 
     def add_status(self, status: ConversionStatus) -> None:
+        """Count one test's conversion status."""
         if status == ConversionStatus.SUCCESS:
             self.success += 1
         elif status == ConversionStatus.PARTIAL:
@@ -29,10 +31,12 @@ class ConversionReport:
 
     @property
     def converted(self) -> int:
+        """Tests converted fully or partially."""
         return self.success + self.partial
 
     @property
     def success_rate(self) -> float:
+        """Converted tests as a percentage of all tests."""
         if self.total_tests == 0:
             return 0.0
         return round((self.converted / self.total_tests) * 100, 2)

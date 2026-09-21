@@ -13,6 +13,7 @@ TABLES = ("TEST", "COMPONENT", "COMPONENT_STEP", "BPTEST_TO_COMPONENTS")
 
 
 def build_model(source, output):
+    """Build the neutral model from decoded ALM rows and write it as JSON (build-model)."""
     source, output = Path(source), Path(output)
     payload = json.loads(source.read_text(encoding="utf-8-sig"))
 
@@ -59,6 +60,7 @@ def build_model(source, output):
 
 
 def main(argv=None):
+    """Command line of build-model."""
     parser = argparse.ArgumentParser(
         description="Build a model from decoded ALM rows."
     )

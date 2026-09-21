@@ -25,10 +25,12 @@ LIMITATIONS = [
 
 
 def read_json(path):
+    """Read a JSON file."""
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def identity(value, location):
+    """Integer ALM ID of a value; Booleans and non-numbers are rejected."""
     if isinstance(value, bool):
         raise ValueError(f"{location}: invalid ID.")
     try:
@@ -38,6 +40,7 @@ def identity(value, location):
 
 
 def relative_path(root, value, label):
+    """A path from the manifest, relative to the manifest's folder."""
     if not isinstance(value, str) or not value:
         raise ValueError(f"{label}: non-empty path required.")
     path = Path(value)
@@ -45,6 +48,7 @@ def relative_path(root, value, label):
 
 
 def load_inputs(manifest_path):
+    """Load and validate the manifest, the ALM rows and the component-to-script bindings."""
     manifest = read_json(manifest_path)
     if not isinstance(manifest, dict):
         raise ValueError("Manifest must be an object.")
@@ -86,6 +90,7 @@ def load_inputs(manifest_path):
 
 
 def relationship_issues(rows):
+    """Relations and orders in the ALM rows that reference missing entities."""
     tests = {identity(r["TS_TEST_ID"], "TS_TEST_ID") for r in rows["TEST"]}
     components = {identity(r["CO_ID"], "CO_ID") for r in rows["COMPONENT"]}
     issues = []
@@ -112,12 +117,14 @@ def relationship_issues(rows):
 
 
 def decode(data, encoding):
+    """Decode script bytes with the given or detected encoding."""
     if encoding == "auto":
         encoding = "utf-16" if data.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8-sig"
     return data.decode(encoding, errors="strict"), encoding
 
 
 def run_batch(manifest_path, output):
+    """Analyze every bound component script and write model, report and sources."""
     manifest_path, output = Path(manifest_path).resolve(), Path(output).resolve()
     if output.exists() or output.is_symlink():
         raise FileExistsError(f"Output already exists: {output}")
@@ -241,10 +248,12 @@ def run_batch(manifest_path, output):
 
 
 def write_json(path, value):
+    """Write a JSON file."""
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def main(argv=None):
+    """Command line of analyze-scripts."""
     parser = argparse.ArgumentParser(description="Analyze scripts by verified component identity.")
     parser.add_argument("manifest")
     parser.add_argument("--out", required=True, help="New analysis directory")

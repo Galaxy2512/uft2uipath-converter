@@ -16,11 +16,13 @@ import olefile
 
 
 class ActionResourceError(ValueError):
+    """Resource.mtr / Test.tsp data that cannot be read."""
     pass
 
 
 @dataclass
 class ActionResource:
+    """Action metadata: logical name, description, and associated repositories and libraries."""
     name: str
     description: str
     reusable: bool
@@ -30,6 +32,7 @@ class ActionResource:
 
 
 def read_action_resource(data: bytes, require_name: bool = True) -> ActionResource:
+    """Read the ComponentInfo metadata of a Resource.mtr (or Test.tsp) OLE file."""
     if not olefile.isOleFile(io.BytesIO(data)):
         raise ActionResourceError("Resource.mtr is not an OLE compound document.")
     with olefile.OleFileIO(io.BytesIO(data)) as ole:

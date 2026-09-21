@@ -30,16 +30,23 @@ def secret_source(operation):
 
 
 def analyze_source(source):
+    """Parse one action script and report what it references and what blocks it.
+
+    Returns the typed operations, referenced parameters/environment/data/
+    secure values/outputs/objects, coverage counts and line-level issues.
+    """
     parsed = UftVbScriptParser().parse(source)
     issues, parameters, environments, objects = [], set(), set(), []
     data_columns, secrets, secure_values, outputs = set(), set(), set(), set()
     kinds = Counter()
 
     def issue(code, message, line, raw):
+        """Record a blocker found at a source line."""
         issues.append({"code": code, "message": message,
                        "line_number": line, "raw": raw, "severity": "blocker"})
 
     def walk(value, line=None):
+        """Visit an operation and every value inside it, collecting references and issues."""
         if isinstance(value, ScriptOperation):
             line = value.line_number
             kinds[type(value).__name__] += 1

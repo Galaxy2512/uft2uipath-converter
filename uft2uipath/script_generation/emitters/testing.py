@@ -19,6 +19,11 @@ REPORT_LEVELS = {
       notes="micFail logs an error and continues, as UFT does; the calling test fails at "
             "its end. A screenshot argument is not carried over.")
 def emit_report_event(ctx, node, parent, trace, display):
+    """Reporter.ReportEvent: Log Message with the level of the status.
+
+    micFail also sets the InOut failure flag, so execution continues as in UFT
+    and the calling test fails at its end.
+    """
     status = (node.get("status") or "").strip()
     if status.lower() not in REPORT_LEVELS:
         raise ValueError(f"Reporter status {status!r} needs interpretation.")
@@ -40,6 +45,11 @@ def emit_report_event(ctx, node, parent, trace, display):
 @maps("ExitTestOperation", uft="ExitTest", activities=("Throw",),
       notes="The calling test catches it: the run stops, and fails only if a failure was reported.")
 def emit_exit_test(ctx, node, parent, trace, display):
+    """ExitTest: throw the marked exception the calling test catches.
+
+    The message says whether a failure was reported before, because a
+    faulted workflow does not return its InOut arguments.
+    """
     code = (node.get("code") or {}).get("raw", "")
     ctx.exits_test = True
     # A faulted workflow does not hand back its InOut arguments, so the

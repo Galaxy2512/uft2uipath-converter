@@ -1,3 +1,6 @@
+# Tests decoding of ALM .ptd table dumps (alm/ptd_reader.py, alm/tables.py):
+# every column type and NULL, empty and truncated files, schema mismatches, and
+# tables split over several files.
 import pytest
 
 from ptd_fixtures import NULL, encode_rows, write_export

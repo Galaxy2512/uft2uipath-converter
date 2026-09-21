@@ -22,11 +22,13 @@ _IDENTIFIER = re.compile(r"[^A-Za-z0-9_]")
 
 
 class ReviewError(ValueError):
+    """A selector review file that cannot be used as given."""
     pass
 
 
 @dataclass
 class AcceptanceSettings:
+    """How selector candidates are accepted: threshold, reviewed entries, browser type and timeout."""
     threshold: float | None = None
     browser_type: str | None = None
     timeout_ms: int = 30000
@@ -34,6 +36,7 @@ class AcceptanceSettings:
 
 
 def identity_key(identity: dict[str, Any]) -> tuple:
+    """Case-insensitive identity of a UFT object, for matching candidates, reviews and bindings."""
     return target_key(identity)
 
 
@@ -120,6 +123,7 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
 
 
 def argument_name(kind: str, name: str, direction: str = "in") -> str:
+    """Workflow argument name for a UFT value, e.g. in_param_User or out_param_Result."""
     cleaned = _IDENTIFIER.sub("_", name).strip("_") or "value"
     if not cleaned[0].isalpha():
         cleaned = "v" + cleaned

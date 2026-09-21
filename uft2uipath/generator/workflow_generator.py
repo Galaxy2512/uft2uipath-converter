@@ -10,7 +10,9 @@ from uft2uipath.generator.activity_generator import ActivityGenerator
 
 
 class WorkflowGenerator:
+    """Writes one legacy workflow per business component. Legacy path, not used by convert."""
     def __init__(self, activity_generator: ActivityGenerator | None = None):
+        """Use the given activity generator, or a default one."""
         self.activity_generator = activity_generator or ActivityGenerator()
 
     def generate_component_workflow(
@@ -18,6 +20,7 @@ class WorkflowGenerator:
         component: BusinessComponent,
         output_dir: str | Path,
     ) -> Path:
+        """Write the workflow of one component and return its path."""
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
 

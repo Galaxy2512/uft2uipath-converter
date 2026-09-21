@@ -24,10 +24,12 @@ LIMITATIONS = [
 
 
 def read(path):
+    """Read a JSON file."""
     return json.loads(path.read_text(encoding="utf-8-sig"))
 
 
 def inside(root, reference):
+    """Resolve a path from the analysis, refusing one that leaves its directory."""
     if not isinstance(reference, str):
         raise ValueError("Analysis reference must be a path string.")
     path = (root / reference).resolve()
@@ -37,10 +39,12 @@ def inside(root, reference):
 
 
 def write_json(path, value):
+    """Write a JSON file."""
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def emit_test(test, components, call_bindings, global_issues):
+    """Test workflow invoking its components with explicitly bound In arguments."""
     test_id = test["id"]
     issues = list(global_issues)
     arguments, invocations, seen_relations = {}, [], set()
@@ -105,6 +109,7 @@ def emit_test(test, components, call_bindings, global_issues):
 
 
 def emit_bundle(analysis_dir, bindings_path, output):
+    """Emit a workflow bundle from analyze-scripts output and explicit bindings."""
     analysis_dir, output = Path(analysis_dir).resolve(), Path(output).resolve()
     if output.exists() or output.is_symlink():
         raise FileExistsError(f"Output already exists: {output}")
@@ -187,6 +192,7 @@ def emit_bundle(analysis_dir, bindings_path, output):
 
 
 def main(argv=None):
+    """Command line of emit-workflows."""
     parser = argparse.ArgumentParser(description="Emit guarded workflow candidates from script analysis.")
     parser.add_argument("analysis")
     parser.add_argument("--bindings", required=True)

@@ -6,12 +6,18 @@ from uft2uipath.script_generation.emitter import UI, X, _secret_source, expr, q
 
 
 def _input_flag(binding, method):
+    """"true" if the binding's input method is the given one, as the classic activities expect."""
     return str(binding["input_method"] == method).lower()
 
 
 @maps("ExistCondition", uft=".Exist(n)", activities=("UiElementExists",), requires_selector=True,
       kind="condition", notes="Timeout must be a positive literal number of seconds.")
 def emit_exists(ctx, condition, parent, display):
+    """Object.Exist(n): UiElementExists into a new Boolean variable, returned as the condition.
+
+    Uses the full selector outside any browser scope, so a missing browser
+    makes the condition false instead of failing the attach.
+    """
     variable = ctx.temporary("exists", "Boolean")
     binding = ctx.object_binding(condition, "exists")
     timeout_node = condition.get("timeout") or {}
@@ -39,6 +45,10 @@ PROPERTY_ATTRIBUTES = {
       notes="Read with the full selector, outside any browser scope. The attribute is converted "
             "to String, as GetROProperty's value is compared in UFT.")
 def emit_get_attribute(ctx, node, parent):
+    """Object.GetROProperty("p"): Get Attribute into an Object variable, read as String.
+
+    Only properties in PROPERTY_ATTRIBUTES are mapped; others block.
+    """
     if parent is None:
         raise ValueError("GetROProperty needs a Get Attribute activity before this statement; not supported here.")
     prop = (node.get("property") or "").strip().lower()
@@ -60,6 +70,7 @@ def emit_get_attribute(ctx, node, parent):
 @maps("ClickOperation", uft=".Click", activities=("Click",), requires_selector=True,
       notes="A recorded click offset is not reproduced.")
 def emit_click(ctx, node, parent, trace, display):
+    """Object.Click: single left click at the element's centre."""
     binding = ctx.object_binding(node, "click")
     activity = ET.SubElement(parent, q("Click", UI), {
         "DisplayName": display, "ContinueOnError": "False",
@@ -76,6 +87,7 @@ def emit_click(ctx, node, parent, trace, display):
 
 @maps("SetTextOperation", uft=".Set", activities=("TypeInto",), requires_selector=True)
 def emit_type_into(ctx, node, parent, trace, display):
+    """Object.Set value: Type Into replacing the field's content."""
     binding = ctx.object_binding(node, "set")
     text = ctx.value(node.get("value"), "String", parent)
     activity = ET.SubElement(parent, q("TypeInto", UI), {
@@ -90,6 +102,7 @@ def emit_type_into(ctx, node, parent, trace, display):
 @maps("SetSecureTextOperation", uft=".SetSecure", activities=("TypeInto",), requires_selector=True,
       notes="The UFT encoded value is not carried over; a secure argument supplies it.")
 def emit_secure_type_into(ctx, node, parent, trace, display):
+    """Object.SetSecure: Type Into from a secure argument; the UFT encoded value is not used."""
     binding = ctx.object_binding(node, "set")
     secret = ctx.references.get(("secure", _secret_source(node)))
     if secret is None or secret[1] != "String":
@@ -110,6 +123,7 @@ def emit_secure_type_into(ctx, node, parent, trace, display):
 
 @maps("SelectOperation", uft=".Select", activities=("SelectItem",), requires_selector=True)
 def emit_select_item(ctx, node, parent, trace, display):
+    """Object.Select value: Select Item."""
     binding = ctx.object_binding(node, "select")
     item = ctx.value(node.get("value"), "String", parent)
     activity = ET.SubElement(parent, q("SelectItem", UI), {
@@ -122,6 +136,7 @@ def emit_select_item(ctx, node, parent, trace, display):
 @maps("SyncOperation", uft=".Sync", activities=("WaitUiElementAppear",), requires_selector=True,
       notes="Sync waits for load completion; waiting for the page element is close, not identical.")
 def emit_sync(ctx, node, parent, trace, display):
+    """Browser/Page.Sync: wait until the page element appears (close to, not the same as, load completion)."""
     binding = ctx.object_binding(node, "exists")
     activity = ET.SubElement(parent, q("WaitUiElementAppear", UI), {
         "DisplayName": display + " / wait for page", "ContinueOnError": "False",

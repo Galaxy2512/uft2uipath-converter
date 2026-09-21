@@ -29,6 +29,9 @@ class QcpModelReader:
     - never silently fake unsupported logic; unknown items appear in ConversionReport.md.
     """
     def read(self, extracted_dir: str | Path, source_qcp: str | Path) -> MigrationModel:
+        """Build a MigrationModel by searching the export's text for components and tests. Legacy
+        path, not used by convert.
+        """
         db = AlmDatabase.load(extracted_dir)
         component_names = self._discover_components(db)
         components: list[Component] = []
@@ -51,6 +54,7 @@ class QcpModelReader:
         return MigrationModel(str(source_qcp), components, tests, str(Path(extracted_dir)), issues)
 
     def _discover_components(self, db: AlmDatabase) -> list[str]:
+        """Component names found by pattern in the export's text."""
         blob = db.blob
         candidates: set[str] = set()
         for pat in _GENERIC_COMPONENT_PATTERNS:
@@ -66,6 +70,9 @@ class QcpModelReader:
         return sorted(candidates, key=lambda x: (0 if x.endswith("_QWERTZ") else 1, x.lower()))
 
     def _discover_tests(self, db: AlmDatabase, components: list[Component]) -> list[TestCase]:
+        """Known BPT flows (DEFAULT_FLOWS) named in the export or with at least two of their
+        components present.
+        """
         blob = db.blob
         component_set = {c.name for c in components}
         tests: list[TestCase] = []

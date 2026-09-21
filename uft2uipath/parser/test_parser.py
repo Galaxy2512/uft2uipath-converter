@@ -8,10 +8,13 @@ from uft2uipath.parser.component_parser import ComponentParser
 
 
 class TestParser:
+    """Builds a UftTestCase from a generic nested dict. Legacy path, not used by convert."""
     def __init__(self, component_parser: ComponentParser | None = None):
+        """Use the given component parser, or a default one."""
         self.component_parser = component_parser or ComponentParser()
 
     def parse(self, raw_test: dict) -> UftTestCase:
+        """Parse one test and its components."""
         test_case = UftTestCase(
             name=raw_test.get("name", "UnnamedTest"),
             description=raw_test.get("description"),

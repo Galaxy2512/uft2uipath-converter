@@ -14,12 +14,15 @@ from uft2uipath.alm.tables import AlmTables
 
 
 def normalize(path: str) -> str:
+    """Canonical backslash path without empty or '.' parts."""
     parts = [p for p in path.replace("/", "\\").split("\\") if p not in ("", ".")]
     return "\\".join(parts)
 
 
 class SmartRepository:
+    """The file system ALM exposes to UFT, mapped to the physical blobs in the export."""
     def __init__(self, tables: AlmTables):
+        """Index logical file paths to their physical files."""
         self.root = tables.root.resolve()
         physical = {
             row["SRPF_ID"]: row["SRPF_PATH"]
@@ -33,13 +36,16 @@ class SmartRepository:
             self._files[logical.lower()] = (logical, physical.get(row.get("SRLF_PHYSICAL_ID")))
 
     def exists(self, logical: str) -> bool:
+        """True if the logical file is in the repository."""
         return normalize(logical).lower() in self._files
 
     def files_under(self, folder: str) -> list[str]:
+        """Logical files below a folder, sorted."""
         prefix = normalize(folder).lower() + "\\"
         return sorted(name for key, (name, _) in self._files.items() if key.startswith(prefix))
 
     def physical_path(self, logical: str) -> Path:
+        """Physical file of a logical path; refuses paths that leave the export."""
         entry = self._files.get(normalize(logical).lower())
         if entry is None:
             raise FileNotFoundError(f"Not in ALM repository: {logical}")
@@ -51,4 +57,5 @@ class SmartRepository:
         return path
 
     def read_bytes(self, logical: str) -> bytes:
+        """Content of a logical file."""
         return self.physical_path(logical).read_bytes()

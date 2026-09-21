@@ -48,6 +48,7 @@ _EXTERNAL_ACTION = re.compile(r"^(.*?)\s*\[(.+)\]$")
 
 @dataclass
 class ActionCall:
+    """A RunAction call in a script: the called name, its iterations and where it is written."""
     name: str
     iterations: str | None
     line: int
@@ -58,6 +59,9 @@ class ActionCall:
 
 @dataclass
 class ActionScript:
+    """One action of a test or component: its Script.mts text and metadata
+    (logical name, repositories, snapshots) and the RunAction calls it makes.
+    """
     folder: str
     name: str | None
     script: str
@@ -73,6 +77,7 @@ class ActionScript:
 
 @dataclass
 class ScriptAsset:
+    """A test or component folder in the repository with its actions and function libraries."""
     key: str
     kind: str
     entity_id: int
@@ -84,6 +89,9 @@ class ScriptAsset:
 
 @dataclass
 class ExecutionUnit:
+    """One action executed by a test, in order, with the component, relation,
+    flow and group/branch containers it was reached through.
+    """
     order: int
     asset: str
     action: str
@@ -97,6 +105,7 @@ class ExecutionUnit:
 
 @dataclass
 class ResolvedTest:
+    """An ALM test with the ordered actions it executes and why it may be blocked."""
     test_id: int
     name: str
     test_type: str | None
@@ -106,6 +115,7 @@ class ResolvedTest:
 
 
 def decode_script(data: bytes) -> tuple[str, str]:
+    """Decode Script.mts bytes (UTF-16 with BOM, UTF-8, else cp1252) and name the encoding used."""
     if data.startswith((b"\xff\xfe", b"\xfe\xff")):
         return data.decode("utf-16"), "utf-16"
     try:
@@ -115,6 +125,7 @@ def decode_script(data: bytes) -> tuple[str, str]:
 
 
 def parse_run_actions(text: str) -> list[ActionCall]:
+    """RunAction calls in a script, skipping comments and UFT step metadata."""
     calls = []
     for number, line in enumerate(text.splitlines(), 1):
         code = line.split(" @@ ", 1)[0].strip()
@@ -129,6 +140,7 @@ def parse_run_actions(text: str) -> list[ActionCall]:
 
 @dataclass
 class _Context:
+    """Where the expansion currently is: component, relation, flow path and containers."""
     component_id: int | None = None
     relation_id: int | None = None
     flow_path: list[int] = field(default_factory=list)
@@ -136,7 +148,9 @@ class _Context:
 
 
 class ScriptResolver:
+    """Resolves ALM tests (scripted or BPT) to the ordered action scripts they run."""
     def __init__(self, repository: SmartRepository, rows: dict[str, list[dict[str, Any]]]):
+        """Index tests, components and the BPT relation tree; nothing is read from disk yet."""
         self.repository = repository
         self.tests = {row["TS_TEST_ID"]: row for row in rows["TEST"]}
         self.components = {row["CO_ID"]: row for row in rows["COMPONENT"]}
@@ -154,9 +168,11 @@ class ScriptResolver:
         )
 
     def resolve(self, test_ids: list[int]) -> list[ResolvedTest]:
+        """Resolve the given tests in order."""
         return [self._resolve_test(test_id) for test_id in test_ids]
 
     def _resolve_test(self, test_id: int) -> ResolvedTest:
+        """Resolve one test by type; manual tests are not_automated, unresolved parts block it."""
         row = self.tests[test_id]
         test_type = row.get("TS_TYPE")
         result = ResolvedTest(test_id, row.get("TS_NAME") or "", test_type, "resolved")
@@ -181,6 +197,7 @@ class ScriptResolver:
         return result
 
     def _expand_relations(self, relations, result: ResolvedTest, context: _Context) -> None:
+        """Expand BPT relations in order; groups and switch/case branches become containers."""
         for relation in relations:
             subtype = relation.get("BC_SUBTYPE_ID") or RELATION_COMPONENT
             if subtype in RELATION_CONTAINERS:
@@ -200,6 +217,7 @@ class ScriptResolver:
                        f"Relation {relation.get('BC_ID')} has unsupported type {subtype}.")
 
     def _expand_component(self, relation, result: ResolvedTest, context: _Context) -> None:
+        """Expand one component relation: an automated component's actions, or a shadow component's flow."""
         component_id = relation.get("BC_CO_ID")
         component = self.components.get(component_id)
         if component is None:
@@ -229,6 +247,7 @@ class ScriptResolver:
                    f"Component {component_id} ({component.get('CO_NAME')}) is not automated ({subtype}).")
 
     def _expand(self, asset: ScriptAsset, result: ResolvedTest, context: _Context) -> None:
+        """Expand an asset from its main flow, Action0."""
         for issue in asset.issues:
             _issue(result, issue["code"], f"{asset.key}: {issue['message']}")
         main = asset.actions.get("Action0")
@@ -240,6 +259,7 @@ class ScriptResolver:
 
     def _walk(self, asset: ScriptAsset, action: ActionScript, result: ResolvedTest,
               context: _Context, stack: list[tuple[str, str]]) -> None:
+        """Follow the RunAction calls of an action depth-first, recording each executed action."""
         for call in action.calls:
             if call.target is None:
                 _issue(result, "unresolved_action", f"{asset.key}/{action.folder} line {call.line}: {call.source}")
@@ -261,10 +281,12 @@ class ScriptResolver:
             self._walk(target_asset, target, result, context, stack + [(target_asset.key, target.folder)])
 
     def _test_asset(self, test_id: int) -> ScriptAsset | None:
+        """The scripted test's asset, from TS_PATH; None if the path is empty."""
         path = self.tests[test_id].get("TS_PATH")
         return self._asset("test", test_id, "tests\\" + path) if path else None
 
     def _asset(self, kind: str, entity_id: int, root: str) -> ScriptAsset:
+        """Load (once) a test or component folder: its actions, function libraries and call targets."""
         key = f"{kind}:{entity_id}"
         if key in self.assets:
             return self.assets[key]
@@ -283,6 +305,7 @@ class ScriptResolver:
         return asset
 
     def _load_action(self, asset: ScriptAsset, folder: str, files: list[str]) -> None:
+        """Read one action folder: Script.mts, Resource.mtr metadata and repository files."""
         base = f"{asset.root}\\{folder}"
         script = f"{base}\\Script.mts"
         if not self.repository.exists(script):
@@ -326,9 +349,11 @@ class ScriptResolver:
         return [self._resource(reference) for reference in metadata.function_libraries]
 
     def _shared_repository(self, reference: str) -> dict[str, Any]:
+        """Resolve a shared Object Repository reference of an action."""
         return self._resource(reference)
 
     def _resource(self, reference: str) -> dict[str, Any]:
+        """Resolve an ALM resource reference to a repository file, recording why it failed if it did."""
         entry: dict[str, Any] = {"reference": reference, "path": None, "issue": None}
         parts = parse_reference(reference)
         if parts is None:
@@ -350,6 +375,7 @@ class ScriptResolver:
         return entry
 
     def _link_calls(self, asset: ScriptAsset) -> None:
+        """Link each RunAction call to the action it names; ambiguous names are issues."""
         for action in asset.actions.values():
             for call in action.calls:
                 external = _EXTERNAL_ACTION.match(call.name)
@@ -364,6 +390,7 @@ class ScriptResolver:
                                          "message": f"{action.folder} line {call.line}: {call.name!r} matches {matches}"})
 
     def _link_external(self, asset, action, call, action_name: str, test_name: str) -> None:
+        """Link a call to an action of another scripted test ('Action [Test]')."""
         owners = [test_id for test_id, row in self.tests.items()
                   if row.get("TS_TYPE") in SCRIPTED_TEST_TYPES
                   and (row.get("TS_NAME") or "").casefold() == test_name.casefold()]
@@ -382,16 +409,19 @@ class ScriptResolver:
 
 
 def _find_action(asset: ScriptAsset, label: str) -> list[str]:
+    """Action folders whose folder name or logical name matches, case-insensitively."""
     wanted = label.casefold()
     return sorted({a.folder for a in asset.actions.values()
                    if wanted in {a.folder.casefold(), (a.name or "").casefold()}})
 
 
 def _issue(result: ResolvedTest, code: str, message: str) -> None:
+    """Record an issue on a test once."""
     entry = {"code": code, "message": message}
     if entry not in result.issues:
         result.issues.append(entry)
 
 
 def _sort_int(value) -> int:
+    """Sort key that puts missing orders last."""
     return value if isinstance(value, int) else 2**31

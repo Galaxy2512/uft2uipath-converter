@@ -21,7 +21,9 @@ def parse_reference(reference: str) -> tuple[str, str] | None:
 
 
 class ResourceIndex:
+    """ALM resources (function libraries, shared repositories...) by folder path and file name."""
     def __init__(self, resource_rows: list[dict[str, Any]], folder_rows: list[dict[str, Any]]):
+        """Build each resource folder's full path from the folder tree."""
         folders = {row["RFO_ID"]: row for row in folder_rows}
         self._paths: dict[int, str] = {}
         for folder_id in folders:
@@ -34,6 +36,7 @@ class ResourceIndex:
         self._resources = resource_rows
 
     def find(self, folder_path: str, file_name: str) -> str | None:
+        """Repository path of the file in exactly the referenced folder, or None."""
         matches = self._matches(file_name)
         wanted_folder = folder_path.strip("\\").casefold()
         for row in matches:
@@ -46,6 +49,7 @@ class ResourceIndex:
         return [self._path(row) for row in self._matches(file_name)]
 
     def _matches(self, file_name: str) -> list[dict[str, Any]]:
+        """Resource rows whose file or resource name matches, case-insensitively."""
         wanted = file_name.casefold()
         return [row for row in self._resources if row.get("RSC_ID") is not None
                 and wanted in {str(row.get(key) or "").casefold()
@@ -53,4 +57,5 @@ class ResourceIndex:
 
     @staticmethod
     def _path(row: dict[str, Any]) -> str:
+        """Repository path where the export stores a resource file."""
         return f"resources\\{row['RSC_ID']}\\{row.get('RSC_FILE_NAME') or row.get('RSC_NAME')}"

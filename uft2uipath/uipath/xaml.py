@@ -8,9 +8,11 @@ import html, re
 from uft2uipath.model.ast import Component, TestCase, OperationType
 
 def safe_class(name: str) -> str:
+    """Valid XAML class name from any name."""
     return re.sub(r"\W+", "_", name).strip("_")
 
 def xaml_header(xclass: str) -> str:
+    """Opening of a legacy workflow document."""
     return f'''<Activity mc:Ignorable="sap sap2010" x:Class="{safe_class(xclass)}" xmlns="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" xmlns:p="http://schemas.microsoft.com/netfx/2009/xaml/activities" xmlns:sap="http://schemas.microsoft.com/netfx/2009/xaml/activities/presentation" xmlns:sap2010="http://schemas.microsoft.com/netfx/2010/xaml/activities/presentation" xmlns:scg="clr-namespace:System.Collections.Generic;assembly=System.Private.CoreLib" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <TextExpression.NamespacesForImplementation>
     <scg:List x:TypeArguments="x:String" Capacity="8"><x:String>System</x:String><x:String>System.Collections.Generic</x:String><x:String>System.Data</x:String><x:String>System.Linq</x:String></scg:List>
@@ -20,9 +22,11 @@ def xaml_header(xclass: str) -> str:
   </TextExpression.ReferencesForImplementation>'''
 
 def write_line(text: str, display: str = "Migration step") -> str:
+    """WriteLine activity snippet."""
     return f'    <p:WriteLine DisplayName="{html.escape(display)}" Text="{html.escape(text)}" />'
 
 def operation_lines(component: Component) -> list[str]:
+    """Placeholder lines describing the classified operations of a component."""
     lines = []
     for op in component.operations:
         if op.type == OperationType.BROWSER_START:
@@ -54,6 +58,7 @@ def operation_lines(component: Component) -> list[str]:
     return lines or [write_line(f"No operation mapped for {component.name}")]
 
 def component_xaml(component: Component) -> str:
+    """Legacy workflow of one component."""
     lines = "\n".join(operation_lines(component))
     return f'''{xaml_header('TestCases_Components_' + component.name)}
   <Sequence DisplayName="{html.escape(component.name)}">
@@ -63,6 +68,7 @@ def component_xaml(component: Component) -> str:
 '''
 
 def test_xaml(test: TestCase) -> str:
+    """Legacy test workflow invoking its components in order."""
     invokes = [write_line(f"Starting migrated BPT test: {test.name}", "Test start")]
     for c in test.component_names:
         invokes.append(f'    <p:InvokeWorkflowFile DisplayName="{html.escape(c)}" WorkflowFileName="TestCases\\Components\\{html.escape(c)}.xaml" />')

@@ -3,6 +3,11 @@
 One workflow per UFT action, one test case per ALM test invoking those
 workflows in execution order. Main.xaml does not call the test cases: they
 are registered in project.json and run from the Test Explorer.
+
+UFT test outcome is reproduced at test level: every step shares one uft_failed
+flag that Reporter micFail sets, and the test fails at its end if it is set.
+When a step can call ExitTest, the steps run inside a TryCatch that stops them
+without failing, unless a failure was reported before.
 """
 
 from __future__ import annotations
@@ -26,6 +31,7 @@ TEST_FAILED = "uft_failed"
 
 @dataclass
 class ActionPlan:
+    """One UFT action to emit: its analysis and the bindings chosen for it."""
     key: str
     workflow: str
     analysis: dict[str, Any]
@@ -34,6 +40,7 @@ class ActionPlan:
 
 @dataclass
 class TestPlan:
+    """One ALM test: the actions it runs, in order, and issues found while resolving it."""
     test_id: int
     name: str
     status: str
@@ -42,11 +49,15 @@ class TestPlan:
 
 
 def workflow_name(key: str) -> str:
+    """Workflow file name for an action key, reduced to a valid XAML class name."""
     return "Action_" + _INVALID.sub("_", key).strip("_")
 
 
 def generate(output: Path, project_name: str, actions: dict[str, ActionPlan],
              tests: list[TestPlan], template: str | None = None) -> dict[str, Any]:
+    """Write the UiPath project: one workflow per action, one test case per ALM
+    test, project.json and Main.xaml. Returns the generation report.
+    """
     (output / "Workflows").mkdir(parents=True)
     (output / "Tests").mkdir()
 
@@ -74,6 +85,12 @@ def generate(output: Path, project_name: str, actions: dict[str, ActionPlan],
 
 
 def _emit_test(test: TestPlan, workflows: dict[str, dict[str, Any]]):
+    """Test case invoking the action workflows of one ALM test in order.
+
+    In arguments become test arguments per step, Out arguments are exposed as
+    test Out arguments, and one shared uft_failed flag collects reported
+    failures: the test fails at its end if any step set it.
+    """
     issues = list(test.issues)
     arguments: dict[str, str] = {}
     directions: dict[str, str] = {}
@@ -165,6 +182,7 @@ def _until_exit_test(invocations):
 
 
 def _main():
+    """Main.xaml: only a log line, since test cases run from the Test Explorer."""
     root, sequence = document("Main", {})
     ET.SubElement(sequence, q("LogMessage", UI), {
         "DisplayName": "Migration entry point", "Level": "Info",
@@ -174,5 +192,6 @@ def _main():
 
 
 def _json(value) -> str:
+    """JSON text as written to project files."""
     import json
     return json.dumps(value, indent=2, ensure_ascii=False)

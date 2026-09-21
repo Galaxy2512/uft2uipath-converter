@@ -26,6 +26,7 @@ def window_target(binding):
 
 
 def _window_name(binding) -> str:
+    """Display name of the window an action is scoped to."""
     path = binding["uft"].get("path") or []
     return str(path[-2]["name"]) if len(path) > 1 else str(binding["uft"].get("page") or "")
 

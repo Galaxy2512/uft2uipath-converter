@@ -9,6 +9,7 @@ import xml.etree.ElementTree as ET
 
 @dataclass
 class DbXmlMapAnalysis:
+    """Summary of a db_xmlmap.xml file: root tag, element count and tag frequencies."""
     path: Path
     root_tag: str
     total_elements: int
@@ -17,7 +18,9 @@ class DbXmlMapAnalysis:
 
 
 class DbXmlMapExplorer:
+    """Exploration tool for the ALM schema file db_xmlmap.xml."""
     def analyze(self, xml_file: str | Path) -> DbXmlMapAnalysis:
+        """Count the elements and tags of the schema file."""
         path = Path(xml_file)
 
         if not path.exists():
@@ -43,6 +46,7 @@ class DbXmlMapExplorer:
         )
 
     def list_tables(self, xml_file: str | Path) -> list[str]:
+        """Names of the tables the schema file defines."""
         path = Path(xml_file)
 
         if not path.exists():
@@ -62,6 +66,7 @@ class DbXmlMapExplorer:
         return sorted(tables)
 
     def describe_table(self, xml_file: str | Path, table_name: str) -> list[str]:
+        """Columns of one table as the schema file defines them."""
         path = Path(xml_file)
 
         if not path.exists():

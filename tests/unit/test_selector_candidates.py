@@ -1,3 +1,6 @@
+# Tests selector proposals from UFT identification properties
+# (mapping/selector_candidates.py): web and desktop selectors, confidence
+# scoring and its cap, reported weaknesses, unsupported classes and XML escaping.
 from uft2uipath.mapping.selector_candidates import MAX_CONFIDENCE, propose
 
 

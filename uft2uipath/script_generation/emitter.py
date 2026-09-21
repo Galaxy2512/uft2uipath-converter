@@ -1,4 +1,17 @@
-"""Classic UI activity candidates; unresolved semantics fail before UI actions."""
+"""One UFT action -> one UiPath workflow (ComponentEmitter) and the XAML helpers it uses.
+
+How a line is migrated:
+1. map_operation looks the parser node up in mapping.operation_registry and
+   calls its handler from script_generation.emitters.
+2. Handlers ask this class for typed C# values (value, as_string, condition)
+   and for verified selector bindings (object_binding, ui_target).
+3. Anything that cannot be mapped raises ValueError; the line's activities are
+   dropped, a Throw takes its place, and the workflow starts with a Throw too,
+   so an incomplete migration can never run as if it were complete.
+
+Currently Classic UI activities are emitted; modern activities are planned
+once their XAML has been confirmed in Studio.
+"""
 import json
 import math
 import re
@@ -38,10 +51,12 @@ CSHARP_KEYWORDS = frozenset("""
 
 
 def q(name, uri=WF):
+    """Qualified XML name: the local name in the given namespace (workflow namespace by default)."""
     return f"{{{uri}}}{name}"
 
 
 def expr(code):
+    """Mark C# code as an expression; studio_xaml.prepare turns it into CSharpValue/CSharpReference."""
     return "[" + code + "]"
 
 
@@ -50,6 +65,7 @@ class NonNull(str):
 
 
 def literal(value):
+    """C# literal for a Python str, bool, Int32-range int or finite float."""
     if isinstance(value, str):
         return json.dumps(value, ensure_ascii=True)
     if type(value) is bool:
@@ -64,6 +80,7 @@ def literal(value):
 
 
 def throw(message, display="Migration blocked", exception="System.InvalidOperationException"):
+    """Throw activity raising the given exception type with a fixed message."""
     return ET.Element(q("Throw"), {
         "DisplayName": display,
         "Exception": expr(f"new {exception}(" + literal(message) + ")"),
@@ -96,6 +113,7 @@ def document(name, arguments, directions=None):
 
 
 def write_xaml(path, root):
+    """Serialize a workflow as Studio-compatible C# XAML (see studio_xaml.prepare)."""
     from uft2uipath.script_generation.studio_xaml import prepare
     root = prepare(root)
     ET.indent(root, space="  ")
@@ -103,6 +121,7 @@ def write_xaml(path, root):
 
 
 def _secret_source(node):
+    """Name of the secure argument a SetSecure step needs: its object's logical name."""
     target = node.get("target") or {}
     return target.get("logical_name") or target.get("object_type") or "value"
 
@@ -124,7 +143,15 @@ def target_key(target):
 
 
 class ComponentEmitter:
+    """Turns the parsed operations of one UFT action into one UiPath workflow.
+
+    It owns the per-workflow state the handlers share: arguments and their
+    directions, typed variables, object bindings, and the issues and trace that
+    end up in generation-report.json. Which activities a line becomes is decided
+    by the handlers in script_generation.emitters, found through the registry.
+    """
     def __init__(self, component_id, analysis, bindings, workflow_name=None):
+        """Load the bindings (arguments and selectors) the workflow may use; nothing is emitted yet."""
         self.component_id = component_id
         self.workflow_name = workflow_name or f"Component_{component_id}"
         self.analysis = analysis
@@ -145,12 +172,17 @@ class ComponentEmitter:
         self._load_bindings()
 
     def problem(self, node, code, message):
+        """Record a blocker for the report; the workflow then starts with a Throw."""
         self.issues.append({
             "code": code, "message": message, "line_number": node.get("line_number"),
             "raw": node.get("raw"), "component_id": self.component_id,
         })
 
     def _load_bindings(self):
+        """Validate and index the bindings: In arguments per parameter, environment,
+        data and secure value, Out arguments for output parameters, and the
+        selector of each UFT object identity.
+        """
         if not isinstance(self.bindings, dict):
             raise ValueError("Component target bindings must be an object.")
         for category in ("parameters", "environment", "data", "secure"):
@@ -297,6 +329,7 @@ class ComponentEmitter:
         return NonNull(f"({code}).ToString()")
 
     def _code(self, node, kind, parent):
+        """C# code of a value already known to have the given type."""
         node_type = node.get("node_type")
         if node_type == "LiteralValue":
             return literal(node.get("value"))
@@ -313,6 +346,11 @@ class ComponentEmitter:
         return lookup(node_type).handler(self, node, parent)
 
     def object_binding(self, node, action):
+        """Verified selector binding of the object a node acts on.
+
+        Actions (anything but an existence check or a read) also need an input
+        method and are split into a browser/window scope plus a partial selector.
+        """
         target = node.get("target")
         if not isinstance(target, dict):
             raise ValueError("Missing object target.")
@@ -341,6 +379,7 @@ class ComponentEmitter:
         return binding
 
     def ui_target(self, activity, activity_type, binding, timeout=None, scoped=False):
+        """Add the Target (selector and timeout) of a UI activity; scoped targets use the partial selector."""
         prop = ET.SubElement(activity, q(activity_type + ".Target", UI))
         ET.SubElement(prop, q("Target", UI), {
             "Selector": expr(literal(binding["partial_selector"] if scoped else binding["selector"])),
@@ -351,6 +390,11 @@ class ComponentEmitter:
             self.scoped_actions[activity] = binding
 
     def map_operation(self, node, parent):
+        """Emit one parsed operation into parent and record its trace entry.
+
+        The registry names the handler; if there is none, or it raises, everything
+        the line emitted is removed and a Throw marks the line as not migrated.
+        """
         kind = node.get("node_type")
         line = node.get("line_number")
         display = f"UFT line {line}: {kind}"
@@ -372,6 +416,12 @@ class ComponentEmitter:
 
     def generate(self):
         # The root is built last: mapping can add arguments, e.g. the failure flag.
+        """Emit the whole workflow and its report.
+
+        Order: parser-level blockers, every operation, browser/window scopes, then
+        variables and arguments, because mapping can still add them (e.g. the
+        failure flag). Any issue puts a Throw before the first activity.
+        """
         seq = ET.Element(q("Sequence"), {"DisplayName": self.workflow_name})
         operations = self.analysis.get("operations")
         if not isinstance(operations, list) or not operations:

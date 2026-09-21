@@ -1,3 +1,7 @@
+# Tests selector acceptance (uft2uipath/mapping/acceptance.py): which selector
+# candidates become generation bindings by confidence threshold or review file,
+# that web targets need an explicit browser type, and how parameters, outputs and
+# environment values are named as workflow arguments.
 import pytest
 
 from uft2uipath.mapping.acceptance import (AcceptanceSettings, ReviewError, argument_name,

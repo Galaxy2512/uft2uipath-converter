@@ -9,6 +9,9 @@ from uft2uipath.script_generation.emitter import (
 
 @maps("IfOperation", uft="If ... Then ... Else ... End If", activities=("If",))
 def emit_if(ctx, node, parent, trace, display):
+    """If ... Then ... Else: the condition's activities first, then an If with the
+    C# condition. A condition that cannot be mapped blocks only the If line.
+    """
     line = node.get("line_number")
     start = len(parent)
     try:
@@ -36,6 +39,11 @@ _ORDERING = {"<": "<", ">": ">", "<=": "<=", ">=": ">="}
       notes="Both sides must have the same static type; VBScript's implicit conversions are "
             "not reproduced. Strings compare ordinally, as VBScript's default binary compare.")
 def emit_comparison(ctx, node, parent, display):
+    """C# comparison of two values of the same static type.
+
+    Strings compare ordinally and treat null as ""; numbers compare
+    directly; Booleans only for equality.
+    """
     left, right, operator = node.get("left"), node.get("right"), node.get("operator")
     kinds = {kind for kind in (ctx.value_type(left), ctx.value_type(right)) if kind}
     if len(kinds) > 1:
@@ -57,6 +65,9 @@ def emit_comparison(ctx, node, parent, display):
 
 @maps("LogicalCondition", uft="a And b, a Or b", activities=(), kind="condition")
 def emit_logical(ctx, node, parent, display):
+    """C# && / || of the operands. VBScript evaluates every operand; the
+    activities they need all run before the If, so nothing is skipped.
+    """
     joiner = {"and": " && ", "or": " || "}.get((node.get("operator") or "").lower())
     if joiner is None or len(node.get("operands") or []) < 2:
         raise ValueError(f"Logical operator {node.get('operator')!r} is not supported.")
@@ -65,17 +76,20 @@ def emit_logical(ctx, node, parent, display):
 
 @maps("NotCondition", uft="Not a", activities=(), kind="condition")
 def emit_not(ctx, node, parent, display):
+    """C# negation of a condition."""
     return f"!({ctx.condition(node.get('operand'), parent, display)})"
 
 
 @maps("DeclarationOperation", uft="Dim / Option Explicit", activities=(), status="no_effect",
       notes="Declarations become workflow variables where they are used.")
 def emit_declaration(ctx, node, parent, trace, display):
+    """Dim / Option Explicit: nothing to emit; variables are declared where they are assigned."""
     trace.update(status="mapped_unverified", activity="(declaration)")
 
 
 @maps("NoEffectOperation", uft="Randomize and similar", activities=(), status="no_effect")
 def emit_no_effect(ctx, node, parent, trace, display):
+    """Statements without a migrated effect, e.g. Randomize: nothing to emit."""
     trace.update(status="mapped_unverified", activity="(no effect)",
                  note=f"{node.get('keyword')} has no migrated equivalent.")
 
@@ -83,6 +97,7 @@ def emit_no_effect(ctx, node, parent, trace, display):
 @maps("FunctionDefinitionOperation", uft="Function / Sub definition", activities=(),
       status="no_effect", notes="The definition is not part of the flow; calls to it block instead.")
 def emit_function_definition(ctx, node, parent, trace, display):
+    """A Function/Sub definition is not part of the flow; calls to it block instead."""
     trace.update(status="mapped_unverified", activity="(definition not migrated)")
 
 
@@ -106,6 +121,7 @@ def _variable(ctx, name, kind):
 @maps("AssignOperation", uft="x = value", activities=("Assign",),
       notes="String, Int32 and Boolean; a variable keeps one type for the whole action.")
 def emit_assign(ctx, node, parent, trace, display):
+    """x = value: Assign to a workflow variable typed from the value (String, Int32, Boolean, Double)."""
     if not IDENTIFIER_NAME.fullmatch(node.get("name") or ""):
         raise ValueError("Assignment target is not a simple variable name.")
     kind = ctx.value_type(node.get("value")) or "String"
@@ -118,6 +134,7 @@ def emit_assign(ctx, node, parent, trace, display):
 @maps("ParameterAssignmentOperation", uft='Parameter("X") = value', activities=("Assign",),
       notes="Writes an Out argument of the action workflow; the test exposes it per step.")
 def emit_output_parameter(ctx, node, parent, trace, display):
+    """Parameter("X") = value: Assign to the Out argument of output parameter X."""
     binding = ctx.references.get(("outputs", node.get("name")))
     if binding is None:
         raise ValueError(f"Missing Out binding for output parameter {node.get('name')}.")
@@ -128,6 +145,7 @@ def emit_output_parameter(ctx, node, parent, trace, display):
 
 @maps("WaitOperation", uft="Wait n", activities=("Delay",))
 def emit_wait(ctx, node, parent, trace, display):
+    """Wait n: Delay of n seconds; only a positive literal is accepted."""
     seconds = (node.get("seconds") or {}).get("value")
     if (node.get("seconds") or {}).get("node_type") != "LiteralValue" or type(seconds) is not int or not 0 < seconds <= 86400:
         raise ValueError("Wait requires a positive literal number of seconds.")

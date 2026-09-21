@@ -12,6 +12,7 @@ from uft2uipath.rows_cli import build_model
 
 
 def check_name(name):
+    """Reject component names Windows cannot use as file names: reserved, invalid characters or too long."""
     reserved = {"CON", "PRN", "AUX", "NUL", "CONIN$", "CONOUT$"}
     reserved.update(f"{prefix}{n}" for prefix in ("COM", "LPT") for n in "123456789¹²³")
     if (
@@ -25,6 +26,7 @@ def check_name(name):
 
 
 def integer(row, key):
+    """Integer value of a row field, or ValueError naming the field."""
     try:
         return int(str(row[key]))
     except (KeyError, ValueError, TypeError):
@@ -32,6 +34,9 @@ def integer(row, key):
 
 
 def validate_tables(tables):
+    """Check unique test/component IDs, valid component names, and that steps and relations
+    reference existing entities.
+    """
     identifiers = {}
     for table, key in (("TEST", "TS_TEST_ID"), ("COMPONENT", "CO_ID")):
         values = [integer(row, key) for row in tables[table]]
@@ -60,6 +65,7 @@ def validate_tables(tables):
 
 
 def convert_rows(source, output_dir):
+    """Build a review scaffold project from decoded ALM rows (convert-rows command)."""
     source = Path(source).resolve()
     with tempfile.TemporaryDirectory(prefix="uft2uipath_convert_") as temporary:
         staging = Path(temporary)
@@ -126,6 +132,7 @@ def convert_rows(source, output_dir):
 
 
 def main(argv=None):
+    """Command line of convert-rows."""
     parser = argparse.ArgumentParser(description="Generate a review scaffold from ALM JSON.")
     parser.add_argument("source")
     parser.add_argument("--out", required=True, help="Parent output directory")

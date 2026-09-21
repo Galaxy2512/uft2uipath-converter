@@ -1,7 +1,8 @@
 # Command-line entry point for the uft2uipath converter. Wires up subcommands
-# (inspect, convert, build-model, convert-rows, analyze-scripts,
+# (inspect, convert, inventory, build-model, convert-rows, analyze-scripts,
 # emit-workflows, migrate-project) that drive the extraction, ALM decoding,
-# script analysis and UiPath project/workflow generation stages.
+# script analysis and UiPath project/workflow generation stages. `convert` is
+# the end-to-end command; `inventory` summarizes coverage of convert outputs.
 import argparse
 from pathlib import Path
 from uft2uipath.archive.extractor import ArchiveExtractor
@@ -10,6 +11,7 @@ from uft2uipath.script_generation.browser_scopes import BROWSER_TYPES
 
 
 def main():
+    """Parse the command line and run the chosen subcommand."""
     parser = argparse.ArgumentParser(
         prog="uft2uipath",
         description="UFT to UiPath Converter",
@@ -106,6 +108,7 @@ def main():
 
 
 def _run_convert(parser, args) -> None:
+    """The convert command: run ConversionPipeline and print where its artifacts are."""
     import json
 
     from uft2uipath.mapping.acceptance import AcceptanceSettings, load_review
@@ -140,6 +143,7 @@ def _run_convert(parser, args) -> None:
 
 
 def _run_inspect(project_path: str) -> None:
+    """The inspect command: print a discovery report of an extracted project or archive."""
     path = Path(project_path)
 
     if path.is_file() and path.suffix.lower() in [".qcp", ".zip"]:

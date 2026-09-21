@@ -36,11 +36,13 @@ _VT_EMPTY, _VT_I2, _VT_I4, _VT_BSTR, _VT_BOOL, _VT_UI4, _VT_BYTES = 0, 2, 3, 8, 
 
 
 class ObjectRepositoryError(ValueError):
+    """The data is not a readable UFT Object Repository."""
     pass
 
 
 @dataclass
 class RepositoryProperty:
+    """One stored property of a test object, with its VARIANT type and flags."""
     name: str
     value: Any
     variant_type: int
@@ -49,6 +51,9 @@ class RepositoryProperty:
 
 @dataclass
 class RepositoryObject:
+    """A test object in the repository: class, logical name, path from the root,
+    properties, and the mandatory/assistive identification property names.
+    """
     id: str
     test_object_class: str
     logical_name: str
@@ -59,6 +64,7 @@ class RepositoryObject:
     issue: str | None = None
 
     def value(self, name: str) -> Any:
+        """Value of a property by case-insensitive name, or None."""
         wanted = name.casefold()
         for prop in self.properties:
             if prop.name.casefold() == wanted:
@@ -68,9 +74,11 @@ class RepositoryObject:
 
 @dataclass
 class ObjectRepository:
+    """All objects of one repository file."""
     objects: list[RepositoryObject]
 
     def find(self, path: list[tuple[str, str]]) -> RepositoryObject | None:
+        """Object at a (class, logical name) path, compared case-insensitively."""
         wanted = [(cls.casefold(), name.casefold()) for cls, name in path]
         for obj in self.objects:
             if [(cls.casefold(), name.casefold()) for cls, name in obj.path] == wanted:
@@ -79,6 +87,10 @@ class ObjectRepository:
 
 
 def read_object_repository(data: bytes) -> ObjectRepository:
+    """Parse an ObjectRepository.bdb/.tsr file.
+
+    An object that cannot be read keeps an issue instead of failing the file.
+    """
     try:
         databases = read_databases(data)
     except BerkeleyDbError as exc:
@@ -109,6 +121,7 @@ def read_object_repository(data: bytes) -> ObjectRepository:
 
 def _parent_storage(databases, child: str) -> str | None:
     # StgContainmentTable maps parent storage GUID -> child storage GUID (16-byte, little-endian layout).
+    """GUID of the storage holding the object streams, from StgContainmentTable."""
     for parent, value in databases.get(CONTAINMENT, {}).items():
         if len(parent) == 16 and len(value) == 16 and _guid(value) == child.upper():
             return _guid(parent)
@@ -116,6 +129,7 @@ def _parent_storage(databases, child: str) -> str | None:
 
 
 def _object_stream(databases, parent: str | None, index_storage: str, key: bytes) -> bytes | None:
+    """Raw stream of one object, from the parent storage or the only other storage holding it."""
     if parent in databases and key in databases[parent]:
         return databases[parent][key]
     holders = [name for name, records in databases.items()
@@ -124,10 +138,12 @@ def _object_stream(databases, parent: str | None, index_storage: str, key: bytes
 
 
 def _guid(raw: bytes) -> str:
+    """GUID text of 16 little-endian bytes."""
     return str(uuid.UUID(bytes_le=raw)).upper()
 
 
 def _stream(value: bytes) -> bytes:
+    """Payload of a stream value, without its header and stale trailing bytes."""
     if len(value) < _STREAM_HEADER or value[:2] != b"\xff\x01":
         raise ObjectRepositoryError("Unknown stream header.")
     size = struct.unpack("<I", value[0x20:0x24])[0]
@@ -137,6 +153,7 @@ def _stream(value: bytes) -> bytes:
 
 
 def _strings(data: bytes) -> list[str]:
+    """Length-prefixed UTF-16 strings found in the object index stream."""
     tokens, position = [], 0
     while position + 4 <= len(data):
         length = struct.unpack("<I", data[position:position + 4])[0]
@@ -155,10 +172,12 @@ def _strings(data: bytes) -> list[str]:
 
 
 def _parse_index(tokens: list[str]) -> list[dict[str, Any]]:
+    """Object tree from the index strings, as a flat list with each object's path."""
     nodes: list[dict[str, Any]] = []
     position = 0
 
     def take() -> str:
+        """Next index string; the index must not end in the middle of an entry."""
         nonlocal position
         if position >= len(tokens):
             raise ObjectRepositoryError("Object index ends unexpectedly.")
@@ -166,6 +185,7 @@ def _parse_index(tokens: list[str]) -> list[dict[str, Any]]:
         return tokens[position - 1]
 
     def children(path: list[tuple[str, str]]) -> None:
+        """Read the object groups below a path until their end marker."""
         while (group := take()) != END:
             while (name := take()) != END:
                 object_id, object_class = take(), take()
@@ -181,6 +201,7 @@ def _parse_index(tokens: list[str]) -> list[dict[str, Any]]:
 
 
 def _parse_object(data: bytes) -> tuple[list[RepositoryProperty], list[str], list[str]]:
+    """Properties and identification lists of one object stream."""
     position = _PROPERTIES
     count = struct.unpack("<I", data[position:position + 4])[0]
     position += 4
@@ -207,6 +228,7 @@ def _parse_object(data: bytes) -> tuple[list[RepositoryProperty], list[str], lis
 
 
 def _variant(data: bytes, position: int, variant: int) -> tuple[Any, int]:
+    """Decode one property value of the given VARIANT type; returns the value and the next offset."""
     if variant == _VT_BSTR:
         length = struct.unpack("<I", data[position:position + 4])[0]
         return data[position + 4:position + 4 + length].decode("utf-16-le").rstrip("\x00"), position + 4 + length

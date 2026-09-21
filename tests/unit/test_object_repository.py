@@ -1,3 +1,7 @@
+# Tests the UFT Object Repository reader (uft/object_repository.py) and the
+# Berkeley DB B-tree reader beneath it: object hierarchy, properties and
+# identification sets, case-insensitive lookup, and isolated handling of
+# checkpoints, missing streams and corrupt files.
 import pytest
 
 from bdb_fixtures import VT_BOOL, VT_BSTR, VT_I4, btree_file, object_repository, object_stream

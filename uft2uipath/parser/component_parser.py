@@ -8,10 +8,13 @@ from uft2uipath.parser.step_parser import StepParser
 
 
 class ComponentParser:
+    """Builds a BusinessComponent from a generic nested dict. Legacy path, not used by convert."""
     def __init__(self, step_parser: StepParser | None = None):
+        """Use the given step parser, or a default one."""
         self.step_parser = step_parser or StepParser()
 
     def parse(self, raw_component: dict) -> BusinessComponent:
+        """Parse one component and its steps."""
         component = BusinessComponent(
             name=raw_component.get("name", "UnnamedComponent"),
             description=raw_component.get("description"),

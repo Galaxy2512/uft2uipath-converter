@@ -28,10 +28,12 @@ ROOT_OFFSET = 88
 
 
 class BerkeleyDbError(ValueError):
+    """The data is not a readable Berkeley DB btree file."""
     pass
 
 
 def is_berkeley_btree(data: bytes) -> bool:
+    """True if the data starts like a little-endian Berkeley DB btree file."""
     return len(data) >= 24 and struct.unpack("<I", data[12:16])[0] == BTREE_MAGIC
 
 
@@ -51,6 +53,7 @@ def read_databases(data: bytes) -> dict[str, dict[bytes, bytes]]:
 
 
 def _pages(data: bytes) -> list[bytes]:
+    """The file split into pages of the size its header states."""
     if not is_berkeley_btree(data):
         raise BerkeleyDbError("Not a little-endian Berkeley DB btree file.")
     page_size = struct.unpack("<I", data[20:24])[0]
@@ -60,6 +63,7 @@ def _pages(data: bytes) -> list[bytes]:
 
 
 def _tree(pages, meta: int) -> dict[bytes, bytes]:
+    """All key/value records of the btree whose meta page is given."""
     root = struct.unpack("<I", pages[meta][ROOT_OFFSET:ROOT_OFFSET + 4])[0]
     records: dict[bytes, bytes] = {}
     pending, seen = [root], set()
@@ -85,6 +89,7 @@ def _tree(pages, meta: int) -> dict[bytes, bytes]:
 
 
 def _item(pages, page: bytes, offset: int) -> bytes | None:
+    """Bytes of one on-page or overflow item; None for a deleted item."""
     kind = page[offset + 2]
     if kind & DELETED:
         return None
@@ -98,6 +103,7 @@ def _item(pages, page: bytes, offset: int) -> bytes | None:
 
 
 def _overflow(pages, number: int, total: int) -> bytes:
+    """Bytes of an item stored across a chain of overflow pages."""
     chunks, size, seen = [], 0, set()
     while number and size < total:
         if number in seen or number >= len(pages) or pages[number][25] != OVERFLOW_PAGE:

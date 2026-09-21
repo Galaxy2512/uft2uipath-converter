@@ -55,6 +55,7 @@ def _calls(raw: str) -> tuple[set[str], set[str]]:
 
 
 def categorize(issue: dict) -> str:
+    """Blocker category of one report issue (parser, expression, library, condition, binding, mapping)."""
     code, message = issue.get("code"), issue.get("message") or ""
     if code in ("unsupported_statement", "unsupported_object_chain"):
         return "parser"
@@ -72,6 +73,9 @@ def categorize(issue: dict) -> str:
 
 
 def build_inventory(reports: list[dict]) -> dict:
+    """Count lines, operations, blockers by category, unmapped functions and methods,
+    and coverage per test, over one or more generation reports.
+    """
     operations: dict[str, Counter] = defaultdict(Counter)
     blocked_by: Counter = Counter()
     blocked_ops_by: dict[str, Counter] = defaultdict(Counter)
@@ -143,6 +147,7 @@ def build_inventory(reports: list[dict]) -> dict:
 
 
 def format_inventory(inventory: dict) -> str:
+    """Human-readable summary of an inventory, as printed by `uft2uipath inventory`."""
     lines = inventory["lines"]
     out = [f"Lines: {lines['total']}  mapped: {lines['mapped']}  blocked: {lines['blocked']}  "
            f"coverage: {_percent(lines['coverage'])}", "", "Operations (mapped / blocked):"]
@@ -166,6 +171,7 @@ def format_inventory(inventory: dict) -> str:
 
 
 def _percent(value) -> str:
+    """Coverage ratio as a percentage, or - when there is nothing to count."""
     return "-" if value is None else f"{value * 100:.1f}%"
 
 
@@ -178,6 +184,7 @@ def load_report(path: Path) -> dict:
 
 
 def main(argv=None):
+    """Command line: inventory of one or more convert outputs, optionally written as JSON."""
     parser = argparse.ArgumentParser(description="Inventory UFT operations and migration coverage.")
     parser.add_argument("reports", nargs="+", help="convert output directories or generation-report.json files")
     parser.add_argument("--out", help="Also write the inventory as JSON")

@@ -13,6 +13,7 @@ class ArchiveExtractor:
 
     def extract(self, archive: str | Path) -> Path:
 
+        """Extract the archive and return the directory it was extracted to."""
         archive = Path(archive)
 
         if not archive.exists():

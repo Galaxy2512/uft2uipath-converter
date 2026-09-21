@@ -12,7 +12,9 @@ from uft2uipath.model.ast import MigrationModel
 from uft2uipath.uipath.xaml import component_xaml, test_xaml, xaml_header, write_line
 
 class UiPathProjectWriter:
+    """Writes the legacy v0.2 project layout from a MigrationModel (not used by convert)."""
     def write(self, model: MigrationModel, out_dir: str | Path) -> Path:
+        """Write the whole project into out_dir, replacing it."""
         out = Path(out_dir)
         if out.exists():
             shutil.rmtree(out)
@@ -57,6 +59,7 @@ class UiPathProjectWriter:
         return out
 
     def _write_model_json(self, model: MigrationModel, path: Path) -> None:
+        """Write the migration model as Data/migration_model.json."""
         payload = {
             "source_qcp": model.source_qcp,
             "components": [
@@ -76,6 +79,7 @@ class UiPathProjectWriter:
         path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
 
     def _report(self, model: MigrationModel) -> str:
+        """Markdown conversion report of the model."""
         mapped = sum(1 for c in model.components for o in c.operations if o.type.value != "unknown")
         unknown = sum(1 for c in model.components for o in c.operations if o.type.value == "unknown")
         lines = [
@@ -108,6 +112,7 @@ class UiPathProjectWriter:
         return "\n".join(lines)
 
     def _readme(self, model: MigrationModel) -> str:
+        """README of the generated project."""
         return """# Generated UiPath Test Project
 
 Open `project.json` in UiPath Studio.

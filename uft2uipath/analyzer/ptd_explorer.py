@@ -5,8 +5,10 @@ from pathlib import Path
 
 class PtdExplorer:
 
+    """Exploration tool showing the first bytes of a .ptd file for reverse engineering."""
     def inspect(self, file: str | Path, bytes_to_read: int = 512):
 
+        """Print a hex and text view of the first bytes of a .ptd file."""
         path = Path(file)
 
         with open(path, "rb") as f:

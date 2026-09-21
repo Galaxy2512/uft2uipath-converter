@@ -10,8 +10,12 @@ from .project_loader import ProjectLoader
 
 class AlmReader:
 
+    """Reads a project folder into the neutral model through ProjectLoader. Legacy path, not used
+    by convert.
+    """
     def read(self, project_folder: str | Path) -> Project:
 
+        """Load the project folder into a Project."""
         loader = ProjectLoader(project_folder)
 
         if not loader.exists():

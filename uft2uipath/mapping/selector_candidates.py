@@ -36,6 +36,7 @@ MAX_CONFIDENCE = 0.85
 
 @dataclass
 class SelectorCandidate:
+    """A proposed selector with its confidence, the evidence used and its known weaknesses."""
     selector: str | None
     confidence: float
     requires_review: bool = True
@@ -57,6 +58,7 @@ def propose(chain: list[dict[str, Any]]) -> SelectorCandidate:
 
 
 def _web(chain) -> SelectorCandidate:
+    """Web selector: <html title> from the page, frames, then the target webctrl."""
     candidate = SelectorCandidate(None, 0.0, kind="web")
     html = ET.Element("html")
     page = next((s for s in chain if s["class"].casefold() in WEB_PAGES), None)
@@ -84,6 +86,7 @@ def _web(chain) -> SelectorCandidate:
 
 
 def _win(chain) -> SelectorCandidate:
+    """Desktop selector: the top window, then the target control."""
     candidate = SelectorCandidate(None, 0.0, kind="desktop")
     windows = [s for s in chain if s["class"].casefold() in WIN_WINDOWS]
     top = _element("wnd", windows[-1], WIN_ATTRIBUTES, candidate)
@@ -97,6 +100,7 @@ def _win(chain) -> SelectorCandidate:
 
 
 def _element(tag: str, step, mapping, candidate: SelectorCandidate) -> ET.Element:
+    """Selector node from a step's identification properties plus strong assistive ones."""
     element = ET.Element(tag)
     used = []
     names = list(step.get("identification") or [])
@@ -118,6 +122,7 @@ def _element(tag: str, step, mapping, candidate: SelectorCandidate) -> ET.Elemen
 
 
 def _value(step, name: str):
+    """Property value by case-insensitive name, or None."""
     wanted = name.casefold()
     for key, value in (step.get("properties") or {}).items():
         if key.casefold() == wanted:
@@ -126,6 +131,7 @@ def _value(step, name: str):
 
 
 def _score(element: ET.Element, has_top_title: bool) -> float:
+    """Confidence from the attributes used, lowered without a window/page title, capped below 1."""
     score = sum(STRONG.get(a, 0) + WEAK.get(a, 0) for a in element.attrib)
     if not has_top_title:
         score -= 0.15

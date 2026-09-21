@@ -1,3 +1,7 @@
+# End-to-end tests of ConversionPipeline and the `convert` command on synthetic
+# ALM exports: table decoding, test selection, script and Object Repository
+# resolution, selector proposals, project generation, the artifacts written and
+# the refusal to overwrite output or copy connection details.
 import json
 import shutil
 import sys

@@ -1,3 +1,7 @@
+# Tests ScriptResolver (alm/script_resolver.py): which UFT actions and Script.mts
+# files each ALM test executes, in order - RunAction syntax, external actions,
+# BPT component trees - and that unknown, ambiguous, recursive or manual parts
+# block a test instead of being skipped.
 import pytest
 
 from ole_fixtures import action_resource

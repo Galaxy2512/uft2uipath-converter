@@ -8,10 +8,13 @@ from uft2uipath.mapper.activity_mapping import ActivityMappingRegistry
 
 
 class StepParser:
+    """Builds a Step from an action name through ActivityMappingRegistry. Legacy path, not used by convert."""
     def __init__(self, registry: ActivityMappingRegistry | None = None):
+        """Use the given registry, or the default one."""
         self.registry = registry or ActivityMappingRegistry()
 
     def parse_action(self, name: str, action: str, target: str | None = None, value=None, raw=None) -> Step:
+        """Step for one UFT action with the mapping's status."""
         mapping = self.registry.resolve(action)
 
         step = Step(

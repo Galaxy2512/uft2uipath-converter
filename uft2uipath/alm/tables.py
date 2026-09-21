@@ -11,7 +11,9 @@ from uft2uipath.alm.schema import AlmSchema, AlmSchemaReader
 
 
 class AlmTables:
+    """Decoded rows of every ALM table in an extracted export, read on first use."""
     def __init__(self, root: str | Path, reader: PtdReader | None = None):
+        """Read the schema (db_xmlmap.xml) and index the table files, which may be split."""
         self.root = Path(root)
         schema_file = self.root / "db_xmlmap.xml"
         if not schema_file.is_file():
@@ -25,12 +27,15 @@ class AlmTables:
             self._files[path.name.split("_!", 1)[0].upper()].append(path)
 
     def names(self) -> list[str]:
+        """Names of the tables that have data files."""
         return sorted(self._files)
 
     def has(self, name: str) -> bool:
+        """True if the export contains data files for the table."""
         return name.upper() in self._files
 
     def rows(self, name: str) -> list[dict[str, Any]]:
+        """Decoded rows of a table; a table absent from the export reads as empty."""
         key = name.upper()
         if key not in self._cache:
             table = self.schema.get_table(key)

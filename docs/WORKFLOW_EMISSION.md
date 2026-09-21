@@ -7,25 +7,24 @@ activities. No UiPath Studio/runtime is available in the Python test environment
 XML parsing and mapping tests do not prove XAML compilation or executable
 equivalence.
 
-Supported candidate mappings:
-- If Exist with a positive literal timeout: UiElementExists + Boolean result + If.
-  Seconds are converted to milliseconds; nested If statements have distinct variables.
-- Click: Classic Click, single left click, explicitly selected input method.
-- WebEdit.Set: Classic TypeInto with EmptyField=True and an explicit input method.
-  This is a candidate replacement mapping; UFT/app events must be compared at runtime.
-- String literals and explicitly mapped Parameter/Environment references.
-- Explicit In arguments (String, Boolean, Int32) and per-call argument forwarding.
+The complete, current list of mappings, their semantics and how to add one is in
+[MAPPING_REGISTRY.md](MAPPING_REGISTRY.md). In short, the emitter supports Exist,
+Click, Set, SetSecure, Select, Sync, Wait, typed assignments, output parameters,
+Reporter.ReportEvent, ExitTest, And/Or/Not/comparison conditions, GetROProperty,
+arithmetic and the common VBScript string/number functions.
 
 Unresolved operations, malformed expressions, partial object chains and incomplete
 bindings get Throw activities. A component with any blocker has an additional
 Throw before its first UI action, even when the blocker is in a conditional branch.
 A test that invokes a blocked component is blocked before any component invocation.
-These Throws signal incomplete migration; they do not implement UFT ExitTest.
+These "Migration blocked" Throws signal incomplete migration; ExitTest has its own
+mapping (see MAPPING_REGISTRY.md).
 
-Reporter.ReportEvent is NOT reduced to logging, and micFail is NOT assumed to
-mean immediate termination. ExitTest, SetSecure, declarations, loops, arbitrary
-expressions and other unsupported nodes remain blockers with source-line findings.
-Out/InOut arguments and UFT secure-string decoding are not implemented.
+Note: this document describes the older manifest-based `emit-workflows` bundle.
+That bundle binds In arguments only, so components that report failures, call
+ExitTest or write output parameters are blocked there; use `convert`, which
+generates the test-level wiring for them. UFT secure-string decoding is not
+implemented anywhere: SetSecure takes its value from a secure argument.
 
 ## Commands
 

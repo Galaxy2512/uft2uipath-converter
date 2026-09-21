@@ -51,6 +51,7 @@ class AlmTableReader:
     """
 
     def __init__(self, ptd_reader: PtdReader | None = None):
+        """Use the given PTD reader, or a default one."""
         self.ptd_reader = ptd_reader or PtdReader()
 
     def read_table(

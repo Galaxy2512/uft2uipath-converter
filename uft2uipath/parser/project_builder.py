@@ -56,6 +56,7 @@ class ProjectBuilder:
         step_parser: StepEntityParser | None = None,
     ):
         # Parsers convert individual ALM rows into neutral AST objects.
+        """Use the given entity parsers, or the default ones."""
         self.test_parser = test_parser or TestEntityParser()
         self.component_parser = component_parser or ComponentEntityParser()
         self.step_parser = step_parser or StepEntityParser()

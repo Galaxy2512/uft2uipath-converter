@@ -7,8 +7,10 @@ from pathlib import Path
 
 class ProjectInspector:
 
+    """Lists the files of a project folder by extension."""
     def inspect(self, project_folder: str | Path) -> dict:
 
+        """File counts and names of a project folder."""
         root = Path(project_folder)
 
         files = list(root.rglob("*"))

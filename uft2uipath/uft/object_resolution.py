@@ -25,6 +25,7 @@ def resolve_objects(text: str, repositories: list[tuple[str, ObjectRepository]])
 
 
 def _lookup(repositories, path):
+    """First repository, in UFT lookup order, that has the object path."""
     for name, repository in repositories:
         found = repository.find(path)
         if found is not None:
@@ -33,6 +34,7 @@ def _lookup(repositories, path):
 
 
 def _resolve(reference: ObjectReference, repositories) -> dict[str, Any]:
+    """Resolve one reference to repository objects and propose a selector for its target."""
     entry: dict[str, Any] = {
         "lines": [],
         "path": [{"class": s.test_object_class, "name": s.name, "description": s.description}

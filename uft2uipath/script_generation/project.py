@@ -19,6 +19,7 @@ DEPENDENCIES = {
 
 
 def project_metadata(name, tests, template=None):
+    """project.json for a Windows C# test project, optionally based on a template."""
     if template:
         data = json.loads(Path(template).read_text(encoding="utf-8-sig"))
         if data.get("targetFramework") != "Windows" or data.get("expressionLanguage") != "CSharp":
@@ -68,6 +69,7 @@ def project_metadata(name, tests, template=None):
 
 
 def migrate_project(manifest, bindings, output, template=None, make_zip=False):
+    """Analyze, emit and package a manifest as a Studio test project (migrate-project)."""
     output = Path(output).resolve()
     archive = output.with_name(output.name + ".zip")
     if output.exists() or output.is_symlink():
@@ -148,6 +150,7 @@ def migrate_project(manifest, bindings, output, template=None, make_zip=False):
 
 
 def main(argv=None):
+    """Command line of migrate-project."""
     parser = argparse.ArgumentParser(description="Migrate an explicitly mapped script manifest to a UiPath test project.")
     parser.add_argument("manifest")
     parser.add_argument("--bindings", required=True)

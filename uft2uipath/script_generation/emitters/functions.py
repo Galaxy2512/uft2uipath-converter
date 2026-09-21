@@ -26,6 +26,7 @@ def _s(code: str) -> str:
 class Function:
     # "String": any value, converted as VBScript would; "Int32"; "Number": Int32
     # or Double as given; "Any": any type, passed as is.
+    """How one VBScript built-in is translated: accepted argument types, result type and C# template."""
     params: tuple[str, ...]
     # A type, or a function of the argument types.
     returns: str | Callable[[list[str]], str]
@@ -35,18 +36,21 @@ class Function:
 
 
 def _cint(codes, kinds):
+    """CInt/CLng: VBScript rounds half to even, as Convert.ToInt32 does; True is -1."""
     a, kind = codes[0], kinds[0]
     return {"Int32": a, "Double": f"System.Convert.ToInt32({a})",
             "Boolean": f"({a} ? -1 : 0)"}.get(kind, f"System.Convert.ToInt32(System.Convert.ToDouble({a}))")
 
 
 def _cdbl(codes, kinds):
+    """CDbl for each source type; True is -1."""
     a, kind = codes[0], kinds[0]
     return {"Double": a, "Int32": f"(double)({a})",
             "Boolean": f"({a} ? -1.0 : 0.0)"}.get(kind, f"System.Convert.ToDouble({a})")
 
 
 def _mid(codes, kinds):
+    """Mid(s, start[, length]) with VBScript's 1-based start and "" past the end."""
     s, start = _s(codes[0]), codes[1]
     if len(codes) == 2:
         return f'({start} > {s}.Length ? "" : {s}.Substring({start} - 1))'
@@ -107,6 +111,9 @@ BUILTINS = set(FUNCTIONS) | set("""
 
 
 def _spec(ctx, node) -> Function:
+    """Catalog entry of a call, or ValueError naming why it cannot be mapped:
+    a built-in not mapped yet, or a library/action function not migrated yet.
+    """
     name = node.get("name") or ""
     spec = FUNCTIONS.get(name.lower())
     if spec is None:
@@ -121,6 +128,7 @@ def _spec(ctx, node) -> Function:
 
 
 def _argument_types(ctx, node, spec):
+    """Types the arguments of a call are used with; blocks arguments the function cannot take."""
     kinds = []
     for param, argument in zip(spec.params, node.get("arguments") or []):
         kind = ctx.expression_type(argument)
@@ -135,6 +143,7 @@ def _argument_types(ctx, node, spec):
 
 
 def _function_type(ctx, node):
+    """Result type of a call (the registry's typer for FunctionCall)."""
     spec = _spec(ctx, node)
     kinds = _argument_types(ctx, node, spec)
     return spec.returns(kinds) if callable(spec.returns) else spec.returns
@@ -144,6 +153,7 @@ def _function_type(ctx, node):
       typer=_function_type,
       notes="VBScript built-ins: " + ", ".join(sorted(FUNCTIONS)) + ". Other calls block.")
 def emit_function(ctx, node, parent):
+    """C# code for a built-in call; a String result is never null."""
     spec = _spec(ctx, node)
     kinds = _argument_types(ctx, node, spec)
     codes = [ctx.as_string(argument, parent) if param == "String" else ctx.value(argument, kind, parent)
@@ -154,6 +164,10 @@ def emit_function(ctx, node, parent):
 
 
 def _binary_type(ctx, node):
+    """Result type of an arithmetic operation, following VBScript: / and ^ give
+    Double, integer division and Mod need Int32, + on two strings concatenates.
+    Mixed or non-numeric operands block rather than guess VBScript's conversions.
+    """
     operator = node.get("operator")
     left, right = ctx.expression_type(node.get("left")), ctx.expression_type(node.get("right"))
     if operator == "+" and left == right == "String":
@@ -175,6 +189,7 @@ def _binary_type(ctx, node):
       notes="Operands must be numbers, or both strings for +. Int32 overflow wraps instead of "
             "promoting to Long/Double as VBScript does.")
 def emit_binary(ctx, node, parent):
+    """C# code for an arithmetic operation of the type _binary_type found."""
     kind, operator = _binary_type(ctx, node), node.get("operator")
     left, right = node.get("left"), node.get("right")
     a = ctx.value(left, ctx.expression_type(left), parent)
@@ -193,6 +208,7 @@ def emit_binary(ctx, node, parent):
 
 
 def _unary_type(ctx, node):
+    """Type of -x: the operand's numeric type."""
     kind = ctx.expression_type(node.get("operand"))
     if kind not in NUMERIC:
         raise ValueError(f"Negating {kind} relies on VBScript's implicit conversion; not reproduced.")
@@ -201,5 +217,6 @@ def _unary_type(ctx, node):
 
 @maps("UnaryExpression", uft="-a", activities=(), kind="expression", typer=_unary_type)
 def emit_unary(ctx, node, parent):
+    """C# negation of a number."""
     operand = node.get("operand")
     return f"(-({ctx.value(operand, _unary_type(ctx, node), parent)}))"

@@ -20,6 +20,7 @@ class StepEntityParser:
     """
 
     def parse(self, row: dict[str, Any]) -> Step:
+        """Step from one COMPONENT_STEP row, keeping the raw row."""
         return Step(
             id=self._to_int(row.get("CS_STEP_ID")),
             order=self._to_int(row.get("CS_STEP_ORDER")),
@@ -31,6 +32,7 @@ class StepEntityParser:
         )
 
     def _to_int(self, value: Any) -> int | None:
+        """Integer of a value, or None."""
         if value is None:
             return None
 

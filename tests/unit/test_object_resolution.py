@@ -1,3 +1,7 @@
+# Tests how object references in scripts are found and resolved against the
+# local and shared Object Repositories (uft/object_resolution.py): grouping by
+# line, repository search order, descriptive programming, and classifying
+# unknown or dynamic objects instead of inventing them.
 from bdb_fixtures import VT_BSTR, object_repository, object_stream
 from uft2uipath.alm.resources import ResourceIndex, parse_reference
 from uft2uipath.uft.object_references import extract_references

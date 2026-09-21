@@ -37,6 +37,7 @@ _TEXT_TYPES = {"varchar", "clob"}
 
 
 class PtdFormatError(ValueError):
+    """A .ptd file that does not match its table schema."""
     pass
 
 
@@ -50,6 +51,7 @@ class PtdReader:
         file: str | Path,
         columns: list[AlmColumn],
     ) -> list[dict[str, Any]]:
+        """Decode every row of a .ptd file with the table's columns."""
         path = Path(file)
         data = path.read_bytes()
         if not columns:
@@ -69,6 +71,7 @@ class PtdReader:
         return rows
 
     def _read_value(self, data: bytes, position: int, column: AlmColumn) -> tuple[Any, int]:
+        """Decode one column value; returns the value and the next offset."""
         datatype = (column.datatype or "").lower()
         if datatype == "timestamp":
             raw = data[position:position + 8]

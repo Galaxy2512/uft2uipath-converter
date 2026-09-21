@@ -7,7 +7,9 @@ import zipfile
 
 
 class ArchiveExtractor:
+    """Extracts .qcp/.zip exports into a new temporary directory."""
     def extract(self, archive: str | Path) -> Path:
+        """Extract the archive and return the directory it was extracted to."""
         archive = Path(archive)
 
         if not archive.exists():
@@ -18,6 +20,7 @@ class ArchiveExtractor:
         original_decode_extra = zipfile.ZipInfo._decodeExtra
 
         def safe_decode_extra(self, filename_crc):
+            """Accept entries whose zip extra field is corrupt instead of failing the archive."""
             try:
                 original_decode_extra(self, filename_crc)
             except zipfile.BadZipFile as exc:
