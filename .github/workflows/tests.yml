@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - feature/qcp-end-to-end-slice
+      - feature/studio-validation
   pull_request:
     branches:
       - develop
