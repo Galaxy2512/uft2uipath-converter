@@ -30,6 +30,7 @@ from uft2uipath.parser.project_builder import ProjectBuilder
 from uft2uipath.script_analysis.analyzer import analyze_source
 from uft2uipath.script_generation.project_emitter import (ActionPlan, TestPlan, generate,
                                                           workflow_name)
+from uft2uipath.studio_validation import validate_project
 from uft2uipath.uft.object_repository import read_object_repository
 from uft2uipath.uft.object_resolution import resolve_objects
 
@@ -40,7 +41,7 @@ REPOSITORY_TABLES = ("SMART_REPOSITORY_LOGICAL_FILE", "SMART_REPOSITORY_PHYSICAL
 RESOURCE_TABLES = ("RESOURCES", "RESOURCE_FOLDERS")
 EXPORTED_TABLES = MODEL_TABLES + REPOSITORY_TABLES + RESOURCE_TABLES
 
-PENDING_STAGES = ("validate",)
+PENDING_STAGES = ("studio_runtime_validation",)
 
 
 @dataclass
@@ -121,6 +122,31 @@ class ConversionPipeline:
                 stages.extend(self._generate(repository, resolver, resolutions, resolved,
                                              staging, project_name))
 
+            project_dir = staging / "project"
+            if (project_dir / "project.json").is_file():
+                validation = validate_project(project_dir)
+                _write(artifacts_dir / "studio-validation.json", validation)
+                stages.append({
+                    "name": "validate",
+                    "status": "done" if validation["static_validation_passed"] else "failed",
+                    "artifact": "artifacts/studio-validation.json",
+                    "error_count": len(validation["errors"]),
+                    "warning_count": len(validation["warnings"]),
+                    "level": "static",
+                })
+                generation_report = project_dir / "generation-report.json"
+                if generation_report.is_file():
+                    generated = json.loads(generation_report.read_text(encoding="utf-8"))
+                    generated["static_validation_passed"] = validation["static_validation_passed"]
+                    generated["studio_load_verified"] = False
+                    _write(generation_report, generated)
+            else:
+                stages.append({
+                    "name": "validate",
+                    "status": "skipped",
+                    "detail": "UiPath project was not generated.",
+                })
+
             stages.extend({"name": name, "status": "pending"} for name in PENDING_STAGES)
             _write(artifacts_dir / "pipeline-report.json", {
                 "format_version": FORMAT_VERSION,
@@ -138,7 +164,7 @@ class ConversionPipeline:
             name: self.output_dir / "artifacts" / f"{name}.json"
             for name in ("decoded-tables", "resolved-project", "resolved-scripts",
                          "selector-candidates", "script-analysis", "conversion-plan",
-                         "selector-review.template", "pipeline-report")
+                         "selector-review.template", "studio-validation", "pipeline-report")
         }
         artifacts = {name: path for name, path in artifacts.items() if path.is_file()}
         return PipelineResult(self.output_dir, project, artifacts, table_errors)
