@@ -5,5 +5,10 @@ description = "ALM/UFT BPT QCP to UiPath Test Project converter"
 requires-python = ">=3.10"
 dependencies = ["olefile>=0.46"]
 
+[project.optional-dependencies]
+dev = [
+    "pytest>=9",
+]
+
 [project.scripts]
 uft2uipath = "uft2uipath.cli:main"
