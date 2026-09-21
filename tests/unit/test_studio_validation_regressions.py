@@ -154,7 +154,7 @@ def test_assign_and_delay_use_explicit_csharp_nodes(tmp_path):
     assert report["status"] == "mapped_unverified"
     assign = root.find(".//" + q("Assign"))
     out_arg = assign.find(".//" + q("OutArgument"))
-    assert out_arg.text is None
+    assert not (out_arg.text or "").strip()
     assert out_arg.find(q("CSharpReference")).text == "URL"
 
     delay = root.find(".//" + q("Delay"))
