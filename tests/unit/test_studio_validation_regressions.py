@@ -145,3 +145,26 @@ def test_generated_package_has_no_empty_members_or_invoke_arguments(tmp_path):
     report = json.loads((output / "generation-report.json").read_text())
     assert report["blocked_component_count"] == 2
     assert report["studio_project"]["studio_load_verified"] is False
+
+
+def test_assign_and_delay_use_explicit_csharp_nodes(tmp_path):
+    source = 'URL = "http://example.test/"\nWait 10'
+    root, report = emit(tmp_path, source, {"objects": []})
+
+    assert report["status"] == "mapped_unverified"
+    assign = root.find(".//" + q("Assign"))
+    out_arg = assign.find(".//" + q("OutArgument"))
+    assert out_arg.text is None
+    assert out_arg.find(q("CSharpReference")).text == "URL"
+
+    delay = root.find(".//" + q("Delay"))
+    assert "Duration" not in delay.attrib
+    duration = delay.find(q("Delay.Duration") + "/" + q("InArgument"))
+    assert duration is not None
+    assert duration.find(q("CSharpValue")).text == "TimeSpan.FromSeconds(10)"
+
+    for element in root.iter():
+        for value in element.attrib.values():
+            assert not (isinstance(value, str) and value.startswith("[") and value.endswith("]"))
+        if element.text:
+            assert not (element.text.startswith("[") and element.text.endswith("]"))
