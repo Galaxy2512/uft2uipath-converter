@@ -76,6 +76,28 @@ def test_datatable_values_become_workflow_arguments():
     assert root.find(".//" + q("TypeInto", UI)).attrib["Text"] == "[in_data_Username]"
 
 
+def test_setsecure_types_an_argument_because_the_encoded_value_is_not_carried_over():
+    source = 'Browser("B").Page("P").WebEdit("User").SetSecure DataTable("Password", dtLocalSheet)'
+    config = bindings()
+    config.pop("data")
+    config["secure"] = {"User": {"name": "in_secure_User", "type": "String", "direction": "In"}}
+    root, report = ComponentEmitter("10", analyze_source(source), config).generate()
+    root = ET.fromstring(ET.tostring(root))
+
+    assert root.find(".//" + q("TypeInto", UI)).attrib["Text"] == "[in_secure_User]"
+    assert report["arguments"] == {"in_secure_User": "String"}
+    assert "encoded value is not carried over" in report["trace"][0]["note"]
+    assert report["status"] == "mapped_unverified"
+
+
+def test_setsecure_without_a_secure_argument_blocks():
+    source = 'Browser("B").Page("P").WebEdit("User").SetSecure "48656c6c6f"'
+    root, report = ComponentEmitter("10", analyze_source(source), bindings()).generate()
+
+    assert report["status"] == "blocked"
+    assert any("cannot be decoded" in issue["message"] for issue in report["issues"])
+
+
 def test_unbound_datatable_column_blocks():
     root, report = emit('Browser("B").Page("P").WebEdit("User").Set DataTable("Missing", dtLocalSheet)')
 

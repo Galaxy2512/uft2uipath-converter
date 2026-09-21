@@ -7,7 +7,7 @@ from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.parser.uft_script_nodes import (
     DataTableReference, EnvironmentReference, ExistCondition, FunctionDefinitionOperation,
     ObjectReference, ParameterReference,
-    ScriptOperation, UnknownScriptOperation, UnknownValueExpression,
+    ScriptOperation, SetSecureTextOperation, UnknownScriptOperation, UnknownValueExpression,
 )
 
 
@@ -23,10 +23,16 @@ def typed(value):
     return value
 
 
+def secret_source(operation):
+    """Names the secret a SetSecure step needs, from the object it types into."""
+    target = operation.target
+    return (target.logical_name or target.object_type or "value") if target else "value"
+
+
 def analyze_source(source):
     parsed = UftVbScriptParser().parse(source)
     issues, parameters, environments, objects = [], set(), set(), []
-    data_columns = set()
+    data_columns, secrets, secure_values = set(), set(), set()
     kinds = Counter()
 
     def issue(code, message, line, raw):
@@ -66,9 +72,13 @@ def analyze_source(source):
                 issue("object_assignment_unsupported",
                       "Assigning an object reference has no validated UiPath equivalent.",
                       line, value.raw)
-            if type(value).__name__ == "SetSecureTextOperation":
+            if isinstance(value, SetSecureTextOperation):
+                # UFT stores an encoded value that cannot be decoded here.
+                secrets.add(secret_source(value))
+                # Its encoded source is replaced by the secure argument.
+                secure_values.add(id(value.value))
                 issue("secure_value_mapping_required",
-                      "UFT secure values need an explicit UiPath credential mapping.",
+                      "UFT secure value is encoded; the real value must be supplied as an argument.",
                       line, value.raw)
             if type(value).__name__ == "ExitTestOperation":
                 issue("exit_mapping_required",
@@ -81,7 +91,7 @@ def analyze_source(source):
             issue("parameter_binding_required",
                   "Reference preserved; argument direction, type and call binding are not resolved.",
                   line, value.raw)
-        if isinstance(value, DataTableReference):
+        if isinstance(value, DataTableReference) and id(value) not in secure_values:
             data_columns.add(value.column)
             issue("data_binding_required",
                   "DataTable column preserved; the run-time data source is not resolved.",
@@ -129,6 +139,7 @@ def analyze_source(source):
             "parameters": sorted(parameters),
             "environment": sorted(environments),
             "data": sorted(data_columns),
+            "secure": sorted(secrets),
             "objects": objects,
         },
         "coverage": {

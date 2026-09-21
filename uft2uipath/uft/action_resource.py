@@ -26,9 +26,10 @@ class ActionResource:
     reusable: bool
     document_type: str
     shared_repositories: list[str]
+    function_libraries: list[str]
 
 
-def read_action_resource(data: bytes) -> ActionResource:
+def read_action_resource(data: bytes, require_name: bool = True) -> ActionResource:
     if not olefile.isOleFile(io.BytesIO(data)):
         raise ActionResourceError("Resource.mtr is not an OLE compound document.")
     with olefile.OleFileIO(io.BytesIO(data)) as ole:
@@ -46,7 +47,7 @@ def read_action_resource(data: bytes) -> ActionResource:
     except (UnicodeDecodeError, ET.ParseError) as exc:
         raise ActionResourceError(f"ComponentInfo XML is unreadable: {exc}") from None
     name = (root.findtext("Name") or "").strip()
-    if not name:
+    if not name and require_name:
         raise ActionResourceError("ComponentInfo has no action name.")
     return ActionResource(
         name=name,
@@ -55,4 +56,6 @@ def read_action_resource(data: bytes) -> ActionResource:
         document_type=(root.findtext("DocumentType") or "").strip(),
         shared_repositories=[(node.text or "").strip() for node in root.findall("SORs/SOR")
                              if (node.text or "").strip()],
+        function_libraries=[(node.text or "").strip() for node in root.findall("FuncLibs/FuncLib")
+                            if (node.text or "").strip()],
     )

@@ -129,8 +129,10 @@ def argument_name(kind: str, name: str) -> str:
 def build_binding(analysis: dict[str, Any], decisions: list[dict[str, Any]]) -> dict[str, Any]:
     """Builds the target binding the component emitter expects."""
     references = analysis.get("references", {})
-    binding: dict[str, Any] = {"parameters": {}, "environment": {}, "data": {}, "objects": []}
-    for category, kind in (("parameters", "param"), ("environment", "env"), ("data", "data")):
+    binding: dict[str, Any] = {"parameters": {}, "environment": {}, "data": {},
+                               "secure": {}, "objects": []}
+    for category, kind in (("parameters", "param"), ("environment", "env"),
+                           ("data", "data"), ("secure", "secure")):
         for name in references.get(category, []):
             binding[category][name] = {
                 "name": argument_name(kind, name), "type": "String", "direction": "In",

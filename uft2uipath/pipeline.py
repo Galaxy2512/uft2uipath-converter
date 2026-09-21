@@ -21,7 +21,11 @@ from uft2uipath.alm.script_resolver import ScriptResolver
 from uft2uipath.alm.tables import AlmTables
 from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.ast import Project
+from uft2uipath.alm.script_resolver import decode_script
 from uft2uipath.mapping.acceptance import AcceptanceSettings, build_binding, decide, review_template
+from uft2uipath.parser.uft_script_nodes import FunctionDefinitionOperation
+from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
+from uft2uipath.script_analysis.library_calls import annotate_library_calls
 from uft2uipath.parser.project_builder import ProjectBuilder
 from uft2uipath.script_analysis.analyzer import analyze_source
 from uft2uipath.script_generation.project_emitter import (ActionPlan, TestPlan, generate,
@@ -114,7 +118,8 @@ class ConversionPipeline:
                 repository, resolver, referenced, resolved = resolution
                 object_stage, resolutions = self._resolve_objects(repository, resolver, referenced, staging)
                 stages.append(object_stage)
-                stages.extend(self._generate(resolver, resolutions, resolved, staging, project_name))
+                stages.extend(self._generate(repository, resolver, resolutions, resolved,
+                                             staging, project_name))
 
             stages.extend({"name": name, "status": "pending"} for name in PENDING_STAGES)
             _write(artifacts_dir / "pipeline-report.json", {
@@ -163,7 +168,8 @@ class ConversionPipeline:
                 entry["source_copy"] = source
                 actions[folder] = entry
             assets[key] = {"kind": asset.kind, "entity_id": asset.entity_id, "root": asset.root,
-                           "actions": actions, "issues": asset.issues}
+                           "actions": actions, "function_libraries": asset.function_libraries,
+                           "issues": asset.issues}
         _write(staging / "artifacts" / "resolved-scripts.json", {
             "format_version": FORMAT_VERSION,
             "tests": [asdict(test) for test in resolved],
@@ -211,20 +217,44 @@ class ConversionPipeline:
                  "artifact": "artifacts/selector-candidates.json", "reference_statuses": statuses}
         return stage, {key: value["objects"] for key, value in actions.items()}
 
-    def _generate(self, resolver, resolutions, resolved, staging: Path, project_name: str):
+    @staticmethod
+    def _library_functions(repository, asset) -> dict[str, str]:
+        """Maps function name -> library path for the libraries this asset associates."""
+        functions: dict[str, str] = {}
+        for library in asset.function_libraries:
+            path = library.get("path")
+            if not path:
+                continue
+            try:
+                text, _ = decode_script(repository.read_bytes(path))
+            except (OSError, ValueError) as exc:
+                library["issue"] = f"unreadable_library: {exc}"
+                continue
+            for operation in UftVbScriptParser().parse(text).operations:
+                if isinstance(operation, FunctionDefinitionOperation):
+                    functions.setdefault(operation.name.casefold(), path)
+        return functions
+
+    def _generate(self, repository, resolver, resolutions, resolved, staging: Path, project_name: str):
         # Only actions a test actually executes become workflows; Action0 is the main flow.
         executed = {f"{unit.asset}/{unit.action}" for test in resolved for unit in test.execution}
-        analyses, decisions = {}, {}
+        analyses, decisions, libraries = {}, {}, {}
         for key, objects in sorted(resolutions.items()):
             if key not in executed:
                 continue
             asset_key, folder = key.rsplit("/", 1)
-            analyses[key] = analyze_source(resolver.assets[asset_key].actions[folder].text)
+            asset = resolver.assets[asset_key]
+            if asset_key not in libraries:
+                libraries[asset_key] = self._library_functions(repository, asset)
+            analysis = analyze_source(asset.actions[folder].text)
+            annotate_library_calls(analysis, libraries[asset_key])
+            analyses[key] = analysis
             decisions[key] = [decide(entry, self.acceptance) for entry in objects]
         _write(staging / "artifacts" / "script-analysis.json", {
             "format_version": FORMAT_VERSION,
             "actions": {key: {"coverage": analysis["coverage"], "issues": analysis["issues"],
-                              "references": analysis["references"]}
+                              "references": analysis["references"],
+                              "function_libraries": resolver.assets[key.rsplit("/", 1)[0]].function_libraries}
                         for key, analysis in analyses.items()},
         })
         coverage = {"operation_count": 0, "recognized_operation_count": 0}

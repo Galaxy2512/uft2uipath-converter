@@ -34,14 +34,23 @@ class ResourceIndex:
         self._resources = resource_rows
 
     def find(self, folder_path: str, file_name: str) -> str | None:
+        matches = self._matches(file_name)
         wanted_folder = folder_path.strip("\\").casefold()
-        wanted_file = file_name.casefold()
-        for row in self._resources:
-            names = {str(row.get(key) or "").casefold() for key in ("RSC_FILE_NAME", "RSC_NAME")}
-            if wanted_file not in names or row.get("RSC_ID") is None:
-                continue
-            if self._paths.get(row.get("RSC_PARENT_ID")) != wanted_folder:
-                continue
-            stored = row.get("RSC_FILE_NAME") or row.get("RSC_NAME")
-            return f"resources\\{row['RSC_ID']}\\{stored}"
+        for row in matches:
+            if self._paths.get(row.get("RSC_PARENT_ID")) == wanted_folder:
+                return self._path(row)
         return None
+
+    def find_by_name(self, file_name: str) -> list[str]:
+        """Projects get reorganised, so a reference may name a folder the file left."""
+        return [self._path(row) for row in self._matches(file_name)]
+
+    def _matches(self, file_name: str) -> list[dict[str, Any]]:
+        wanted = file_name.casefold()
+        return [row for row in self._resources if row.get("RSC_ID") is not None
+                and wanted in {str(row.get(key) or "").casefold()
+                               for key in ("RSC_FILE_NAME", "RSC_NAME")}]
+
+    @staticmethod
+    def _path(row: dict[str, Any]) -> str:
+        return f"resources\\{row['RSC_ID']}\\{row.get('RSC_FILE_NAME') or row.get('RSC_NAME')}"

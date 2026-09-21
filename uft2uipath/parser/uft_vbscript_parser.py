@@ -111,7 +111,8 @@ class UftVbScriptParser:
     OPTIONAL_STEP = re.compile(r"^\s*OptionalStep\s*\.\s*", re.IGNORECASE)
 
     FUNCTION_PATTERN = re.compile(
-        r"^\s*(?P<keyword>Function|Sub)\s+(?P<name>[A-Za-z_]\w*)\s*(?:\((?P<parameters>.*)\))?\s*$",
+        r"^\s*(?:(?P<scope>Public|Private)\s+)?(?:Default\s+)?"
+        r"(?P<keyword>Function|Sub)\s+(?P<name>[A-Za-z_]\w*)\s*(?:\((?P<parameters>.*)\))?\s*$",
         re.IGNORECASE,
     )
     WITH_PATTERN = re.compile(r"^\s*With\s+(?P<target>.+?)\s*$", re.IGNORECASE)

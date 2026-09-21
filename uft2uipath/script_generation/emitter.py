@@ -60,6 +60,11 @@ def write_xaml(path, root):
     path.write_bytes(ET.tostring(root, encoding="utf-8", xml_declaration=True))
 
 
+def _secret_source(node):
+    target = node.get("target") or {}
+    return target.get("logical_name") or target.get("object_type") or "value"
+
+
 def target_key(target):
     """Identity of a UFT object: its hierarchy, however the binding spelled it."""
     path = target.get("path")
@@ -103,7 +108,7 @@ class ComponentEmitter:
     def _load_bindings(self):
         if not isinstance(self.bindings, dict):
             raise ValueError("Component target bindings must be an object.")
-        for category in ("parameters", "environment", "data"):
+        for category in ("parameters", "environment", "data", "secure"):
             entries = self.bindings.get(category, {})
             if not isinstance(entries, dict):
                 raise ValueError(f"{category} must be an object.")
@@ -300,6 +305,23 @@ class ComponentEmitter:
                 if node.get("x") is not None:
                     trace["note"] = (f"Recorded offset ({node['x']}, {node['y']}) is not reproduced; "
                                      "the element is clicked at its centre.")
+            elif kind == "SetSecureTextOperation":
+                binding = self.object_binding(node, "set")
+                secret = self.references.get(("secure", _secret_source(node)))
+                if secret is None or secret[1] != "String":
+                    raise ValueError(
+                        f"SetSecure needs a String argument bound for {_secret_source(node)!r}; "
+                        "the UFT encoded value cannot be decoded."
+                    )
+                activity = ET.SubElement(parent, q("TypeInto", UI), {
+                    "DisplayName": display, "Text": expr(secret[0]), "EmptyField": "True",
+                    "ContinueOnError": "False",
+                    "SimulateType": str(binding["input_method"] == "Simulate").lower(),
+                    "SendWindowMessages": str(binding["input_method"] == "SendWindowMessages").lower(),
+                })
+                self.ui_target(activity, "TypeInto", binding, scoped=True)
+                trace.update(status="mapped_unverified", activity="TypeInto (secure)",
+                             note="The UFT encoded value is not carried over; the argument supplies it.")
             elif kind == "SetTextOperation":
                 binding = self.object_binding(node, "set")
                 text = self.value(node.get("value"), "String")

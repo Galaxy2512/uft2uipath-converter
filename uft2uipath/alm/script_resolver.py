@@ -78,6 +78,7 @@ class ScriptAsset:
     entity_id: int
     root: str
     actions: dict[str, ActionScript] = field(default_factory=dict)
+    function_libraries: list[dict[str, Any]] = field(default_factory=list)
     issues: list[dict[str, Any]] = field(default_factory=list)
 
 
@@ -273,6 +274,7 @@ class ScriptResolver:
         if not files:
             asset.issues.append({"code": "missing_asset_folder", "message": f"No repository files under {asset.root}."})
             return asset
+        asset.function_libraries = self._function_libraries(asset)
         folders = sorted({m.group(1) for f in files if (m := _ACTION_FOLDER.match(f[len(asset.root) + 1:]))},
                          key=lambda name: int(name[6:]))
         for folder in folders:
@@ -311,7 +313,22 @@ class ScriptResolver:
             calls=parse_run_actions(text),
         )
 
+    def _function_libraries(self, asset: ScriptAsset) -> list[dict[str, Any]]:
+        """Function libraries are associated with the test or component, in Test.tsp."""
+        settings = f"{asset.root}\\Test.tsp"
+        if not self.repository.exists(settings):
+            return []
+        try:
+            metadata = read_action_resource(self.repository.read_bytes(settings), require_name=False)
+        except (FileNotFoundError, ActionResourceError) as exc:
+            asset.issues.append({"code": "unreadable_test_settings", "message": f"{settings}: {exc}"})
+            return []
+        return [self._resource(reference) for reference in metadata.function_libraries]
+
     def _shared_repository(self, reference: str) -> dict[str, Any]:
+        return self._resource(reference)
+
+    def _resource(self, reference: str) -> dict[str, Any]:
         entry: dict[str, Any] = {"reference": reference, "path": None, "issue": None}
         parts = parse_reference(reference)
         if parts is None:
@@ -321,7 +338,13 @@ class ScriptResolver:
         else:
             entry["path"] = self.resources.find(*parts)
             if entry["path"] is None:
-                entry["issue"] = "resource_not_found"
+                candidates = [path for path in self.resources.find_by_name(parts[1])
+                              if self.repository.exists(path)]
+                if len(candidates) == 1:
+                    entry["path"] = candidates[0]
+                    entry["issue"] = "resolved_by_file_name"
+                else:
+                    entry["issue"] = "resource_not_found" if not candidates else "ambiguous_resource"
             elif not self.repository.exists(entry["path"]):
                 entry["issue"] = "resource_file_missing"
         return entry
