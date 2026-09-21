@@ -33,11 +33,17 @@ from uft2uipath.parser.uft_script_nodes import (
     ActivateOperation,
     AssignOperation,
     BackOperation,
+    CheckpointOperation,
     ClickOperation,
     CloseOperation,
     ComparisonCondition,
+    ConcatenationExpression,
     DataTableReference,
     DeclarationOperation,
+    FunctionDefinitionOperation,
+    NoEffectOperation,
+    ObjectAssignmentOperation,
+    ParameterAssignmentOperation,
     EnvironmentReference,
     ExistCondition,
     ExitTestOperation,
@@ -104,6 +110,21 @@ class UftVbScriptParser:
     METADATA = " @@ "
     OPTIONAL_STEP = re.compile(r"^\s*OptionalStep\s*\.\s*", re.IGNORECASE)
 
+    FUNCTION_PATTERN = re.compile(
+        r"^\s*(?P<keyword>Function|Sub)\s+(?P<name>[A-Za-z_]\w*)\s*(?:\((?P<parameters>.*)\))?\s*$",
+        re.IGNORECASE,
+    )
+    WITH_PATTERN = re.compile(r"^\s*With\s+(?P<target>.+?)\s*$", re.IGNORECASE)
+    CHECKPOINT_PATTERN = re.compile(
+        r'^\s*Check\s+CheckPoint\s*\(\s*"(?P<name>(?:[^"]|"")*)"\s*\)\s*$', re.IGNORECASE,
+    )
+    PARAMETER_ASSIGNMENT_PATTERN = re.compile(
+        r'^\s*Parameter\s*\(\s*"(?P<name>(?:[^"]|"")*)"\s*\)\s*=\s*(?P<value>.+?)\s*$', re.IGNORECASE,
+    )
+    OBJECT_ASSIGNMENT_PATTERN = re.compile(
+        r"^\s*Set\s+(?P<name>[A-Za-z_]\w*)\s*=\s*(?P<expression>.+?)\s*$", re.IGNORECASE,
+    )
+    NO_EFFECT_PATTERN = re.compile(r"^\s*(?P<keyword>Randomize)\s*$", re.IGNORECASE)
     WAIT_PATTERN = re.compile(r"^\s*Wait\s*\(?\s*(?P<seconds>[^),]+?)\s*\)?\s*$", re.IGNORECASE)
     DECLARATION_PATTERN = re.compile(r"^\s*(?P<keyword>Dim|Option)\s+(?P<names>.+?)\s*$", re.IGNORECASE)
     ASSIGNMENT_PATTERN = re.compile(r"^\s*(?P<name>[A-Za-z_]\w*)\s*=\s*(?P<value>.+?)\s*$")
@@ -236,6 +257,31 @@ class UftVbScriptParser:
                 index += 1
                 continue
 
+            terminator = self._terminator(normalized)
+            if terminator:
+                if terminator in expected_terminators:
+                    return operations, index, terminator
+                operations.append(
+                    UnknownScriptOperation(
+                        raw=line, line_number=index + 1,
+                        reason=f"Unexpected block terminator: {terminator}",
+                    )
+                )
+                index += 1
+                continue
+
+            function_match = self.FUNCTION_PATTERN.match(code)
+            if function_match:
+                operation, index = self._parse_function(lines, index, function_match)
+                operations.append(operation)
+                continue
+
+            with_match = self.WITH_PATTERN.match(code)
+            if with_match and split_chain(with_match.group("target"))[0]:
+                inner, index = self._parse_with(lines, index, with_match.group("target"))
+                operations.extend(inner)
+                continue
+
             if re.fullmatch(r"end[ \t]*if", normalized):
                 if "end_if" in expected_terminators:
                     return operations, index, "end_if"
@@ -365,6 +411,53 @@ class UftVbScriptParser:
             index + 1,
         )
 
+    def _terminator(self, normalized: str) -> str | None:
+        if re.fullmatch(r"end[ \t]+(function|sub)", normalized):
+            return "end_function"
+        if re.fullmatch(r"end[ \t]+with", normalized):
+            return "end_with"
+        return None
+
+    def _parse_function(self, lines, index, match) -> tuple[ScriptOperation, int]:
+        """
+        Parse Function/Sub ... End Function: its body is not part of the flow.
+        """
+
+        parameters = [p.strip() for p in (match.group("parameters") or "").split(",") if p.strip()]
+        body, end_index, terminator = self._parse_block(
+            lines=lines, start_index=index + 1, expected_terminators={"end_function"},
+        )
+        if terminator != "end_function":
+            return UnknownScriptOperation(
+                raw=lines[index], line_number=index + 1,
+                reason=f"{match.group('keyword')} block has no matching End.",
+            ), end_index
+        return FunctionDefinitionOperation(
+            raw=lines[index], line_number=index + 1,
+            keyword=match.group("keyword").capitalize(), name=match.group("name"),
+            parameters=parameters, body=body,
+        ), end_index + 1
+
+    def _parse_with(self, lines, index, target: str) -> tuple[list[ScriptOperation], int]:
+        """
+        Expand With <object> ... End With by prefixing its member statements.
+        """
+
+        prefix = target.strip()
+        body: list[str] = []
+        current = index + 1
+        while current < len(lines):
+            code = self._code(lines[current])
+            if self._terminator(code.strip().lower()) == "end_with":
+                break
+            body.append(prefix + code.strip() if code.strip().startswith(".") else lines[current])
+            current += 1
+        operations, _, _ = self._parse_block(lines=body, start_index=0, expected_terminators=set())
+        for operation in operations:
+            # Keep the line numbers of the original script.
+            operation.line_number = (operation.line_number or 1) + index + 1
+        return operations, min(current + 1, len(lines))
+
     def _parse_condition(self, expression: str):
         """
         Parse an If condition: Exist, a comparison, or a preserved expression.
@@ -414,6 +507,26 @@ class UftVbScriptParser:
         if steps:
             return self._parse_object_statement(steps, remainder, code, line, line_number)
 
+        parameter_match = self.PARAMETER_ASSIGNMENT_PATTERN.match(code)
+        if parameter_match:
+            return ParameterAssignmentOperation(
+                raw=line, line_number=line_number,
+                name=parameter_match.group("name").replace('""', '"'),
+                value=self._parse_value(parameter_match.group("value")),
+            )
+
+        object_match = self.OBJECT_ASSIGNMENT_PATTERN.match(code)
+        if object_match:
+            return ObjectAssignmentOperation(
+                raw=line, line_number=line_number,
+                name=object_match.group("name"), expression=object_match.group("expression"),
+            )
+
+        no_effect_match = self.NO_EFFECT_PATTERN.match(code)
+        if no_effect_match:
+            return NoEffectOperation(raw=line, line_number=line_number,
+                                     keyword=no_effect_match.group("keyword").capitalize())
+
         wait_match = self.WAIT_PATTERN.match(code)
         if wait_match:
             return WaitOperation(raw=line, line_number=line_number,
@@ -450,6 +563,13 @@ class UftVbScriptParser:
 
         method = method_match.group("method").lower()
         arguments = method_match.group("arguments").strip()
+
+        checkpoint_match = self.CHECKPOINT_PATTERN.match(remainder.strip().lstrip("."))
+        if checkpoint_match:
+            return CheckpointOperation(
+                raw=line, line_number=line_number, target=target,
+                name=checkpoint_match.group("name").replace('""', '"'),
+            )
 
         if method == "click":
             coordinates = self.COORDINATES_PATTERN.match(arguments) if arguments else None
@@ -548,6 +668,26 @@ class UftVbScriptParser:
                    "description": dict(step.description)} for step in steps],
         )
 
+    def _split_concatenation(self, value: str) -> list[str] | None:
+        """
+        Split a & b & c at the top level, ignoring & inside strings or calls.
+        """
+
+        parts, current, depth, in_string = [], "", 0, False
+        for character in value:
+            if character == '"':
+                in_string = not in_string
+            elif not in_string and character in "()":
+                depth += 1 if character == "(" else -1
+            elif not in_string and character == "&" and depth == 0:
+                parts.append(current)
+                current = ""
+                continue
+            current += character
+        parts.append(current)
+        stripped = [part.strip() for part in parts]
+        return stripped if len(stripped) > 1 and all(stripped) else None
+
     def _unwrap(self, arguments: str) -> str:
         """
         Remove one pair of parentheses wrapping a whole argument: Navigate(URL).
@@ -613,6 +753,12 @@ class UftVbScriptParser:
 
         if self.VARIABLE_PATTERN.match(value) and value.lower() not in ("true", "false", "nothing"):
             return VariableReference(raw=value, name=value)
+
+        parts = self._split_concatenation(value)
+        if parts is not None:
+            parsed = [self._parse_value(part) for part in parts]
+            if not any(isinstance(part, UnknownValueExpression) for part in parsed):
+                return ConcatenationExpression(raw=value, parts=parsed)
 
         string_match = self.STRING_LITERAL_PATTERN.match(value)
 

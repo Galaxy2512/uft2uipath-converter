@@ -5,7 +5,8 @@ from dataclasses import fields, is_dataclass
 
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.parser.uft_script_nodes import (
-    DataTableReference, EnvironmentReference, ExistCondition, ObjectReference, ParameterReference,
+    DataTableReference, EnvironmentReference, ExistCondition, FunctionDefinitionOperation,
+    ObjectReference, ParameterReference,
     ScriptOperation, UnknownScriptOperation, UnknownValueExpression,
 )
 
@@ -46,6 +47,24 @@ def analyze_source(source):
                     issue("unresolved_report_status", "Report status needs interpretation.", line, value.raw)
                 issue("assertion_mapping_required",
                       "Preserve report severity and test outcome; logging alone is insufficient.",
+                      line, value.raw)
+            if isinstance(value, FunctionDefinitionOperation):
+                # A definition is not part of the flow; its body is not migrated here.
+                issue("function_definition_not_migrated",
+                      f"{value.keyword} {value.name} is defined but not converted; "
+                      "calls to it cannot be mapped.", line, value.raw)
+                return
+            if type(value).__name__ == "CheckpointOperation":
+                issue("checkpoint_mapping_required",
+                      "UFT checkpoint needs an explicit UiPath verification with the same criteria.",
+                      line, value.raw)
+            if type(value).__name__ == "ParameterAssignmentOperation":
+                issue("output_parameter_mapping_required",
+                      "Writing an output parameter needs an explicit Out argument mapping.",
+                      line, value.raw)
+            if type(value).__name__ == "ObjectAssignmentOperation":
+                issue("object_assignment_unsupported",
+                      "Assigning an object reference has no validated UiPath equivalent.",
                       line, value.raw)
             if type(value).__name__ == "SetSecureTextOperation":
                 issue("secure_value_mapping_required",

@@ -149,6 +149,10 @@ class ComponentEmitter:
             if binding is None or binding[1] != expected:
                 raise ValueError(f"Missing {expected} binding for {category}:{source}.")
             return binding[0]
+        if kind == "ConcatenationExpression":
+            if expected != "String":
+                raise ValueError(f"Concatenation produces String, not {expected}.")
+            return " + ".join(self.value(part, "String") for part in node.get("parts", []))
         if kind == "VariableReference":
             name = node.get("name")
             if (name, expected) not in self.assigned:
@@ -234,6 +238,14 @@ class ComponentEmitter:
             if kind == "DeclarationOperation":
                 # Declarations become workflow variables where they are used.
                 trace.update(status="mapped_unverified", activity="(declaration)")
+                return
+            if kind == "NoEffectOperation":
+                trace.update(status="mapped_unverified", activity="(no effect)",
+                             note=f"{node.get('keyword')} has no migrated equivalent.")
+                return
+            if kind == "FunctionDefinitionOperation":
+                # The definition is not part of the flow; calls to it block instead.
+                trace.update(status="mapped_unverified", activity="(definition not migrated)")
                 return
             if kind == "AssignOperation":
                 name = node.get("name")

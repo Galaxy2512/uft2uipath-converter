@@ -1,9 +1,11 @@
 """Constructs taken from the real ALM_DEMO and Migration_BPT scripts."""
 from uft2uipath.parser.uft_script_nodes import (
-    ActivateOperation, AssignOperation, BackOperation, ClickOperation, CloseOperation,
-    ComparisonCondition, DataTableReference, DeclarationOperation, ExistCondition, IfOperation,
-    LiteralValue, NavigateOperation, SelectOperation, SetSecureTextOperation, SetTextOperation,
-    SyncOperation, UnknownScriptOperation, VariableReference, WaitOperation,
+    ActivateOperation, AssignOperation, BackOperation, CheckpointOperation, ClickOperation,
+    CloseOperation, ComparisonCondition, DataTableReference, DeclarationOperation, ExistCondition,
+    FunctionDefinitionOperation, IfOperation, LiteralValue, NavigateOperation, NoEffectOperation,
+    ObjectAssignmentOperation, ParameterAssignmentOperation, ParameterReference, SelectOperation,
+    SetSecureTextOperation, SetTextOperation, SyncOperation, UnknownScriptOperation,
+    VariableReference, WaitOperation,
 )
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 
@@ -117,6 +119,68 @@ def test_exist_condition_without_timeout_is_still_recognised():
 
     assert isinstance(operation.condition, ExistCondition)
     assert operation.condition.target.logical_name == "userName"
+
+
+def test_function_bodies_do_not_become_main_flow_steps():
+    operations = parse("\n".join([
+        f'{WELCOME}.Image("Sign-In").Click',
+        "Function Helper(ByVal x, y)",
+        f'{WELCOME}.WebEdit("userName").Set "only when called"',
+        "Exit Function",
+        "End Function",
+        'Browser("B").Close',
+    ]))
+
+    assert [type(operation) for operation in operations] == [
+        ClickOperation, FunctionDefinitionOperation, CloseOperation,
+    ]
+    definition = operations[1]
+    assert (definition.keyword, definition.name, definition.parameters) == (
+        "Function", "Helper", ["ByVal x", "y"])
+    assert isinstance(definition.body[0], SetTextOperation)
+
+
+def test_with_block_statements_get_their_object_and_original_line_numbers():
+    operations = parse("\n".join([
+        'With Browser("Browser")',
+        ".Sync",
+        '.Page("P").WebEdit("userName").Set "admin"',
+        "End With",
+        'Browser("B").Close',
+    ]))
+
+    assert [type(operation) for operation in operations] == [
+        SyncOperation, SetTextOperation, CloseOperation,
+    ]
+    assert [operation.line_number for operation in operations] == [2, 3, 5]
+    assert operations[1].target.browser == "Browser"
+    assert operations[1].target.logical_name == "userName"
+
+
+def test_checkpoints_output_parameters_and_object_assignments_are_named():
+    operations = parse("\n".join([
+        'Browser("F").Page("S").Check CheckPoint("Frankfurt")',
+        'Parameter("OrderNumber") = "A1"',
+        "Set oItem = Nothing",
+        "Randomize",
+    ]))
+
+    assert [type(operation) for operation in operations] == [
+        CheckpointOperation, ParameterAssignmentOperation, ObjectAssignmentOperation,
+        NoEffectOperation,
+    ]
+    assert operations[0].name == "Frankfurt"
+    assert operations[0].target.page == "S"
+    assert (operations[1].name, operations[1].value.value) == ("OrderNumber", "A1")
+    assert (operations[2].name, operations[2].expression) == ("oItem", "Nothing")
+
+
+def test_concatenated_values_keep_every_part():
+    [operation] = parse(f'{WELCOME}.WebEdit("userName").Set Parameter("First") & " " & sUser')
+
+    assert [type(part) for part in operation.value.parts] == [
+        ParameterReference, LiteralValue, VariableReference,
+    ]
 
 
 def test_comments_after_code_are_not_parsed_as_statements():

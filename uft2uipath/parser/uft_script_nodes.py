@@ -77,6 +77,15 @@ class ParameterReference(ValueExpression):
 
 
 @dataclass
+class ConcatenationExpression(ValueExpression):
+    """
+    Represents VBScript string concatenation: a & b & c.
+    """
+
+    parts: list[ValueExpression] = field(default_factory=list)
+
+
+@dataclass
 class VariableReference(ValueExpression):
     """
     Represents a plain VBScript variable used as a value.
@@ -292,6 +301,57 @@ class AssignOperation(ScriptOperation):
 
     name: str = ""
     value: ValueExpression | None = None
+
+
+@dataclass
+class FunctionDefinitionOperation(ScriptOperation):
+    """
+    Represents a Function/Sub definition. Its body runs only when called.
+    """
+
+    keyword: str = "Function"
+    name: str = ""
+    parameters: list[str] = field(default_factory=list)
+    body: list["ScriptOperation"] = field(default_factory=list)
+
+
+@dataclass
+class CheckpointOperation(ScriptOperation):
+    """
+    Represents <object>.Check CheckPoint("name"): a UFT checkpoint.
+    """
+
+    target: ObjectReference | None = None
+    name: str = ""
+
+
+@dataclass
+class ParameterAssignmentOperation(ScriptOperation):
+    """
+    Represents Parameter("name") = value: an output parameter of the action.
+    """
+
+    name: str = ""
+    value: ValueExpression | None = None
+
+
+@dataclass
+class ObjectAssignmentOperation(ScriptOperation):
+    """
+    Represents Set name = <expression>: a reference to an object, not a value.
+    """
+
+    name: str = ""
+    expression: str = ""
+
+
+@dataclass
+class NoEffectOperation(ScriptOperation):
+    """
+    Represents a statement with no equivalent effect to migrate, e.g. Randomize.
+    """
+
+    keyword: str = ""
 
 
 @dataclass

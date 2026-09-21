@@ -34,7 +34,7 @@ def test_spaced_end_if_keeps_following_steps_outside_branch():
 def test_unparsed_values_are_not_literals():
     for expression in (
         '"Admin" Parameter("Input_User")',
-        '"Admin" & "User"',
+        'Excel_ReadValue("Sheet", 1)',
     ):
         source = f"{TARGET}.Set {expression}"
         operation = UftVbScriptParser().parse(source).operations[0]
@@ -43,6 +43,14 @@ def test_unparsed_values_are_not_literals():
         assert isinstance(operation.value, UnknownValueExpression)
         assert operation.value.raw == expression
         assert not isinstance(operation.value, LiteralValue)
+
+
+def test_concatenation_keeps_each_part_typed():
+    operation = UftVbScriptParser().parse(f'{TARGET}.Set "Admin" & Parameter("User")').operations[0]
+
+    parts = operation.value.parts
+    assert [type(part) for part in parts] == [LiteralValue, ParameterReference]
+    assert parts[0].value == "Admin" and parts[1].name == "User"
 
 
 def test_variable_values_are_named_references_not_text():
