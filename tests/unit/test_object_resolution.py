@@ -48,8 +48,10 @@ def test_repeated_references_are_grouped_with_their_line_numbers():
     assert len(objects) == 1
     assert objects[0]["lines"] == [1, 2]
     assert objects[0]["status"] == "resolved"
-    assert objects[0]["uft"] == {"browser": "B", "page": "P",
-                                 "object_type": "WebEdit", "logical_name": "userName"}
+    assert objects[0]["uft"] == {
+        "path": [{"class": "Browser", "name": "B"}, {"class": "Page", "name": "P"},
+                 {"class": "WebEdit", "name": "userName"}],
+        "browser": "B", "page": "P", "object_type": "WebEdit", "logical_name": "userName"}
 
 
 def test_shared_repository_is_searched_after_the_local_one():

@@ -61,7 +61,19 @@ def write_xaml(path, root):
 
 
 def target_key(target):
-    return tuple(target.get(key) for key in ("browser", "page", "object_type", "logical_name"))
+    """Identity of a UFT object: its hierarchy, however the binding spelled it."""
+    path = target.get("path")
+    if not path:
+        path = [{"class": kind, "name": target.get(name)} for kind, name in
+                (("Browser", "browser"), ("Page", "page"))] + [
+            {"class": target.get("object_type"), "name": target.get("logical_name")}]
+    steps = []
+    for step in path:
+        kind, name = step.get("class"), step.get("name")
+        # A statement on the page repeats it as the target; keep one step for it.
+        if kind and name and (kind.casefold(), name.casefold()) not in steps[-1:]:
+            steps.append((kind.casefold(), name.casefold()))
+    return tuple(steps)
 
 
 class ComponentEmitter:
@@ -115,7 +127,7 @@ class ComponentEmitter:
             if not isinstance(obj, dict) or not isinstance(obj.get("uft"), dict):
                 raise ValueError("Object binding needs a uft identity.")
             key = target_key(obj["uft"])
-            if any(not isinstance(v, str) or not v for v in key) or key in self.objects:
+            if not key or key in self.objects:
                 raise ValueError("Missing or duplicate UFT object identity.")
             self.objects[key] = obj
 
@@ -164,8 +176,12 @@ class ComponentEmitter:
         if action != "exists" and binding.get("input_method") not in {"Simulate", "HardwareEvents", "SendWindowMessages"}:
             raise ValueError("Explicit input_method required.")
         if action != "exists":
-            from uft2uipath.script_generation.browser_scopes import browser_target
-            binding = browser_target(binding)
+            if binding.get("kind") == "desktop":
+                from uft2uipath.script_generation.window_scopes import window_target
+                binding = window_target(binding)
+            else:
+                from uft2uipath.script_generation.browser_scopes import browser_target
+                binding = browser_target(binding)
         return binding
 
     def ui_target(self, activity, activity_type, binding, timeout=None, scoped=False):
@@ -301,7 +317,10 @@ class ComponentEmitter:
         for node in operations:
             self.map_operation(node, seq)
         from uft2uipath.script_generation.browser_scopes import group_browser_actions
-        group_browser_actions(seq, self.scoped_actions)
+        from uft2uipath.script_generation.window_scopes import group_window_actions
+        scoped = self.scoped_actions
+        group_browser_actions(seq, {a: b for a, b in scoped.items() if b.get("kind") != "desktop"})
+        group_window_actions(seq, {a: b for a, b in scoped.items() if b.get("kind") == "desktop"})
         if self.typed_variables:
             variables = ET.Element(q("Sequence.Variables"))
             for name, kind in self.typed_variables.items():

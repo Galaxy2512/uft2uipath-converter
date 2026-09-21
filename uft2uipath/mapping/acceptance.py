@@ -13,6 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from uft2uipath.script_generation.browser_scopes import BROWSER_TYPES
+from uft2uipath.script_generation.emitter import target_key
 
 IDENTITY_KEYS = ("browser", "page", "object_type", "logical_name")
 INPUT_METHODS = {"Simulate", "HardwareEvents", "SendWindowMessages"}
@@ -33,7 +34,7 @@ class AcceptanceSettings:
 
 
 def identity_key(identity: dict[str, Any]) -> tuple:
-    return tuple(identity.get(key) for key in IDENTITY_KEYS)
+    return target_key(identity)
 
 
 def load_review(document: Any) -> dict[tuple, dict[str, Any]]:
@@ -45,7 +46,7 @@ def load_review(document: Any) -> dict[tuple, dict[str, Any]]:
         if not isinstance(entry, dict) or not isinstance(entry.get("uft"), dict):
             raise ReviewError("Every review entry needs a uft identity.")
         key = identity_key(entry["uft"])
-        if any(not isinstance(part, str) or not part for part in key):
+        if not key:
             raise ReviewError(f"Incomplete UFT identity: {entry['uft']}")
         if key in review:
             raise ReviewError(f"Duplicate review entry for {key}.")
@@ -86,11 +87,12 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
     else:
         reviewed, selector, source = {}, candidate["selector"], "threshold"
 
-    browser_type = reviewed.get("browser_type") or settings.browser_type
-    if candidate.get("kind") != "web":
-        decision["reasons"].append(f"unsupported_target_kind: {candidate.get('kind')}")
+    kind = candidate.get("kind")
+    if kind not in ("web", "desktop"):
+        decision["reasons"].append(f"unsupported_target_kind: {kind}")
         return decision
-    if browser_type not in BROWSER_TYPES:
+    browser_type = reviewed.get("browser_type") or settings.browser_type
+    if kind == "web" and browser_type not in BROWSER_TYPES:
         decision["reasons"].append("browser_type_required")
         return decision
     input_method = reviewed.get("input_method") or DEFAULT_INPUT_METHOD
@@ -102,14 +104,18 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
         decision["reasons"].append("invalid_timeout_ms")
         return decision
 
-    decision.update(accepted=True, accepted_by=source, selector=selector, binding={
-        "uft": {key: identity[key] for key in IDENTITY_KEYS},
-        "selector": selector,
+    binding = {
+        "uft": {**{key: identity.get(key) for key in IDENTITY_KEYS},
+                "path": identity.get("path")},
+        "selector": selector, "kind": kind,
         # The emitter refuses unverified bindings; record how this one was accepted.
         "verified": True,
         "verification_note": f"Accepted by {source}; not verified against the application.",
-        "input_method": input_method, "timeout_ms": timeout, "browser_type": browser_type,
-    })
+        "input_method": input_method, "timeout_ms": timeout,
+    }
+    if kind == "web":
+        binding["browser_type"] = browser_type
+    decision.update(accepted=True, accepted_by=source, selector=selector, binding=binding)
     return decision
 
 

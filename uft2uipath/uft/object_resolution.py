@@ -65,15 +65,20 @@ def _resolve(reference: ObjectReference, repositories) -> dict[str, Any]:
                       "identification": obj.mandatory})
 
     target = chain[-1]
-    classes = [s.test_object_class.casefold() for s in reference.path]
-    if classes[:2] == ["browser", "page"] and not reference.descriptive:
-        last = reference.path[2] if len(reference.path) == 3 else None
-        if last is not None or len(reference.path) == 2:
-            entry["uft"] = {
-                "browser": reference.path[0].name, "page": reference.path[1].name,
-                "object_type": last.test_object_class if last else "Page",
-                "logical_name": last.name if last else reference.path[1].name,
-            }
+    if not reference.descriptive:
+        classes = [s.test_object_class.casefold() for s in reference.path]
+        identity: dict[str, Any] = {
+            "path": [{"class": s.test_object_class, "name": s.name} for s in reference.path],
+        }
+        # Web objects also carry the flat identity the emitter's browser scopes use.
+        if classes[:2] == ["browser", "page"] and len(reference.path) in (2, 3):
+            last = reference.path[2] if len(reference.path) == 3 else None
+            identity.update(
+                browser=reference.path[0].name, page=reference.path[1].name,
+                object_type=last.test_object_class if last else "Page",
+                logical_name=last.name if last else reference.path[1].name,
+            )
+        entry["uft"] = identity
     return {
         **entry,
         "status": "descriptive" if reference.descriptive else "resolved",

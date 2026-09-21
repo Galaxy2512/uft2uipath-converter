@@ -56,16 +56,18 @@ def test_review_can_reject_a_candidate_the_threshold_would_accept():
     assert not decision["accepted"] and decision["reasons"] == ["rejected_in_review"]
 
 
-def test_missing_browser_type_and_desktop_targets_are_not_generated():
+def test_web_targets_need_a_browser_but_desktop_targets_do_not():
     no_browser = decide(entry(), AcceptanceSettings(threshold=0.1))
-    desktop = decide(entry(kind="desktop"), settings(threshold=0.1))
+    desktop = decide(entry(kind="desktop"), AcceptanceSettings(threshold=0.1))
+    unsupported = decide(entry(kind=None), settings(threshold=0.1))
     unresolved = decide({"uft": None, "path": [], "lines": [1], "status": "dynamic", "candidate": None},
                         settings(threshold=0.1))
 
     assert no_browser["reasons"] == ["browser_type_required"]
-    assert desktop["reasons"] == ["unsupported_target_kind: desktop"]
+    assert desktop["accepted"] and "browser_type" not in desktop["binding"]
+    assert desktop["binding"]["kind"] == "desktop"
+    assert unsupported["reasons"] == ["unsupported_target_kind: None"]
     assert unresolved["reasons"] == ["no_emitter_identity"]
-    assert not any(d["accepted"] for d in (no_browser, desktop, unresolved))
 
 
 def test_invalid_review_documents_are_rejected():
@@ -87,7 +89,7 @@ def test_binding_names_arguments_for_parameters_and_environment():
                                                     "direction": "In"}}
     assert binding["environment"] == {"1stURL": {"name": "in_env_v1stURL", "type": "String",
                                                  "direction": "In"}}
-    assert [obj["uft"] for obj in binding["objects"]] == [IDENTITY]
+    assert [obj["uft"]["logical_name"] for obj in binding["objects"]] == ["userName"]
     assert argument_name("param", "!!!") == "in_param_value"
 
 
