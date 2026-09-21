@@ -5,7 +5,7 @@ from dataclasses import fields, is_dataclass
 
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.parser.uft_script_nodes import (
-    EnvironmentReference, ExistCondition, ObjectReference, ParameterReference,
+    DataTableReference, EnvironmentReference, ExistCondition, ObjectReference, ParameterReference,
     ScriptOperation, UnknownScriptOperation, UnknownValueExpression,
 )
 
@@ -25,6 +25,7 @@ def typed(value):
 def analyze_source(source):
     parsed = UftVbScriptParser().parse(source)
     issues, parameters, environments, objects = [], set(), set(), []
+    data_columns = set()
     kinds = Counter()
 
     def issue(code, message, line, raw):
@@ -60,6 +61,11 @@ def analyze_source(source):
             parameters.add(value.name)
             issue("parameter_binding_required",
                   "Reference preserved; argument direction, type and call binding are not resolved.",
+                  line, value.raw)
+        if isinstance(value, DataTableReference):
+            data_columns.add(value.column)
+            issue("data_binding_required",
+                  "DataTable column preserved; the run-time data source is not resolved.",
                   line, value.raw)
         if isinstance(value, EnvironmentReference):
             environments.add(value.name)
@@ -103,6 +109,7 @@ def analyze_source(source):
         "references": {
             "parameters": sorted(parameters),
             "environment": sorted(environments),
+            "data": sorted(data_columns),
             "objects": objects,
         },
         "coverage": {

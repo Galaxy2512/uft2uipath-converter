@@ -66,10 +66,14 @@ def _resolve(reference: ObjectReference, repositories) -> dict[str, Any]:
 
     target = chain[-1]
     classes = [s.test_object_class.casefold() for s in reference.path]
-    if len(reference.path) == 3 and classes[:2] == ["browser", "page"] and not reference.descriptive:
-        entry["uft"] = {"browser": reference.path[0].name, "page": reference.path[1].name,
-                        "object_type": reference.path[2].test_object_class,
-                        "logical_name": reference.path[2].name}
+    if classes[:2] == ["browser", "page"] and not reference.descriptive:
+        last = reference.path[2] if len(reference.path) == 3 else None
+        if last is not None or len(reference.path) == 2:
+            entry["uft"] = {
+                "browser": reference.path[0].name, "page": reference.path[1].name,
+                "object_type": last.test_object_class if last else "Page",
+                "logical_name": last.name if last else reference.path[1].name,
+            }
     return {
         **entry,
         "status": "descriptive" if reference.descriptive else "resolved",

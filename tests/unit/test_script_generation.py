@@ -85,7 +85,6 @@ def test_special_literal_is_csharp_expression_and_xml_roundtrips():
     'Reporter.ReportEvent micFail, "Title", "Failure"',
     'ExitTest(-1)',
     TARGET + '.SetSecure Parameter("User")',
-    'Option Explicit',
     TARGET + '.Set user & "x"',
 ])
 def test_unsupported_semantics_block_before_any_ui(source):
@@ -94,6 +93,16 @@ def test_unsupported_semantics_block_before_any_ui(source):
     assert first_action(root).tag == q("Throw")
     assert root.find(".//" + q("Click", UI)) is not None
     assert report["trace"][-1]["raw"] == source
+
+
+def test_declarations_do_not_block_and_emit_no_activity():
+    root, report = emit("Option Explicit\nDim user\n" + CLICK)
+
+    assert report["status"] == "mapped_unverified"
+    assert first_action(root).tag != q("Throw")
+    assert [trace["activity"] for trace in report["trace"]] == [
+        "(declaration)", "(declaration)", "Click",
+    ]
 
 
 def test_unresolved_else_blocks_entire_workflow_before_condition():

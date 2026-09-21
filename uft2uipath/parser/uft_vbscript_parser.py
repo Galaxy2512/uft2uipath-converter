@@ -534,6 +534,10 @@ class UftVbScriptParser:
                 object_type = kind
                 logical_name = step.name
 
+        if object_type is None and page is not None:
+            # A statement on the page itself, e.g. Page.Sync.
+            object_type, logical_name = "Page", page
+
         return ObjectReference(
             browser=browser,
             page=page,

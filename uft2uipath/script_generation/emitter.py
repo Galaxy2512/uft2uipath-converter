@@ -12,6 +12,7 @@ for prefix, uri in (("", WF), ("x", X), ("ui", UI)):
 TYPES = {"String": "x:String", "Boolean": "x:Boolean", "Int32": "x:Int32"}
 # A deliberately restrictive naming contract avoids keyword collisions.
 IDENTIFIER = re.compile(r"in_[A-Za-z][A-Za-z0-9_]*\Z")
+IDENTIFIER_NAME = re.compile(r"[A-Za-z][A-Za-z0-9_]*\Z")
 
 
 def q(name, uri=WF):
@@ -76,6 +77,8 @@ class ComponentEmitter:
         self.trace = []
         self.counter = 0
         self.variables = []
+        self.typed_variables = {}
+        self.assigned = set()
         self.scoped_actions = {}
         self._load_bindings()
 
@@ -88,7 +91,7 @@ class ComponentEmitter:
     def _load_bindings(self):
         if not isinstance(self.bindings, dict):
             raise ValueError("Component target bindings must be an object.")
-        for category in ("parameters", "environment"):
+        for category in ("parameters", "environment", "data"):
             entries = self.bindings.get(category, {})
             if not isinstance(entries, dict):
                 raise ValueError(f"{category} must be an object.")
@@ -126,12 +129,19 @@ class ComponentEmitter:
             if actual != expected:
                 raise ValueError(f"Expected {expected}; no implicit conversion from {actual}.")
             return literal(value)
-        category = {"ParameterReference": "parameters", "EnvironmentReference": "environment"}.get(kind)
+        category = {"ParameterReference": "parameters", "EnvironmentReference": "environment",
+                    "DataTableReference": "data"}.get(kind)
         if category:
-            binding = self.references.get((category, node.get("name")))
+            source = node.get("column") if category == "data" else node.get("name")
+            binding = self.references.get((category, source))
             if binding is None or binding[1] != expected:
-                raise ValueError(f"Missing {expected} binding for {category}:{node.get('name')}.")
+                raise ValueError(f"Missing {expected} binding for {category}:{source}.")
             return binding[0]
+        if kind == "VariableReference":
+            name = node.get("name")
+            if (name, expected) not in self.assigned:
+                raise ValueError(f"{name} is not assigned as {expected} earlier in this action.")
+            return name
         raise ValueError("Unsupported expression remains unresolved.")
 
     def object_binding(self, node, action):
@@ -178,7 +188,7 @@ class ComponentEmitter:
         if kind == "IfOperation":
             self.counter += 1
             variable = f"exists_{self.counter}"
-            self.variables.append(variable)
+            self.typed_variables[variable] = "Boolean"
             condition = node.get("condition") or {}
             try:
                 if condition.get("node_type") != "ExistCondition":
@@ -205,7 +215,51 @@ class ComponentEmitter:
             return
 
         try:
-            if kind == "ClickOperation":
+            if kind == "DeclarationOperation":
+                # Declarations become workflow variables where they are used.
+                trace.update(status="mapped_unverified", activity="(declaration)")
+                return
+            if kind == "AssignOperation":
+                name = node.get("name")
+                if not IDENTIFIER_NAME.fullmatch(name or ""):
+                    raise ValueError("Assignment target is not a simple variable name.")
+                text = self.value(node.get("value"), "String")
+                if self.typed_variables.get(name, "String") != "String":
+                    raise ValueError(f"{name} is already used with another type.")
+                self.typed_variables[name] = "String"
+                self.assigned.add((name, "String"))
+                assign = ET.SubElement(parent, q("Assign"), {"DisplayName": display})
+                ET.SubElement(ET.SubElement(assign, q("Assign.To")), q("OutArgument"), {
+                    q("TypeArguments", X): "x:String"}).text = expr(name)
+                ET.SubElement(ET.SubElement(assign, q("Assign.Value")), q("InArgument"), {
+                    q("TypeArguments", X): "x:String"}).text = expr(text)
+                trace.update(status="mapped_unverified", activity="Assign")
+            elif kind == "WaitOperation":
+                seconds = (node.get("seconds") or {}).get("value")
+                if (node.get("seconds") or {}).get("node_type") != "LiteralValue" or type(seconds) is not int or not 0 < seconds <= 86400:
+                    raise ValueError("Wait requires a positive literal number of seconds.")
+                ET.SubElement(parent, q("Delay"), {
+                    "DisplayName": display, "Duration": expr(f"TimeSpan.FromSeconds({seconds})"),
+                })
+                trace.update(status="mapped_unverified", activity="Delay")
+            elif kind == "SelectOperation":
+                binding = self.object_binding(node, "select")
+                item = self.value(node.get("value"), "String")
+                activity = ET.SubElement(parent, q("SelectItem", UI), {
+                    "DisplayName": display, "Item": expr(item), "ContinueOnError": "False",
+                })
+                self.ui_target(activity, "SelectItem", binding, scoped=True)
+                trace.update(status="mapped_unverified", activity="SelectItem")
+            elif kind == "SyncOperation":
+                binding = self.object_binding(node, "exists")
+                activity = ET.SubElement(parent, q("WaitUiElementAppear", UI), {
+                    "DisplayName": display + " / wait for page", "ContinueOnError": "False",
+                })
+                self.ui_target(activity, "WaitUiElementAppear", binding)
+                # Sync waits for load completion; waiting for the page element is close, not identical.
+                trace.update(status="mapped_unverified", activity="WaitUiElementAppear",
+                             note="Sync approximated by waiting for the page selector.")
+            elif kind == "ClickOperation":
                 binding = self.object_binding(node, "click")
                 activity = ET.SubElement(parent, q("Click", UI), {
                     "DisplayName": display, "ContinueOnError": "False",
@@ -215,6 +269,9 @@ class ComponentEmitter:
                 })
                 self.ui_target(activity, "Click", binding, scoped=True)
                 trace.update(status="mapped_unverified", activity="Click")
+                if node.get("x") is not None:
+                    trace["note"] = (f"Recorded offset ({node['x']}, {node['y']}) is not reproduced; "
+                                     "the element is clicked at its centre.")
             elif kind == "SetTextOperation":
                 binding = self.object_binding(node, "set")
                 text = self.value(node.get("value"), "String")
@@ -245,13 +302,13 @@ class ComponentEmitter:
             self.map_operation(node, seq)
         from uft2uipath.script_generation.browser_scopes import group_browser_actions
         group_browser_actions(seq, self.scoped_actions)
-        if self.variables:
+        if self.typed_variables:
             variables = ET.Element(q("Sequence.Variables"))
-            for name in self.variables:
-                ET.SubElement(variables, q("Variable"), {q("TypeArguments", X): "x:Boolean", "Name": name})
+            for name, kind in self.typed_variables.items():
+                ET.SubElement(variables, q("Variable"), {q("TypeArguments", X): TYPES[kind], "Name": name})
             seq.insert(0, variables)
         if self.issues:
-            index = 1 if self.variables else 0
+            index = 1 if self.typed_variables else 0
             seq.insert(index, throw(f"Component {self.component_id}: incomplete migration. Read generation-report.json."))
         return root, {
             "component_id": self.component_id,
