@@ -36,7 +36,7 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
     assert [c.name for c in test.components] == ["Login", "Logout"]
     assert set(result.artifacts) == {"decoded-tables", "resolved-project", "resolved-scripts",
                                      "selector-candidates", "script-analysis", "conversion-plan",
-                                     "selector-review.template", "pipeline-report"}
+                                     "selector-review.template", "studio-validation", "pipeline-report"}
 
     decoded = read(result.artifacts["decoded-tables"])
     assert decoded["tables"]["TEST"] == {"row_count": 2}
@@ -45,9 +45,11 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
     report = read(result.artifacts["pipeline-report"])
     assert [s["name"] for s in report["stages"]] == [
         "extract", "decode", "model", "resolve_scripts", "resolve_objects",
-        "analyze", "bind", "emit", *PENDING_STAGES,
+        "analyze", "bind", "emit", "validate", *PENDING_STAGES,
     ]
     assert report["uipath_project_generated"] is True
+    validation = read(result.artifacts["studio-validation"])
+    assert validation["static_validation_passed"] is True
     # Manual tests are not registered as UiPath test cases.
     assert {t["test_id"]: t["status"] for t in read(tmp_path / "out" / "project" /
                                                    "generation-report.json")["tests"]} == {
@@ -260,6 +262,7 @@ def test_pipeline_generates_a_studio_project_from_accepted_selectors(tmp_path):
     assert stages["bind"]["accepted_selectors"] == 2
     assert stages["emit"]["registered_test_count"] == 1
     assert read(result.artifacts["pipeline-report"])["uipath_project_generated"] is True
+    assert read(result.artifacts["studio-validation"])["static_validation_passed"] is True
 
 
 def test_without_accepted_selectors_the_project_is_generated_but_blocked(tmp_path):
@@ -323,5 +326,6 @@ def test_convert_command_runs_pipeline(tmp_path, monkeypatch, capsys):
 
     printed = capsys.readouterr().out
     assert "Tests selected: 1" in printed
-    assert "Studio load, execution and UFT equivalence are unverified." in printed
+    assert "Static Studio-project validation runs automatically." in printed
+    assert "Actual Studio load, execution and UFT equivalence are unverified." in printed
     assert (out / "artifacts" / "resolved-project.json").is_file()
