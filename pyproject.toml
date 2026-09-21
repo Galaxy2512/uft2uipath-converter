@@ -12,3 +12,7 @@ dev = [
 
 [project.scripts]
 uft2uipath = "uft2uipath.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["uft2uipath*"]
+exclude = ["tests*", "samples*", "output*", "examples*"]
