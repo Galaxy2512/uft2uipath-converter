@@ -1,7 +1,10 @@
 """Classic UI activity candidates; unresolved semantics fail before UI actions."""
 import json
+import math
 import re
 import xml.etree.ElementTree as ET
+
+from uft2uipath.mapping.operation_registry import lookup
 
 WF = "http://schemas.microsoft.com/netfx/2009/xaml/activities"
 X = "http://schemas.microsoft.com/winfx/2006/xaml"
@@ -9,10 +12,29 @@ UI = "http://schemas.uipath.com/workflow/activities"
 for prefix, uri in (("", WF), ("x", X), ("ui", UI)):
     ET.register_namespace(prefix, uri)
 
-TYPES = {"String": "x:String", "Boolean": "x:Boolean", "Int32": "x:Int32"}
+TYPES = {"String": "x:String", "Boolean": "x:Boolean", "Int32": "x:Int32", "Double": "x:Double",
+         "Object": "x:Object"}
+# Object only holds activity results internally; arguments stay typed.
+ARGUMENT_TYPES = ("String", "Boolean", "Int32")
 # A deliberately restrictive naming contract avoids keyword collisions.
 IDENTIFIER = re.compile(r"in_[A-Za-z][A-Za-z0-9_]*\Z")
+OUT_IDENTIFIER = re.compile(r"out_[A-Za-z][A-Za-z0-9_]*\Z")
 IDENTIFIER_NAME = re.compile(r"[A-Za-z][A-Za-z0-9_]*\Z")
+DIRECTIONS = {"In": "InArgument", "Out": "OutArgument", "InOut": "InOutArgument"}
+# Set by Reporter micFail in any action; the calling test fails at its end.
+FAILED_FLAG = "io_uft_failed"
+# Marks the exception ExitTest raises, so the test can stop without failing.
+EXIT_TEST_MARKER = "UFT ExitTest"
+# Appended to that message when a failure was reported before the ExitTest.
+EXIT_FAILED_SUFFIX = " [failure reported]"
+CSHARP_KEYWORDS = frozenset("""
+    abstract as base bool break byte case catch char checked class const continue decimal
+    default delegate do double else enum event explicit extern false finally fixed float for
+    foreach goto if implicit in int interface internal is lock long namespace new null object
+    operator out override params private protected public readonly ref return sbyte sealed
+    short sizeof stackalloc static string struct switch this throw true try typeof uint ulong
+    unchecked unsafe ushort using virtual void volatile while
+""".split())
 
 
 def q(name, uri=WF):
@@ -23,6 +45,10 @@ def expr(code):
     return "[" + code + "]"
 
 
+class NonNull(str):
+    """C# code for a String that is never null, e.g. a concatenation or ToString()."""
+
+
 def literal(value):
     if isinstance(value, str):
         return json.dumps(value, ensure_ascii=True)
@@ -30,24 +56,40 @@ def literal(value):
         return "true" if value else "false"
     if type(value) is int and -(2**31) <= value < 2**31:
         return str(value)
+    if type(value) is float and math.isfinite(value):
+        text = repr(value)
+        # A C# double literal needs a decimal point or an exponent.
+        return text if any(c in text for c in ".eE") else text + ".0"
     raise ValueError("Unsupported literal type or Int32 range.")
 
 
-def throw(message):
+def throw(message, display="Migration blocked", exception="System.InvalidOperationException"):
     return ET.Element(q("Throw"), {
-        "DisplayName": "Migration blocked",
-        "Exception": expr("new System.InvalidOperationException(" + literal(message) + ")"),
+        "DisplayName": display,
+        "Exception": expr(f"new {exception}(" + literal(message) + ")"),
     })
 
 
-def document(name, arguments):
+def assign(parent, display, target, kind, code):
+    """Assign the C# expression code to a variable or argument of the given type."""
+    element = ET.SubElement(parent, q("Assign"), {"DisplayName": display})
+    ET.SubElement(ET.SubElement(element, q("Assign.To")), q("OutArgument"), {
+        q("TypeArguments", X): TYPES[kind]}).text = expr(target)
+    ET.SubElement(ET.SubElement(element, q("Assign.Value")), q("InArgument"), {
+        q("TypeArguments", X): TYPES[kind]}).text = expr(code)
+    return element
+
+
+def document(name, arguments, directions=None):
+    """Workflow root; arguments are In unless directions names Out or InOut."""
     root = ET.Element(q("Activity"), {q("Class", X): name})
     # Omit the x:Members directive when the workflow has no arguments.
     if arguments:
         members = ET.SubElement(root, q("Members", X))
         for arg, kind in sorted(arguments.items()):
+            direction = DIRECTIONS[(directions or {}).get(arg, "In")]
             ET.SubElement(members, q("Property", X), {
-                "Name": arg, "Type": f"InArgument({TYPES[kind]})",
+                "Name": arg, "Type": f"{direction}({TYPES[kind]})",
             })
     seq = ET.SubElement(root, q("Sequence"), {"DisplayName": name})
     return root, seq
@@ -88,6 +130,9 @@ class ComponentEmitter:
         self.analysis = analysis
         self.bindings = bindings
         self.arguments = {}
+        # Only Out and InOut arguments are listed; the rest are In.
+        self.directions = {}
+        self.exits_test = False
         self.references = {}
         self.objects = {}
         self.issues = []
@@ -118,13 +163,32 @@ class ComponentEmitter:
                 name, kind = arg.get("name"), arg.get("type")
                 if (
                     not isinstance(name, str) or not IDENTIFIER.fullmatch(name)
-                    or kind not in TYPES or arg.get("direction") != "In"
+                    or kind not in ARGUMENT_TYPES or arg.get("direction") != "In"
                 ):
                     raise ValueError("Only explicit In arguments named in_<identifier>, with String/Boolean/Int32 types, are supported.")
                 if name in self.arguments:
                     raise ValueError(f"Duplicate target argument {name}.")
                 self.arguments[name] = kind
                 self.references[(category, source_name)] = (name, kind)
+        outputs = self.bindings.get("outputs", {})
+        if not isinstance(outputs, dict):
+            raise ValueError("outputs must be an object.")
+        for source_name, arg in outputs.items():
+            if not isinstance(arg, dict):
+                raise ValueError("Argument definition must be an object.")
+            name, kind = arg.get("name"), arg.get("type")
+            if (
+                not isinstance(name, str) or not OUT_IDENTIFIER.fullmatch(name)
+                or kind not in ARGUMENT_TYPES or arg.get("direction") != "Out"
+            ):
+                raise ValueError("Output parameters must be Out arguments named out_<identifier>, with String/Boolean/Int32 types.")
+            if name in self.arguments:
+                raise ValueError(f"Duplicate target argument {name}.")
+            self.arguments[name] = kind
+            self.directions[name] = "Out"
+            self.references[("outputs", source_name)] = (name, kind)
+            # UFT reads an output parameter as its current value.
+            self.references.setdefault(("parameters", source_name), (name, kind))
         objects = self.bindings.get("objects", [])
         if not isinstance(objects, list):
             raise ValueError("objects must be an array.")
@@ -136,34 +200,117 @@ class ComponentEmitter:
                 raise ValueError("Missing or duplicate UFT object identity.")
             self.objects[key] = obj
 
-    def value(self, node, expected):
+    def failure_flag(self):
+        """The InOut Boolean a reported failure sets; the calling test checks it."""
+        self.arguments[FAILED_FLAG] = "Boolean"
+        self.directions[FAILED_FLAG] = "InOut"
+        return FAILED_FLAG
+
+    def expression_type(self, node):
+        """Static type of a value expression; raises with the reason when it is unknown."""
         if not isinstance(node, dict):
             raise ValueError("Value expression is missing.")
         kind = node.get("node_type")
         if kind == "LiteralValue":
             value = node.get("value")
-            actual = "Boolean" if type(value) is bool else "Int32" if type(value) is int else "String" if isinstance(value, str) else None
-            if actual != expected:
-                raise ValueError(f"Expected {expected}; no implicit conversion from {actual}.")
-            return literal(value)
+            actual = ("Boolean" if type(value) is bool else "Int32" if type(value) is int
+                      else "Double" if type(value) is float else "String" if isinstance(value, str) else None)
+            if actual is None:
+                raise ValueError("Unsupported literal value.")
+            return actual
         category = {"ParameterReference": "parameters", "EnvironmentReference": "environment",
                     "DataTableReference": "data"}.get(kind)
         if category:
             source = node.get("column") if category == "data" else node.get("name")
             binding = self.references.get((category, source))
-            if binding is None or binding[1] != expected:
-                raise ValueError(f"Missing {expected} binding for {category}:{source}.")
-            return binding[0]
+            if binding is None:
+                raise ValueError(f"Missing binding for {category}:{source}.")
+            return binding[1]
         if kind == "ConcatenationExpression":
-            if expected != "String":
-                raise ValueError(f"Concatenation produces String, not {expected}.")
-            return " + ".join(self.value(part, "String") for part in node.get("parts", []))
+            return "String"
         if kind == "VariableReference":
-            name = node.get("name")
-            if (name, expected) not in self.assigned:
-                raise ValueError(f"{name} is not assigned as {expected} earlier in this action.")
-            return name
+            kinds = {kind for name, kind in self.assigned if name == node.get("name")}
+            if len(kinds) != 1:
+                raise ValueError(f"{node.get('name')} is not assigned earlier in this action.")
+            return kinds.pop()
+        entry = lookup(kind)
+        if entry is not None and entry.kind == "expression" and entry.handler is not None:
+            return entry.typer(self, node) if entry.typer else entry.returns
         raise ValueError("Unsupported expression remains unresolved.")
+
+    def value_type(self, node):
+        """Static type of a value expression, or None when it cannot be known."""
+        try:
+            return self.expression_type(node)
+        except ValueError:
+            return None
+
+    def function_origin(self, name):
+        """Where a non-built-in function is defined: its library, this action, or None."""
+        library = (self.analysis.get("library_functions") or {}).get(name.casefold())
+        if library:
+            return f"library {library}"
+        local = {(op.get("name") or "").casefold() for op in self.analysis.get("operations") or []
+                 if isinstance(op, dict) and op.get("node_type") == "FunctionDefinitionOperation"}
+        return "this action" if name.casefold() in local else None
+
+    def temporary(self, prefix, kind):
+        """A new workflow variable for an intermediate result."""
+        self.counter += 1
+        name = f"{prefix}_{self.counter}"
+        self.typed_variables[name] = kind
+        return name
+
+    def condition(self, node, parent, display):
+        """C# Boolean code for an If condition; activities it needs go to parent first."""
+        if not isinstance(node, dict):
+            raise ValueError("Condition is missing.")
+        entry = lookup(node.get("node_type"))
+        if entry is not None and entry.kind == "condition" and entry.handler is not None:
+            return entry.handler(self, node, parent, display)
+        if entry is None or entry.kind == "expression":
+            # A plain value used as a condition must be Boolean, as VBScript would test it.
+            return self.value(node, "Boolean", parent)
+        raise ValueError(f"{node.get('node_type')} is not a supported condition.")
+
+    def value(self, node, expected, parent=None):
+        """C# code for a value of the expected type.
+
+        Values that need an activity first, e.g. reading a property, emit it
+        into parent. Only conversions VBScript and C# agree on are implicit.
+        """
+        actual = self.expression_type(node)
+        code = self._code(node, actual, parent)
+        if actual == expected:
+            return code
+        if expected == "Double" and actual == "Int32":
+            return f"(double)({code})"
+        raise ValueError(f"Expected {expected}; no implicit conversion from {actual}.")
+
+    def as_string(self, node, parent=None):
+        """C# String code for a value, converted as VBScript converts it in & and CStr."""
+        kind = self.expression_type(node)
+        code = self._code(node, kind, parent)
+        if kind == "String":
+            return code
+        # Boolean prints True/False in both; numbers use the current culture in both.
+        return NonNull(f"({code}).ToString()")
+
+    def _code(self, node, kind, parent):
+        node_type = node.get("node_type")
+        if node_type == "LiteralValue":
+            return literal(node.get("value"))
+        category = {"ParameterReference": "parameters", "EnvironmentReference": "environment",
+                    "DataTableReference": "data"}.get(node_type)
+        if category:
+            source = node.get("column") if category == "data" else node.get("name")
+            return self.references[(category, source)][0]
+        if node_type == "ConcatenationExpression":
+            # C# concatenation turns null into "", as VBScript does with Empty.
+            return NonNull(" + ".join(self.as_string(part, parent) for part in node.get("parts", [])))
+        if node_type == "VariableReference":
+            return node.get("name")
+        return lookup(node_type).handler(self, node, parent)
 
     def object_binding(self, node, action):
         target = node.get("target")
@@ -210,136 +357,22 @@ class ComponentEmitter:
         trace = {"component_id": self.component_id, "line_number": line,
                  "raw": node.get("raw"), "node_type": kind, "status": "blocked"}
         self.trace.append(trace)
-        if kind == "IfOperation":
-            self.counter += 1
-            variable = f"exists_{self.counter}"
-            self.typed_variables[variable] = "Boolean"
-            condition = node.get("condition") or {}
-            try:
-                if condition.get("node_type") != "ExistCondition":
-                    raise ValueError("Only an explicitly parsed Exist condition is supported.")
-                binding = self.object_binding(condition, "exists")
-                timeout_node = condition.get("timeout") or {}
-                seconds = timeout_node.get("value")
-                if timeout_node.get("node_type") != "LiteralValue" or type(seconds) is not int or not 0 < seconds <= 2147483:
-                    raise ValueError("Exist requires a positive literal timeout in seconds in this version.")
-                activity = ET.SubElement(parent, q("UiElementExists", UI), {
-                    "DisplayName": display + " / Exists", "Exists": expr(variable), "ContinueOnError": "False",
-                })
-                self.ui_target(activity, "UiElementExists", binding, seconds * 1000)
-                trace.update(status="mapped_unverified", activity="UiElementExists + If")
-            except (ValueError, ET.ParseError) as exc:
-                self.problem(node, "unresolved_condition", str(exc))
-                parent.append(throw(f"Component {self.component_id}, line {line}: unresolved condition."))
-            branch = ET.SubElement(parent, q("If"), {"DisplayName": display, "Condition": expr(variable)})
-            for field, prop_name in (("then_operations", "If.Then"), ("else_operations", "If.Else")):
-                prop = ET.SubElement(branch, q(prop_name))
-                body = ET.SubElement(prop, q("Sequence"), {"DisplayName": field})
-                for child in node.get(field, []):
-                    self.map_operation(child, body)
-            return
-
+        # Handlers live in script_generation.emitters; the registry says which applies.
+        entry = lookup(kind)
+        start = len(parent)
         try:
-            if kind == "DeclarationOperation":
-                # Declarations become workflow variables where they are used.
-                trace.update(status="mapped_unverified", activity="(declaration)")
-                return
-            if kind == "NoEffectOperation":
-                trace.update(status="mapped_unverified", activity="(no effect)",
-                             note=f"{node.get('keyword')} has no migrated equivalent.")
-                return
-            if kind == "FunctionDefinitionOperation":
-                # The definition is not part of the flow; calls to it block instead.
-                trace.update(status="mapped_unverified", activity="(definition not migrated)")
-                return
-            if kind == "AssignOperation":
-                name = node.get("name")
-                if not IDENTIFIER_NAME.fullmatch(name or ""):
-                    raise ValueError("Assignment target is not a simple variable name.")
-                text = self.value(node.get("value"), "String")
-                if self.typed_variables.get(name, "String") != "String":
-                    raise ValueError(f"{name} is already used with another type.")
-                self.typed_variables[name] = "String"
-                self.assigned.add((name, "String"))
-                assign = ET.SubElement(parent, q("Assign"), {"DisplayName": display})
-                ET.SubElement(ET.SubElement(assign, q("Assign.To")), q("OutArgument"), {
-                    q("TypeArguments", X): "x:String"}).text = expr(name)
-                ET.SubElement(ET.SubElement(assign, q("Assign.Value")), q("InArgument"), {
-                    q("TypeArguments", X): "x:String"}).text = expr(text)
-                trace.update(status="mapped_unverified", activity="Assign")
-            elif kind == "WaitOperation":
-                seconds = (node.get("seconds") or {}).get("value")
-                if (node.get("seconds") or {}).get("node_type") != "LiteralValue" or type(seconds) is not int or not 0 < seconds <= 86400:
-                    raise ValueError("Wait requires a positive literal number of seconds.")
-                ET.SubElement(parent, q("Delay"), {
-                    "DisplayName": display, "Duration": expr(f"TimeSpan.FromSeconds({seconds})"),
-                })
-                trace.update(status="mapped_unverified", activity="Delay")
-            elif kind == "SelectOperation":
-                binding = self.object_binding(node, "select")
-                item = self.value(node.get("value"), "String")
-                activity = ET.SubElement(parent, q("SelectItem", UI), {
-                    "DisplayName": display, "Item": expr(item), "ContinueOnError": "False",
-                })
-                self.ui_target(activity, "SelectItem", binding, scoped=True)
-                trace.update(status="mapped_unverified", activity="SelectItem")
-            elif kind == "SyncOperation":
-                binding = self.object_binding(node, "exists")
-                activity = ET.SubElement(parent, q("WaitUiElementAppear", UI), {
-                    "DisplayName": display + " / wait for page", "ContinueOnError": "False",
-                })
-                self.ui_target(activity, "WaitUiElementAppear", binding)
-                # Sync waits for load completion; waiting for the page element is close, not identical.
-                trace.update(status="mapped_unverified", activity="WaitUiElementAppear",
-                             note="Sync approximated by waiting for the page selector.")
-            elif kind == "ClickOperation":
-                binding = self.object_binding(node, "click")
-                activity = ET.SubElement(parent, q("Click", UI), {
-                    "DisplayName": display, "ContinueOnError": "False",
-                    "ClickType": "CLICK_SINGLE", "MouseButton": "BTN_LEFT",
-                    "SimulateClick": str(binding["input_method"] == "Simulate").lower(),
-                    "SendWindowMessages": str(binding["input_method"] == "SendWindowMessages").lower(),
-                })
-                self.ui_target(activity, "Click", binding, scoped=True)
-                trace.update(status="mapped_unverified", activity="Click")
-                if node.get("x") is not None:
-                    trace["note"] = (f"Recorded offset ({node['x']}, {node['y']}) is not reproduced; "
-                                     "the element is clicked at its centre.")
-            elif kind == "SetSecureTextOperation":
-                binding = self.object_binding(node, "set")
-                secret = self.references.get(("secure", _secret_source(node)))
-                if secret is None or secret[1] != "String":
-                    raise ValueError(
-                        f"SetSecure needs a String argument bound for {_secret_source(node)!r}; "
-                        "the UFT encoded value cannot be decoded."
-                    )
-                activity = ET.SubElement(parent, q("TypeInto", UI), {
-                    "DisplayName": display, "Text": expr(secret[0]), "EmptyField": "True",
-                    "ContinueOnError": "False",
-                    "SimulateType": str(binding["input_method"] == "Simulate").lower(),
-                    "SendWindowMessages": str(binding["input_method"] == "SendWindowMessages").lower(),
-                })
-                self.ui_target(activity, "TypeInto", binding, scoped=True)
-                trace.update(status="mapped_unverified", activity="TypeInto (secure)",
-                             note="The UFT encoded value is not carried over; the argument supplies it.")
-            elif kind == "SetTextOperation":
-                binding = self.object_binding(node, "set")
-                text = self.value(node.get("value"), "String")
-                activity = ET.SubElement(parent, q("TypeInto", UI), {
-                    "DisplayName": display, "Text": expr(text), "EmptyField": "True", "ContinueOnError": "False",
-                    "SimulateType": str(binding["input_method"] == "Simulate").lower(),
-                    "SendWindowMessages": str(binding["input_method"] == "SendWindowMessages").lower(),
-                })
-                self.ui_target(activity, "TypeInto", binding, scoped=True)
-                trace.update(status="mapped_unverified", activity="TypeInto (replace)")
-            else:
+            if entry is None or entry.handler is None or entry.kind != "operation":
                 raise ValueError(f"{kind} has no validated semantic mapping; source preserved.")
+            entry.handler(self, node, parent, trace, display)
         except (ValueError, ET.ParseError) as exc:
+            # Drop activities the line emitted before it failed, e.g. a property read.
+            del parent[start:]
             self.problem(node, "unsupported_mapping", str(exc))
             parent.append(throw(f"Component {self.component_id}, line {line}: migration incomplete."))
 
     def generate(self):
-        root, seq = document(self.workflow_name, self.arguments)
+        # The root is built last: mapping can add arguments, e.g. the failure flag.
+        seq = ET.Element(q("Sequence"), {"DisplayName": self.workflow_name})
         operations = self.analysis.get("operations")
         if not isinstance(operations, list) or not operations:
             self.problem({}, "no_operations", "No parsed script operations available.")
@@ -363,9 +396,16 @@ class ComponentEmitter:
         if self.issues:
             index = 1 if self.typed_variables else 0
             seq.insert(index, throw(f"Component {self.component_id}: incomplete migration. Read generation-report.json."))
-        return root, {
+        root, placeholder = document(self.workflow_name, self.arguments, self.directions)
+        root[list(root).index(placeholder)] = seq
+        report = {
             "component_id": self.component_id,
             "status": "blocked" if self.issues else "mapped_unverified",
             "arguments": self.arguments, "issues": self.issues, "trace": self.trace,
             "executable_verified": False, "equivalent_verified": False,
         }
+        if self.directions:
+            report["argument_directions"] = dict(self.directions)
+        if self.exits_test:
+            report["exits_test"] = True
+        return root, report

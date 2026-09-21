@@ -69,15 +69,19 @@ def test_branch_types_and_references_are_preserved():
 
 
 def test_unknown_expression_and_declarations_have_line_diagnostics():
-    source = 'Option Explicit\nDim user\n' + SET.replace('Parameter("User")', 'Excel_Read(user)')
+    source = 'Option Explicit\nDim user\n' + SET.replace('Parameter("User")', 'Excel_Read(user) user')
     result = analyze_source(source)
     assert result["operations"][0]["raw"] == "Option Explicit"
-    # Declarations are recognized; the library call is not.
+    # Declarations are recognized; the malformed value is not.
     assert result["coverage"]["unsupported_statement_count"] == 0
     assert result["coverage"]["unsupported_expression_count"] == 1
     expression = [i for i in result["issues"] if i["code"] == "unsupported_expression"][0]
     assert expression["line_number"] == 3
-    assert expression["raw"] == "Excel_Read(user)"
+    assert expression["raw"] == "Excel_Read(user) user"
+    # A well-formed call parses; whether it can be mapped is decided when emitting.
+    call = analyze_source(SET.replace('Parameter("User")', 'Excel_Read(user)'))
+    assert call["operations"][0]["value"]["node_type"] == "FunctionCall"
+    assert call["coverage"]["unsupported_expression_count"] == 0
 
 
 def test_partial_object_match_is_not_certified():

@@ -33,6 +33,9 @@ from uft2uipath.parser.uft_script_nodes import (
     ActivateOperation,
     AssignOperation,
     BackOperation,
+    BinaryExpression,
+    FunctionCall,
+    UnaryExpression,
     CheckpointOperation,
     ClickOperation,
     CloseOperation,
@@ -42,13 +45,16 @@ from uft2uipath.parser.uft_script_nodes import (
     DeclarationOperation,
     FunctionDefinitionOperation,
     NoEffectOperation,
+    NotCondition,
     ObjectAssignmentOperation,
+    ObjectPropertyReference,
     ParameterAssignmentOperation,
     EnvironmentReference,
     ExistCondition,
     ExitTestOperation,
     IfOperation,
     LiteralValue,
+    LogicalCondition,
     NavigateOperation,
     ObjectReference,
     ParameterReference,
@@ -102,8 +108,11 @@ class UftVbScriptParser:
         re.IGNORECASE,
     )
 
-    COMPARISON_PATTERN = re.compile(
-        r"^(?P<left>.+?)\s*(?P<operator><>|<=|>=|=|<|>)\s*(?P<right>.+)$",
+    COMPARISON_OPERATORS = ("<>", "<=", ">=", "=", "<", ">")
+
+    GET_RO_PROPERTY_PATTERN = re.compile(
+        r'^(?P<object>.+?)\.GetROProperty\s*\(\s*"(?P<property>[^"]+)"\s*\)$',
+        re.IGNORECASE,
     )
 
     # Statement metadata UFT appends to recorded steps.
@@ -148,16 +157,14 @@ class UftVbScriptParser:
         "select": SelectOperation, "navigate": NavigateOperation,
     }
 
+    # Arguments are split separately: commas inside strings or calls are not separators.
     REPORT_EVENT_PATTERN = re.compile(
-        r"^\s*Reporter\.ReportEvent\s+"
-        r"(?P<status>[^,]+)\s*,\s*"
-        r"(?P<title>[^,]+)\s*,\s*"
-        r"(?P<message>.+?)\s*$",
+        r"^\s*Reporter\.ReportEvent\s*(?P<arguments>.*?)\s*$",
         re.IGNORECASE,
     )
 
     EXIT_TEST_PATTERN = re.compile(
-        r"^\s*ExitTest\s*\(\s*(?P<code>.*?)\s*\)\s*$",
+        r"^\s*ExitTest(?:\s*\(\s*(?P<code>.*?)\s*\)|\s+(?P<bare>\S.*?))?\s*$",
         re.IGNORECASE,
     )
 
@@ -167,7 +174,7 @@ class UftVbScriptParser:
     )
 
     ENVIRONMENT_PATTERN = re.compile(
-        r'^Environment\(\s*"(?P<name>[^"]+)"\s*\)$',
+        r'^Environment(?:\.Value)?\(\s*"(?P<name>[^"]+)"\s*\)$',
         re.IGNORECASE,
     )
 
@@ -177,6 +184,13 @@ class UftVbScriptParser:
     )
 
     INTEGER_PATTERN = re.compile(r"^-?\d+$")
+
+    DECIMAL_PATTERN = re.compile(r"^-?\d+\.\d+$")
+
+    CALL_PATTERN = re.compile(r"^(?P<name>[A-Za-z_]\w*)\s*\(")
+
+    # VBScript functions called without arguments are written without parentheses.
+    NULLARY_FUNCTIONS = {"rnd", "now", "date", "time", "timer"}
 
     def parse(self, source: str) -> ParsedScript:
         """
@@ -461,10 +475,24 @@ class UftVbScriptParser:
 
     def _parse_condition(self, expression: str):
         """
-        Parse an If condition: Exist, a comparison, or a preserved expression.
+        Parse an If condition by VBScript precedence: Or, And, Not, then a
+        comparison, Exist or a plain value. Operators inside strings or
+        parentheses belong to their operand.
         """
 
-        condition = expression.strip()
+        condition = self._unwrap_all(expression)
+
+        for word in ("Or", "And"):
+            operands = self._split_top_level_word(condition, word)
+            if len(operands) > 1:
+                return LogicalCondition(
+                    operator=word, raw=condition,
+                    operands=[self._parse_condition(operand) for operand in operands],
+                )
+
+        not_match = re.match(r"^Not\b\s*(?P<operand>.+)$", condition, re.IGNORECASE)
+        if not_match:
+            return NotCondition(operand=self._parse_condition(not_match.group("operand")), raw=condition)
 
         exist_match = self.EXIST_PATTERN.match(condition)
         if exist_match:
@@ -474,16 +502,56 @@ class UftVbScriptParser:
                 raw=condition,
             )
 
-        comparison_match = self.COMPARISON_PATTERN.match(condition)
-        if comparison_match:
+        comparison = self._split_comparison(condition)
+        if comparison:
+            left, operator, right = comparison
             return ComparisonCondition(
-                left=self._parse_value(comparison_match.group("left")),
-                operator=comparison_match.group("operator"),
-                right=self._parse_value(comparison_match.group("right")),
-                raw=condition,
+                left=self._parse_value(left), operator=operator,
+                right=self._parse_value(right), raw=condition,
             )
 
         return self._parse_value(condition)
+
+    def _unwrap_all(self, expression: str) -> str:
+        value = expression.strip()
+        while (unwrapped := self._unwrap(value)) != value:
+            value = unwrapped
+        return value
+
+    @staticmethod
+    def _top_level_positions(value: str):
+        """Yield indexes of characters outside string literals and parentheses."""
+        depth, in_string = 0, False
+        for index, character in enumerate(value):
+            if character == '"':
+                in_string = not in_string
+            elif not in_string and character in "()":
+                depth += 1 if character == "(" else -1
+            elif not in_string and depth == 0:
+                yield index
+
+    def _split_top_level_word(self, value: str, word: str) -> list[str]:
+        """Split at a keyword operator such as Or, outside strings and parentheses."""
+        pattern = re.compile(rf"\s{word}\s", re.IGNORECASE)
+        parts, start = [], 0
+        for index in self._top_level_positions(value):
+            if index >= start and value[index].isspace():
+                match = pattern.match(value, index)
+                if match:
+                    parts.append(value[start:index].strip())
+                    start = match.end()
+        parts.append(value[start:].strip())
+        return parts if len(parts) > 1 and all(parts) else [value]
+
+    def _split_comparison(self, value: str):
+        """Split at the first comparison operator outside strings and parentheses."""
+        top = set(self._top_level_positions(value))
+        for index in sorted(top):
+            for operator in self.COMPARISON_OPERATORS:
+                if value.startswith(operator, index) and index + len(operator) - 1 in top:
+                    left, right = value[:index].strip(), value[index + len(operator):].strip()
+                    return (left, operator, right) if left and right else None
+        return None
 
     def _parse_statement(
         self,
@@ -612,21 +680,29 @@ class UftVbScriptParser:
         report_match = self.REPORT_EVENT_PATTERN.match(code)
 
         if report_match:
+            arguments = self._split_top_level(self._unwrap(report_match.group("arguments")), ",")
+            # Status, step name, details and an optional screenshot path.
+            if arguments is None or len(arguments) not in (3, 4):
+                return UnknownScriptOperation(
+                    raw=line, line_number=line_number,
+                    reason="Reporter.ReportEvent needs status, step name and details.",
+                )
             return ReportEventOperation(
                 raw=line,
                 line_number=line_number,
-                status=report_match.group("status").strip(),
-                title=self._parse_value(report_match.group("title")),
-                message=self._parse_value(report_match.group("message")),
+                status=arguments[0],
+                title=self._parse_value(arguments[1]),
+                message=self._parse_value(arguments[2]),
             )
 
         exit_match = self.EXIT_TEST_PATTERN.match(code)
 
         if exit_match:
+            argument = exit_match.group("code") or exit_match.group("bare")
             return ExitTestOperation(
                 raw=line,
                 line_number=line_number,
-                code=self._parse_value(exit_match.group("code")),
+                code=self._parse_value(argument) if argument else None,
             )
 
         return UnknownScriptOperation(
@@ -674,20 +750,29 @@ class UftVbScriptParser:
         Split a & b & c at the top level, ignoring & inside strings or calls.
         """
 
+        parts = self._split_top_level(value, "&")
+        return parts if parts is not None and len(parts) > 1 else None
+
+    @staticmethod
+    def _split_top_level(value: str, separator: str) -> list[str] | None:
+        """
+        Split at separators outside strings and parentheses; None if any part is empty.
+        """
+
         parts, current, depth, in_string = [], "", 0, False
         for character in value:
             if character == '"':
                 in_string = not in_string
             elif not in_string and character in "()":
                 depth += 1 if character == "(" else -1
-            elif not in_string and character == "&" and depth == 0:
+            elif not in_string and character == separator and depth == 0:
                 parts.append(current)
                 current = ""
                 continue
             current += character
         parts.append(current)
         stripped = [part.strip() for part in parts]
-        return stripped if len(stripped) > 1 and all(stripped) else None
+        return stripped if all(stripped) else None
 
     def _unwrap(self, arguments: str) -> str:
         """
@@ -752,6 +837,10 @@ class UftVbScriptParser:
                 sheet=(data_table_match.group("sheet") or "").strip() or None,
             )
 
+        if self.VARIABLE_PATTERN.match(value) and value.lower() in self.NULLARY_FUNCTIONS:
+            # Rnd, Now...: VBScript calls a function without arguments without parentheses.
+            return FunctionCall(raw=value, name=value, arguments=[])
+
         if self.VARIABLE_PATTERN.match(value) and value.lower() not in ("true", "false", "nothing"):
             return VariableReference(raw=value, name=value)
 
@@ -760,6 +849,16 @@ class UftVbScriptParser:
             parsed = [self._parse_value(part) for part in parts]
             if not any(isinstance(part, UnknownValueExpression) for part in parsed):
                 return ConcatenationExpression(raw=value, parts=parsed)
+            return UnknownValueExpression(raw=value)
+
+        property_match = self.GET_RO_PROPERTY_PATTERN.match(value)
+
+        if property_match:
+            return ObjectPropertyReference(
+                raw=value,
+                target=self._parse_object_reference(property_match.group("object")),
+                property=property_match.group("property"),
+            )
 
         string_match = self.STRING_LITERAL_PATTERN.match(value)
 
@@ -775,8 +874,75 @@ class UftVbScriptParser:
                 value=int(value),
             )
 
+        if value.lower() in ("true", "false"):
+            return LiteralValue(raw=value, value=value.lower() == "true")
+
+        if self.DECIMAL_PATTERN.match(value):
+            return LiteralValue(raw=value, value=float(value))
+
+        unwrapped = self._unwrap(value)
+        if unwrapped != value:
+            inner = self._parse_value(unwrapped)
+            return UnknownValueExpression(raw=value) if isinstance(inner, UnknownValueExpression) else inner
+
+        # Lowest precedence first, so the split operator is the one applied last.
+        for operators in (("+", "-"), ("Mod",), ("\\",), ("*", "/")):
+            split = self._split_binary(value, operators)
+            if split:
+                left, operator, right = split
+                parsed = [self._parse_value(left), self._parse_value(right)]
+                if any(isinstance(side, UnknownValueExpression) for side in parsed):
+                    return UnknownValueExpression(raw=value)
+                return BinaryExpression(raw=value, operator=operator, left=parsed[0], right=parsed[1])
+
+        if value.startswith("-"):
+            operand = self._parse_value(value[1:])
+            if isinstance(operand, UnknownValueExpression):
+                return UnknownValueExpression(raw=value)
+            return UnaryExpression(raw=value, operator="-", operand=operand)
+
+        split = self._split_binary(value, ("^",))
+        if split:
+            left, operator, right = split
+            parsed = [self._parse_value(left), self._parse_value(right)]
+            if not any(isinstance(side, UnknownValueExpression) for side in parsed):
+                return BinaryExpression(raw=value, operator=operator, left=parsed[0], right=parsed[1])
+            return UnknownValueExpression(raw=value)
+
+        call_match = self.CALL_PATTERN.match(value)
+        if call_match and self._unwrap(value[call_match.end("name"):]) != value[call_match.end("name"):].strip():
+            text = self._unwrap(value[call_match.end("name"):])
+            arguments = self._split_top_level(text, ",") if text.strip() else []
+            if arguments is not None:
+                parsed = [self._parse_value(argument) for argument in arguments]
+                if not any(isinstance(argument, UnknownValueExpression) for argument in parsed):
+                    return FunctionCall(raw=value, name=call_match.group("name"), arguments=parsed)
+
         # Do not turn unparsed expressions into literal text.
         return UnknownValueExpression(raw=value)
+
+    def _split_binary(self, value: str, operators: tuple[str, ...]):
+        """Split at the last top-level binary operator of one precedence level."""
+        top = set(self._top_level_positions(value))
+        found = None
+        for index in sorted(top):
+            for operator in operators:
+                end = index + len(operator)
+                if operator.isalpha():
+                    # A keyword operator stands between spaces, never inside a name.
+                    if (value[index:end].lower() == operator.lower() and 0 < index and end < len(value)
+                            and value[index - 1].isspace() and value[end].isspace()):
+                        found = (index, end, operator)
+                elif value.startswith(operator, index):
+                    previous = value[:index].rstrip()
+                    # A sign after an operator or at the start is unary, not binary.
+                    if previous and (previous[-1].isalnum() or previous[-1] in '_)"'):
+                        found = (index, end, operator)
+        if found is None:
+            return None
+        start, end, operator = found
+        left, right = value[:start].strip(), value[end:].strip()
+        return (left, operator, right) if left and right else None
 
     def _normalize_lines(self, source: str) -> list[str]:
         """

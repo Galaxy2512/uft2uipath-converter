@@ -95,6 +95,37 @@ class VariableReference(ValueExpression):
 
 
 @dataclass
+class FunctionCall(ValueExpression):
+    """
+    Represents a call used as a value: Len(x), CStr(n), Rnd, or a library function.
+    """
+
+    name: str = ""
+    arguments: list[ValueExpression] = field(default_factory=list)
+
+
+@dataclass
+class BinaryExpression(ValueExpression):
+    """
+    Represents arithmetic: a + b, a - b, a * b, a / b, a \\ b, a Mod b, a ^ b.
+    """
+
+    operator: str = ""
+    left: ValueExpression | None = None
+    right: ValueExpression | None = None
+
+
+@dataclass
+class UnaryExpression(ValueExpression):
+    """
+    Represents a negated value: -a.
+    """
+
+    operator: str = ""
+    operand: ValueExpression | None = None
+
+
+@dataclass
 class DataTableReference(ValueExpression):
     """
     Represents DataTable("Column", sheet): a value taken from the run data.
@@ -144,6 +175,18 @@ class ObjectReference:
     path: list[dict[str, Any]] = field(default_factory=list)
 
 
+@dataclass
+class ObjectPropertyReference(ValueExpression):
+    """
+    Represents a run-time property read from a test object:
+
+        Browser("B").Page("P").WebElement("E").GetROProperty("innertext")
+    """
+
+    target: ObjectReference | None = None
+    property: str = ""
+
+
 # ======================================================================
 # OPERATIONS
 # ======================================================================
@@ -185,6 +228,27 @@ class ComparisonCondition:
 
 
 @dataclass
+class LogicalCondition:
+    """
+    Represents a And b And c, or a Or b: operands are conditions or values.
+    """
+
+    operator: str = ""
+    operands: list[Any] = field(default_factory=list)
+    raw: str = ""
+
+
+@dataclass
+class NotCondition:
+    """
+    Represents Not a.
+    """
+
+    operand: Any = None
+    raw: str = ""
+
+
+@dataclass
 class IfOperation(ScriptOperation):
     """
     Represents a VBScript If / Else / End If block.
@@ -192,7 +256,7 @@ class IfOperation(ScriptOperation):
     ElseIf is represented as a nested IfOperation inside else_operations.
     """
 
-    condition: ExistCondition | ComparisonCondition | ValueExpression | None = None
+    condition: Any = None
     then_operations: list[ScriptOperation] = field(default_factory=list)
     else_operations: list[ScriptOperation] = field(default_factory=list)
 

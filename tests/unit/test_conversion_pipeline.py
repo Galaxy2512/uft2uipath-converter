@@ -36,7 +36,8 @@ def test_pipeline_builds_model_from_real_table_rows(tmp_path):
     assert [c.name for c in test.components] == ["Login", "Logout"]
     assert set(result.artifacts) == {"decoded-tables", "resolved-project", "resolved-scripts",
                                      "selector-candidates", "script-analysis", "conversion-plan",
-                                     "selector-review.template", "studio-validation", "pipeline-report"}
+                                     "selector-review.template", "migration-coverage",
+                                     "studio-validation", "pipeline-report"}
 
     decoded = read(result.artifacts["decoded-tables"])
     assert decoded["tables"]["TEST"] == {"row_count": 2}

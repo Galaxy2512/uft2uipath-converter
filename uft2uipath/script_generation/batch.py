@@ -15,7 +15,9 @@ LIMITATIONS = [
     "No project.json is invented. Import Workflows and Tests into an existing Windows C# UiPath project with UIAutomation and System activities.",
     "Mapped does not mean equivalent: validate live selectors, input methods, timeouts and application state.",
     "Click/Set use Attach Browser with explicit browser_type and partial selectors. Attachment adds its own timeout wait; timing equivalence remains unverified.",
-    "Reporter.ReportEvent, ExitTest, SetSecure, declarations and other unsupported operations block before any UI action.",
+    "Operations without a mapping in the operation registry block before any UI action.",
+    "Actions that report failures, exit the test or write output parameters need test-level wiring "
+    "this bundle does not generate; use convert or migrate-project for them.",
     "Caller arguments are explicitly mapped per ALM relation ID; original dataset/value bindings still need verification.",
     "Generated test files are entry workflows, not registered Test Explorer test cases.",
 ]
@@ -64,6 +66,10 @@ def emit_test(test, components, call_bindings, global_issues):
         })
         args = ET.SubElement(invoke, q("InvokeWorkflowFile.Arguments", UI))
         for target_arg, kind in component["arguments"].items():
+            if target_arg in component.get("argument_directions", {}):
+                issues.append({"message": f"Relation {relation_id}: {target_arg} is an Out/InOut "
+                                          "argument; this bundle binds In arguments only."})
+                continue
             binding = mapping.get(target_arg)
             if not isinstance(binding, dict):
                 issues.append({"message": f"Relation {relation_id}: missing call binding for {target_arg}."})

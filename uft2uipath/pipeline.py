@@ -23,6 +23,7 @@ from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.ast import Project
 from uft2uipath.alm.script_resolver import decode_script
 from uft2uipath.mapping.acceptance import AcceptanceSettings, build_binding, decide, review_template
+from uft2uipath.mapping.inventory import build_inventory
 from uft2uipath.parser.uft_script_nodes import FunctionDefinitionOperation
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.script_analysis.library_calls import annotate_library_calls
@@ -164,7 +165,8 @@ class ConversionPipeline:
             name: self.output_dir / "artifacts" / f"{name}.json"
             for name in ("decoded-tables", "resolved-project", "resolved-scripts",
                          "selector-candidates", "script-analysis", "conversion-plan",
-                         "selector-review.template", "studio-validation", "pipeline-report")
+                         "selector-review.template", "migration-coverage", "studio-validation",
+                         "pipeline-report")
         }
         artifacts = {name: path for name, path in artifacts.items() if path.is_file()}
         return PipelineResult(self.output_dir, project, artifacts, table_errors)
@@ -319,6 +321,7 @@ class ConversionPipeline:
                       studio_load_verified=False, executable_verified=False,
                       equivalent_verified=False)
         _write(staging / "project" / "generation-report.json", report)
+        _write(staging / "artifacts" / "migration-coverage.json", build_inventory([report]))
         statuses: dict[str, int] = {}
         for entry in report["tests"]:
             statuses[entry["status"]] = statuses.get(entry["status"], 0) + 1

@@ -34,7 +34,7 @@ def test_spaced_end_if_keeps_following_steps_outside_branch():
 def test_unparsed_values_are_not_literals():
     for expression in (
         '"Admin" Parameter("Input_User")',
-        'Excel_ReadValue("Sheet", 1)',
+        'Excel_ReadValue("Sheet", 1) x',
     ):
         source = f"{TARGET}.Set {expression}"
         operation = UftVbScriptParser().parse(source).operations[0]

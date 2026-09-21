@@ -46,7 +46,7 @@ def prepare(root):
                 ET.SubElement(argument, q("CSharpReference" if output else "CSharpValue"),
                               {q("TypeArguments", X): kind}).text = value[1:-1]
                 element.insert(0, prop)
-        if local in {"InArgument", "OutArgument"} and element.text and element.text.startswith("[") and element.text.endswith("]"):
+        if local in {"InArgument", "OutArgument", "InOutArgument"} and element.text and element.text.startswith("[") and element.text.endswith("]"):
             code, element.text = element.text[1:-1], None
             ET.SubElement(
                 element,

@@ -82,8 +82,8 @@ def test_special_literal_is_csharp_expression_and_xml_roundtrips():
 
 
 @pytest.mark.parametrize("source", [
-    'Reporter.ReportEvent micFail, "Title", "Failure"',
-    'ExitTest(-1)',
+    'Reporter.ReportEvent micCustom, "Title", "Failure"',
+    'Browser("B").Close',
     TARGET + '.SetSecure Parameter("User")',
     TARGET + '.Set user & "x"',
 ])

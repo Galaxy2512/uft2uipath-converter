@@ -65,9 +65,16 @@ def main():
     project_cmd.add_argument("--project-template")
     project_cmd.add_argument("--zip", action="store_true")
 
+    inventory_cmd = sub.add_parser("inventory", help="Count UFT operations, blockers and coverage")
+    inventory_cmd.add_argument("reports", nargs="+", help="convert output directories or generation-report.json files")
+    inventory_cmd.add_argument("--out", help="Also write the inventory as JSON")
+
     args = parser.parse_args()
 
-    if args.command == "migrate-project":
+    if args.command == "inventory":
+        from uft2uipath.mapping.inventory import main as inventory_main
+        inventory_main([*args.reports, *(["--out", args.out] if args.out else [])])
+    elif args.command == "migrate-project":
         from uft2uipath.script_generation.project import main as project_main
         options = [args.manifest, "--bindings", args.bindings, "--out", args.out]
         if args.project_template:

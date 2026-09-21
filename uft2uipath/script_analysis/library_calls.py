@@ -18,6 +18,8 @@ def annotate_library_calls(analysis: dict[str, Any], functions: dict[str, str]) 
     """functions maps a lower-case function name to the library that defines it."""
     if not functions:
         return
+    # The emitter names the library when a parsed call cannot be mapped.
+    analysis["library_functions"] = dict(functions)
     for issue in analysis.get("issues", []):
         if issue.get("code") not in BLOCKED_CODES:
             continue

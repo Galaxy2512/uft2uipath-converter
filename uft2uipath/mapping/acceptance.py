@@ -119,21 +119,29 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
     return decision
 
 
-def argument_name(kind: str, name: str) -> str:
+def argument_name(kind: str, name: str, direction: str = "in") -> str:
     cleaned = _IDENTIFIER.sub("_", name).strip("_") or "value"
     if not cleaned[0].isalpha():
         cleaned = "v" + cleaned
-    return f"in_{kind}_{cleaned}"
+    return f"{direction}_{kind}_{cleaned}"
 
 
 def build_binding(analysis: dict[str, Any], decisions: list[dict[str, Any]]) -> dict[str, Any]:
     """Builds the target binding the component emitter expects."""
     references = analysis.get("references", {})
     binding: dict[str, Any] = {"parameters": {}, "environment": {}, "data": {},
-                               "secure": {}, "objects": []}
+                               "secure": {}, "outputs": {}, "objects": []}
+    # A written parameter is an output: reads of it see its current value.
+    outputs = set(references.get("outputs", []))
+    for name in sorted(outputs):
+        binding["outputs"][name] = {
+            "name": argument_name("param", name, "out"), "type": "String", "direction": "Out",
+        }
     for category, kind in (("parameters", "param"), ("environment", "env"),
                            ("data", "data"), ("secure", "secure")):
         for name in references.get(category, []):
+            if category == "parameters" and name in outputs:
+                continue
             binding[category][name] = {
                 "name": argument_name(kind, name), "type": "String", "direction": "In",
             }

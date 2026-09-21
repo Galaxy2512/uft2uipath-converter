@@ -32,7 +32,7 @@ def secret_source(operation):
 def analyze_source(source):
     parsed = UftVbScriptParser().parse(source)
     issues, parameters, environments, objects = [], set(), set(), []
-    data_columns, secrets, secure_values = set(), set(), set()
+    data_columns, secrets, secure_values, outputs = set(), set(), set(), set()
     kinds = Counter()
 
     def issue(code, message, line, raw):
@@ -65,6 +65,7 @@ def analyze_source(source):
                       "UFT checkpoint needs an explicit UiPath verification with the same criteria.",
                       line, value.raw)
             if type(value).__name__ == "ParameterAssignmentOperation":
+                outputs.add(value.name)
                 issue("output_parameter_mapping_required",
                       "Writing an output parameter needs an explicit Out argument mapping.",
                       line, value.raw)
@@ -140,6 +141,7 @@ def analyze_source(source):
             "environment": sorted(environments),
             "data": sorted(data_columns),
             "secure": sorted(secrets),
+            "outputs": sorted(outputs),
             "objects": objects,
         },
         "coverage": {
