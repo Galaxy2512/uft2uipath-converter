@@ -1,3 +1,7 @@
+# Loads every readable text-like file under an extracted OpenText ALM/QC
+# archive into memory as an AlmDatabase, then lets callers search across all
+# of them for tokens (e.g. component names) and extract surrounding snippets.
+
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path

@@ -1,3 +1,7 @@
+# Heuristically classifies a UFT/BPT component (by name and raw VBScript
+# source) into a list of neutral Operation entries via regex patterns on both
+# the component name and script body, used ahead of UiPath generation.
+
 from __future__ import annotations
 import re
 from uft2uipath.model.ast import Operation, OperationType

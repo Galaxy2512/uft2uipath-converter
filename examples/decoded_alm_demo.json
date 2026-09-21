@@ -1,0 +1,12 @@
+{
+  "project_name": "DemoMigration",
+  "TEST": [{"TS_TEST_ID": "1", "TS_NAME": "Login test"}],
+  "COMPONENT": [{"CO_ID": "10", "CO_NAME": "LoginComponent"}],
+  "COMPONENT_STEP": [
+    {"CS_STEP_ID": "2", "CS_COMPONENT_ID": "10", "CS_STEP_ORDER": "2", "CS_STEP_NAME": "Check login result"},
+    {"CS_STEP_ID": "1", "CS_COMPONENT_ID": "10", "CS_STEP_ORDER": "1", "CS_STEP_NAME": "Enter username"}
+  ],
+  "BPTEST_TO_COMPONENTS": [
+    {"BC_ID": "1", "BC_BPT_ID": "1", "BC_CO_ID": "10", "BC_ORDER": "1"}
+  ]
+}

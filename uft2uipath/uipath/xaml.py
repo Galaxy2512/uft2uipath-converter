@@ -1,3 +1,8 @@
+# Low-level XAML string builders used by UiPathProjectWriter: renders
+# Component/TestCase AST objects (from uft2uipath.model.ast) into workflow
+# XAML text, emitting a WriteLine "TODO native activity" placeholder for each
+# recognized-but-unmapped UFT operation type instead of a real UI activity.
+
 from __future__ import annotations
 import html, re
 from uft2uipath.model.ast import Component, TestCase, OperationType

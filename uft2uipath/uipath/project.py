@@ -1,3 +1,9 @@
+# UiPathProjectWriter: emits a complete UiPath Studio Test Project folder
+# (TestCases/Components XAML, Main.xaml, project.json, Data/migration_model.json,
+# Reports/ConversionReport.md, README) from a MigrationModel. This is the
+# earlier v0.2 generic-converter output path, separate from the manifest/ALM
+# based pipeline in uft2uipath.script_generation.project.
+
 from __future__ import annotations
 import json, shutil
 from pathlib import Path

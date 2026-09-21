@@ -1,49 +1,194 @@
-# uft2uipath converter v0.2
+# uft2uipath converter
 
-General ALM/UFT BPT `.qcp` → UiPath Test Project converter foundation.
+UFT / OpenText ALM `.qcp` to UiPath Test Project migration tool.
 
-## What v0.2 does
+The project is currently focused on building a conservative, reviewable migration pipeline: when a UFT construct cannot be mapped safely, the converter preserves the source context and marks the generated UiPath workflow as blocked instead of silently producing incorrect automation.
 
-- extracts `.qcp` using Python ZIP and falls back to 7-Zip when ALM ZIP headers are non-standard
-- scans ALM/QC project export files safely
-- discovers BPT-like business components generically, not only one fixed sample
-- classifies common UFT/BPT operations into an intermediate model
-- generates a valid UiPath Test Project (`project.json`, `Main.xaml`, `TestCases`, components)
-- writes `Data/migration_model.json`
-- writes `Reports/ConversionReport.md` with warnings and unsupported/TODO items
+## Current end-to-end pipeline
 
-## What v0.2 intentionally does not fake
+The `convert` command accepts an ALM/UFT `.qcp`, `.zip`, or an already extracted project folder and runs the following stages:
 
-- selectors / Object Repository entries
-- custom VBScript functions
-- complex BPT flow reconstruction when ALM table relationships are not decoded yet
-- native UIAutomation activities for selector-dependent operations
+```text
+QCP / ZIP / extracted ALM project
+  -> extract
+  -> decode ALM PTD tables
+  -> build project/test/component model
+  -> resolve UFT tests, actions and Script.mts files
+  -> resolve local/shared Object Repositories
+  -> propose UiPath selector candidates
+  -> parse and analyse VBScript
+  -> bind accepted selectors and runtime inputs
+  -> emit UiPath workflows and test cases
+  -> generate UiPath project.json
+```
 
-Unknown or risky mappings are kept as explicit TODO steps so the converter does not silently generate wrong tests.
+Each major stage writes reviewable JSON artifacts under `<output>/artifacts`.
 
-## Run
+## What is implemented
+
+- QCP/ZIP extraction
+- ALM PTD table decoding
+- BPT/test/component relationship reconstruction
+- UFT test/action script resolution
+- `Script.mts` decoding and preservation
+- local and shared Object Repository reading
+- UFT object-reference resolution
+- UiPath selector candidate generation
+- selector review / confidence-based acceptance for generation
+- VBScript parsing and coverage reporting
+- function-library discovery and call annotation
+- generation of UiPath XAML workflows
+- generation of UiPath Test Project metadata and individual test cases
+- explicit blocking with `Throw` when migration semantics remain unresolved
+- migration reports and intermediate artifacts for manual review
+
+The current emitter supports a growing subset of operations, including examples such as `If ... Exist`, text input, click, select, wait/sync, delay and assignment. Unsupported or ambiguous operations remain visible as blockers.
+
+## Current verification level
+
+The converter can generate a UiPath Test Project, but the project does **not yet claim runtime equivalence**.
+
+Current status:
+
+- Structural generation: implemented
+- Semantic migration: partially implemented and explicitly reported
+- UiPath project generation: implemented
+- Studio load validation: not yet automated
+- Executable verification: not yet completed end-to-end
+- UFT/UiPath behavioural equivalence: not yet verified
+
+Generated reports intentionally keep:
+
+```text
+studio_load_verified = false
+executable_verified = false
+equivalent_verified = false
+```
+
+until those stages are actually proven.
+
+## Run the end-to-end converter
+
+From the repository root:
 
 ```powershell
-cd C:\Users\KristinaŠeparović\Documents\uft2uipath_converter_v02
-py -m uft2uipath.cli "..\Migration_BPT.qcp" --out "..\Generated_By_Converter_v03" --zip
+python -m uft2uipath convert ALM_DEMO_26.1.qcp --out output\alm_demo
 ```
 
-Then open:
+Convert selected ALM test IDs:
+
+```powershell
+python -m uft2uipath convert ALM_DEMO_26.1.qcp --out output\alm_demo --test-id 5 --test-id 8
+```
+
+For web selectors accepted automatically above a confidence threshold, also specify the target browser:
+
+```powershell
+python -m uft2uipath convert ALM_DEMO_26.1.qcp --out output\alm_demo --accept-selectors 0.8 --browser-type Edge
+```
+
+For reviewed selectors, edit the generated `selector-review.template.json` and pass it back with:
+
+```powershell
+python -m uft2uipath convert ALM_DEMO_26.1.qcp --out output\alm_demo_reviewed --selector-review selector-review.json
+```
+
+## Important generated artifacts
+
+Typical output:
 
 ```text
-C:\Users\KristinaŠeparović\Documents\Generated_By_Converter_v03\project.json
+output/
+  artifacts/
+    decoded-tables.json
+    resolved-project.json
+    resolved-scripts.json
+    selector-candidates.json
+    script-analysis.json
+    conversion-plan.json
+    selector-review.template.json
+    pipeline-report.json
+
+  project/
+    project.json
+    Main.xaml
+    generation-report.json
+    Tests/
+      Test_<id>.xaml
+    Workflows/
+      Action_<...>.xaml
 ```
 
-Review:
+The generated test cases are registered in `project.json` and are intended to be run through UiPath Test Explorer. `Main.xaml` is not used to invoke private test cases.
+
+## Selector safety model
+
+Selectors derived from UFT repositories are candidates. Acceptance for generation does **not** mean the selector has been verified against the live target application.
+
+The next iteration should make the distinction explicit between:
+
+- candidate
+- accepted for generation
+- Studio validated
+- runtime verified
+
+This avoids treating a confidence threshold as proof that the target matches during execution.
+
+## Secure values
+
+UFT `SetSecure` encoded values are not decoded or copied into the generated project. The current implementation requires the real value to be supplied through an input binding.
+
+The current binding type is still `String`; migrating this to a UiPath credential / secure input strategy is a planned hardening step.
+
+## Development
+
+Install the package with development dependencies:
+
+```powershell
+python -m pip install -e ".[dev]"
+```
+
+Run the test suite:
+
+```powershell
+pytest
+```
+
+Generated output, IDE metadata, virtual environments and caches are excluded through `.gitignore`.
+
+## Main architecture
 
 ```text
-Reports\ConversionReport.md
-Data\migration_model.json
+uft2uipath/
+  alm/                 ALM/PTD data and repository resolution
+  archive/             QCP/ZIP extraction
+  ast/                 neutral project model
+  mapping/             selector acceptance and mapping decisions
+  parser/              ALM entities and VBScript parsing
+  script_analysis/     semantic/coverage analysis
+  script_generation/   UiPath XAML and Test Project generation
+  uft/                 UFT Object Repository and resource readers
+  pipeline.py          end-to-end conversion orchestration
+  cli.py               command-line interface
 ```
 
-## Roadmap
+## Next milestone
 
-- v0.3: decode ALM BPT table relationships more deeply and reconstruct component order without hints
-- v0.4: Object Repository/selector extraction and mapping
-- v0.5: generate native UiPath activity templates for browser, navigate, click, type, select, verify, Excel
-- v1.0: Test Manager import/export integration and broader UFT operation coverage
+The next development branch should focus on Studio validation rather than adding broad new parser coverage.
+
+Target:
+
+```text
+ALM_DEMO_26.1.qcp
+  -> uft2uipath convert
+  -> generated UiPath Test Project
+  -> open/validate in UiPath Studio
+  -> Workflow Analyzer without blocking structural errors
+  -> execute one representative Login test
+```
+
+Only after that milestone should the project claim an executable migration path.
+
+## Legacy / auxiliary commands
+
+The repository still contains lower-level commands such as `build-model`, `convert-rows`, `analyze-scripts`, `emit-workflows` and `migrate-project`. These remain useful for diagnostics and focused development, while `convert` is the primary end-to-end entry point.

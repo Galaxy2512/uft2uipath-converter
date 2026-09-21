@@ -1,0 +1,158 @@
+"""Typed, loss-aware analysis of the current supported parser subset."""
+import re
+from collections import Counter
+from dataclasses import fields, is_dataclass
+
+from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
+from uft2uipath.parser.uft_script_nodes import (
+    DataTableReference, EnvironmentReference, ExistCondition, FunctionDefinitionOperation,
+    ObjectReference, ParameterReference,
+    ScriptOperation, SetSecureTextOperation, UnknownScriptOperation, UnknownValueExpression,
+)
+
+
+def typed(value):
+    """Keep node kinds: dataclasses.asdict alone loses expression identities."""
+    if is_dataclass(value):
+        return {"node_type": type(value).__name__,
+                **{f.name: typed(getattr(value, f.name)) for f in fields(value)}}
+    if isinstance(value, list):
+        return [typed(item) for item in value]
+    if isinstance(value, dict):
+        return {key: typed(item) for key, item in value.items()}
+    return value
+
+
+def secret_source(operation):
+    """Names the secret a SetSecure step needs, from the object it types into."""
+    target = operation.target
+    return (target.logical_name or target.object_type or "value") if target else "value"
+
+
+def analyze_source(source):
+    parsed = UftVbScriptParser().parse(source)
+    issues, parameters, environments, objects = [], set(), set(), []
+    data_columns, secrets, secure_values = set(), set(), set()
+    kinds = Counter()
+
+    def issue(code, message, line, raw):
+        issues.append({"code": code, "message": message,
+                       "line_number": line, "raw": raw, "severity": "blocker"})
+
+    def walk(value, line=None):
+        if isinstance(value, ScriptOperation):
+            line = value.line_number
+            kinds[type(value).__name__] += 1
+            if isinstance(value, UnknownScriptOperation):
+                issue("unsupported_statement", value.reason, line, value.raw)
+            # Reporter arguments must be split using VBScript quoting rules.
+            # The legacy parser splits at commas; do not certify ambiguous calls.
+            if type(value).__name__ == "ReportEventOperation":
+                status = (value.status or "").lower()
+                if status not in {"micpass", "micfail", "micdone", "micwarning", "0", "1", "2", "3"}:
+                    issue("unresolved_report_status", "Report status needs interpretation.", line, value.raw)
+                issue("assertion_mapping_required",
+                      "Preserve report severity and test outcome; logging alone is insufficient.",
+                      line, value.raw)
+            if isinstance(value, FunctionDefinitionOperation):
+                # A definition is not part of the flow; its body is not migrated here.
+                issue("function_definition_not_migrated",
+                      f"{value.keyword} {value.name} is defined but not converted; "
+                      "calls to it cannot be mapped.", line, value.raw)
+                return
+            if type(value).__name__ == "CheckpointOperation":
+                issue("checkpoint_mapping_required",
+                      "UFT checkpoint needs an explicit UiPath verification with the same criteria.",
+                      line, value.raw)
+            if type(value).__name__ == "ParameterAssignmentOperation":
+                issue("output_parameter_mapping_required",
+                      "Writing an output parameter needs an explicit Out argument mapping.",
+                      line, value.raw)
+            if type(value).__name__ == "ObjectAssignmentOperation":
+                issue("object_assignment_unsupported",
+                      "Assigning an object reference has no validated UiPath equivalent.",
+                      line, value.raw)
+            if isinstance(value, SetSecureTextOperation):
+                # UFT stores an encoded value that cannot be decoded here.
+                secrets.add(secret_source(value))
+                # Its encoded source is replaced by the secure argument.
+                secure_values.add(id(value.value))
+                issue("secure_value_mapping_required",
+                      "UFT secure value is encoded; the real value must be supplied as an argument.",
+                      line, value.raw)
+            if type(value).__name__ == "ExitTestOperation":
+                issue("exit_mapping_required",
+                      "ExitTest scope and outcome need explicit target semantics.",
+                      line, value.raw)
+        if isinstance(value, UnknownValueExpression):
+            issue("unsupported_expression", value.reason, line, value.raw)
+        if isinstance(value, ParameterReference):
+            parameters.add(value.name)
+            issue("parameter_binding_required",
+                  "Reference preserved; argument direction, type and call binding are not resolved.",
+                  line, value.raw)
+        if isinstance(value, DataTableReference) and id(value) not in secure_values:
+            data_columns.add(value.column)
+            issue("data_binding_required",
+                  "DataTable column preserved; the run-time data source is not resolved.",
+                  line, value.raw)
+        if isinstance(value, EnvironmentReference):
+            environments.add(value.name)
+            issue("environment_binding_required",
+                  "Environment reference requires target mapping.", line, value.raw)
+        if isinstance(value, ObjectReference):
+            objects.append(typed(value))
+            # Every part of the written hierarchy must have been interpreted.
+            residual = UftVbScriptParser.OBJECT_PART_PATTERN.sub("", value.raw)
+            if (
+                not value.path or re.sub(r"[. \t]", "", residual)
+                or len(value.path) != len(UftVbScriptParser.OBJECT_PART_PATTERN.findall(value.raw))
+                or not value.logical_name
+            ):
+                issue("unsupported_object_chain",
+                      "Object hierarchy was not completely interpreted.", line, value.raw)
+            issue("selector_mapping_required",
+                  "Logical UFT object reference preserved; UiPath selector is unresolved.",
+                  line, value.raw)
+        if isinstance(value, ExistCondition):
+            issue("exist_mapping_required",
+                  "Exist timeout and Boolean result need equivalent UiPath behavior.",
+                  line, value.raw)
+        if is_dataclass(value):
+            for field in fields(value):
+                walk(getattr(value, field.name), line)
+        elif isinstance(value, (list, tuple)):
+            for item in value:
+                walk(item, line)
+
+    for operation in parsed.operations:
+        walk(operation)
+    operation_count = sum(kinds.values())
+    unsupported = kinds.get("UnknownScriptOperation", 0)
+    # Block markers/comments are retained in source, not counted as operations.
+    if operation_count == 0:
+        issue("empty_script", "No operations parsed; requires review.", None, "")
+    return {
+        "operations": typed(parsed.operations),
+        "source_lines": parsed.source_lines,
+        "references": {
+            "parameters": sorted(parameters),
+            "environment": sorted(environments),
+            "data": sorted(data_columns),
+            "secure": sorted(secrets),
+            "objects": objects,
+        },
+        "coverage": {
+            "operation_count": operation_count,
+            "recognized_operation_count": operation_count - unsupported,
+            "unsupported_statement_count": unsupported,
+            "unsupported_expression_count": sum(
+                item["code"] == "unsupported_expression" for item in issues
+            ),
+            "operation_kinds": dict(sorted(kinds.items())),
+            "definition": "Recognition of parser nodes, not migration or execution success.",
+        },
+        "issues": issues,
+        "executable_verified": False,
+        "generation_ready": False,
+    }

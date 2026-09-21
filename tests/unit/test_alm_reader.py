@@ -1,3 +1,6 @@
+# Unit tests for AlmReader (uft2uipath/parser/alm_reader.py): covers reading an
+# ALM source folder and confirming it produces a Project AST object whose name
+# defaults to the source folder's name.
 from uft2uipath.ast import Project
 from uft2uipath.parser.alm_reader import AlmReader
 

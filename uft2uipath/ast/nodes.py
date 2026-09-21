@@ -1,11 +1,25 @@
-<<<<<<< HEAD
-=======
+# Defines the neutral intermediate model for a migrated UFT/ALM project:
+# dataclasses for tests, business components, steps, parameters, variables,
+# object repository items and conversion issues/status, shared by the
+# parser and the UiPath generator so they don't depend on each other.
 from __future__ import annotations
 
->>>>>>> feature/archive-reader
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
+
+
+class ConversionStatus(str, Enum):
+    SUCCESS = "success"
+    PARTIAL = "partial"
+    FAILED = "failed"
+    UNSUPPORTED = "unsupported"
+
+
+class IssueSeverity(str, Enum):
+    INFO = "info"
+    WARNING = "warning"
+    ERROR = "error"
 
 
 class StepType(str, Enum):
@@ -14,135 +28,178 @@ class StepType(str, Enum):
     LOOP = "loop"
     VERIFICATION = "verification"
     COMMENT = "comment"
+    UNSUPPORTED = "unsupported"
     UNKNOWN = "unknown"
 
 
 @dataclass
+class ConversionIssue:
+    message: str
+    severity: IssueSeverity = IssueSeverity.WARNING
+    source: str | None = None
+    recommendation: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+@dataclass
 class Parameter:
-<<<<<<< HEAD
-    name: str
-    value: Any = None
-    type: str | None = None
-=======
     """
-    Represents an input/output parameter.
+    Represents a UFT/ALM parameter.
+
+    This can become a UiPath argument later.
     """
+
     name: str
     value: Any = None
     datatype: str | None = None
->>>>>>> feature/archive-reader
     direction: str | None = None
+
+    # ALM traceability
+    id: int | None = None
+    source_entity: str | None = None
+    source_id: int | None = None
+
+    raw: dict[str, Any] = field(default_factory=dict)
+@dataclass
+class Variable:
+    name: str
+    datatype: str | None = None
+    default_value: Any = None
+    scope: str | None = None
+    raw: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class ObjectRepositoryItem:
+    name: str
+    object_type: str | None = None
+    selector: str | None = None
+    properties: dict[str, Any] = field(default_factory=dict)
+    raw: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class DataTable:
+    name: str
+    path: str | None = None
+    rows: list[dict[str, Any]] = field(default_factory=list)
+    raw: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
 class Step:
-<<<<<<< HEAD
-    name: str
-    type: StepType = StepType.UNKNOWN
-    action: str | None = None
-    target: str | None = None
-    value: Any = None
-    parameters: list[Parameter] = field(default_factory=list)
-    children: list["Step"] = field(default_factory=list)
-=======
     """
-    Represents one executable step inside a Business Component.
+    Represents one executable or descriptive UFT step.
+
+    This will later become one or more UiPath activities.
     """
+
     name: str
     type: StepType = StepType.UNKNOWN
 
+    # ALM identity and ordering
+    id: int | None = None
+    order: int | None = None
+
+    # Step content
     action: str | None = None
     target: str | None = None
     value: Any = None
+    description: str | None = None
+    expected_result: str | None = None
 
     parameters: list[Parameter] = field(default_factory=list)
+    variables: list[Variable] = field(default_factory=list)
     children: list["Step"] = field(default_factory=list)
+    issues: list[ConversionIssue] = field(default_factory=list)
 
->>>>>>> feature/archive-reader
+    status: ConversionStatus = ConversionStatus.SUCCESS
     raw: dict[str, Any] = field(default_factory=dict)
-
 
 @dataclass
 class BusinessComponent:
-<<<<<<< HEAD
-    name: str
-    description: str | None = None
-    parameters: list[Parameter] = field(default_factory=list)
-    steps: list[Step] = field(default_factory=list)
-=======
     """
-    Represents one UFT Business Component.
+    Represents one ALM/UFT Business Component.
+
+    This will later become a reusable UiPath XAML workflow.
     """
+
     name: str
 
+    # ALM identity
+    id: int | None = None
+    alm_status: str | None = None
+    script_type: str | None = None
+    component_type: str | None = None
+
     description: str | None = None
 
     parameters: list[Parameter] = field(default_factory=list)
+    variables: list[Variable] = field(default_factory=list)
     steps: list[Step] = field(default_factory=list)
+    issues: list[ConversionIssue] = field(default_factory=list)
 
->>>>>>> feature/archive-reader
+    status: ConversionStatus = ConversionStatus.SUCCESS
     raw: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
-class TestCase:
-<<<<<<< HEAD
-    name: str
-    description: str | None = None
-    components: list[BusinessComponent] = field(default_factory=list)
-    parameters: list[Parameter] = field(default_factory=list)
-=======
+class UftTestCase:
     """
-    Represents one UFT Test.
+    Represents one ALM/UFT test case.
+
+    This will later become a UiPath Test Case.
     """
+
     name: str
 
+    # ALM identity
+    id: int | None = None
+    alm_status: str | None = None
+    test_type: str | None = None
+    execution_status: str | None = None
+
     description: str | None = None
 
     components: list[BusinessComponent] = field(default_factory=list)
     parameters: list[Parameter] = field(default_factory=list)
+    variables: list[Variable] = field(default_factory=list)
+    data_tables: list[DataTable] = field(default_factory=list)
+    issues: list[ConversionIssue] = field(default_factory=list)
 
->>>>>>> feature/archive-reader
+    status: ConversionStatus = ConversionStatus.SUCCESS
     raw: dict[str, Any] = field(default_factory=dict)
-
 
 @dataclass
 class SharedResource:
-<<<<<<< HEAD
-    name: str
-    type: str
-    path: str | None = None
-=======
     """
-    Shared resources (Object Repository, Function Library, Excel...).
+    Shared ALM/UFT resources.
+
+    Examples:
+    - Excel data tables
+    - Function libraries
+    - Application Areas
+    - Object repositories
     """
+
     name: str
     type: str
 
+    id: int | None = None
+    file_name: str | None = None
+    location_type: str | None = None
     path: str | None = None
 
->>>>>>> feature/archive-reader
     metadata: dict[str, Any] = field(default_factory=dict)
-
-
+    raw: dict[str, Any] = field(default_factory=dict)
 @dataclass
 class Project:
-<<<<<<< HEAD
     name: str
     source_path: str | None = None
-    tests: list[TestCase] = field(default_factory=list)
+
+    tests: list[UftTestCase] = field(default_factory=list)
     shared_resources: list[SharedResource] = field(default_factory=list)
-=======
-    """
-    Root object representing the complete UFT project.
-    """
-    name: str
+    object_repository: list[ObjectRepositoryItem] = field(default_factory=list)
+    data_tables: list[DataTable] = field(default_factory=list)
+    issues: list[ConversionIssue] = field(default_factory=list)
 
-    source_path: str | None = None
-
-    tests: list[TestCase] = field(default_factory=list)
-
-    shared_resources: list[SharedResource] = field(default_factory=list)
-
->>>>>>> feature/archive-reader
     metadata: dict[str, Any] = field(default_factory=dict)
