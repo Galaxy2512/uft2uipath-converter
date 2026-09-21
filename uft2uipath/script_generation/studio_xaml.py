@@ -33,7 +33,8 @@ def prepare(root):
             "TypeInto": ("Text", "x:String", False),
             "Delay": ("Duration", "s:TimeSpan", False),
             "SelectItem": ("Item", "x:String", False),
-            "LogMessage": ("Message", "x:String", False),
+            # Studio types Log Message's Message as Object; a String argument leaves it unresolved.
+            "LogMessage": ("Message", "x:Object", False),
         }
         if local in mappings:
             attribute, kind, output = mappings[local]

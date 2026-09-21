@@ -168,3 +168,15 @@ def test_assign_and_delay_use_explicit_csharp_nodes(tmp_path):
             assert not (isinstance(value, str) and value.startswith("[") and value.endswith("]"))
         if element.text:
             assert not (element.text.startswith("[") and element.text.endswith("]"))
+
+
+def test_log_message_uses_object_message_argument(tmp_path):
+    # Studio 25.x left a String-typed Message as an unresolved ErrorActivity.
+    root, report = emit(tmp_path, 'Reporter.ReportEvent micPass, "Step", "done"', {"objects": []})
+
+    assert report["status"] == "mapped_unverified"
+    log = root.find(".//" + q("LogMessage", UI))
+    assert "Message" not in log.attrib
+    argument = log.find(q("LogMessage.Message", UI) + "/" + q("InArgument"))
+    assert argument.attrib[q("TypeArguments", X)] == "x:Object"
+    assert argument.find(q("CSharpValue")).attrib[q("TypeArguments", X)] == "x:Object"
