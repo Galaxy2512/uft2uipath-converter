@@ -128,7 +128,8 @@ def _run_convert(parser, args) -> None:
     if result.table_errors:
         print(f"Tables that failed to decode: {', '.join(sorted(result.table_errors))}")
     print(f"Not yet implemented: {', '.join(PENDING_STAGES)}.")
-    print("Studio load, execution and UFT equivalence are unverified.")
+    print("Static Studio-project validation runs automatically.")
+    print("Actual Studio load, execution and UFT equivalence are unverified.")
 
 
 def _run_inspect(project_path: str) -> None:
