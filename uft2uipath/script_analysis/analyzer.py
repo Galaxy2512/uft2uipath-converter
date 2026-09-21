@@ -67,15 +67,12 @@ def analyze_source(source):
                   "Environment reference requires target mapping.", line, value.raw)
         if isinstance(value, ObjectReference):
             objects.append(typed(value))
-            # Reject partial regex matches masquerading as complete object chains.
-            pattern = UftVbScriptParser.OBJECT_PART_PATTERN
-            matches = list(pattern.finditer(value.raw))
-            residual = pattern.sub("", value.raw)
-            types = [m.group("type").lower() for m in matches]
+            # Every part of the written hierarchy must have been interpreted.
+            residual = UftVbScriptParser.OBJECT_PART_PATTERN.sub("", value.raw)
             if (
-                not matches or re.sub(r"[. \t]", "", residual)
-                or types[:2] != ["browser", "page"] or len(types) != 3
-                or not value.object_type or not value.logical_name
+                not value.path or re.sub(r"[. \t]", "", residual)
+                or len(value.path) != len(UftVbScriptParser.OBJECT_PART_PATTERN.findall(value.raw))
+                or not value.logical_name
             ):
                 issue("unsupported_object_chain",
                       "Object hierarchy was not completely interpreted.", line, value.raw)

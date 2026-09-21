@@ -77,6 +77,25 @@ class ParameterReference(ValueExpression):
 
 
 @dataclass
+class VariableReference(ValueExpression):
+    """
+    Represents a plain VBScript variable used as a value.
+    """
+
+    name: str = ""
+
+
+@dataclass
+class DataTableReference(ValueExpression):
+    """
+    Represents DataTable("Column", sheet): a value taken from the run data.
+    """
+
+    column: str = ""
+    sheet: str | None = None
+
+
+@dataclass
 class EnvironmentReference(ValueExpression):
     """
     Represents:
@@ -112,6 +131,8 @@ class ObjectReference:
     object_type: str | None = None
     logical_name: str | None = None
     raw: str = ""
+    # Full hierarchy as written, including desktop classes the web fields cannot hold.
+    path: list[dict[str, Any]] = field(default_factory=list)
 
 
 # ======================================================================
@@ -127,6 +148,8 @@ class ScriptOperation:
 
     raw: str
     line_number: int | None = None
+    # UFT's OptionalStep modifier: the step is skipped instead of failing.
+    optional: bool = False
 
 
 @dataclass
@@ -141,12 +164,26 @@ class ExistCondition:
 
 
 @dataclass
+class ComparisonCondition:
+    """
+    Represents a comparison used as an If condition, e.g. x = "a" or n > 1.
+    """
+
+    left: ValueExpression | None = None
+    operator: str = ""
+    right: ValueExpression | None = None
+    raw: str = ""
+
+
+@dataclass
 class IfOperation(ScriptOperation):
     """
     Represents a VBScript If / Else / End If block.
+
+    ElseIf is represented as a nested IfOperation inside else_operations.
     """
 
-    condition: ExistCondition | None = None
+    condition: ExistCondition | ComparisonCondition | ValueExpression | None = None
     then_operations: list[ScriptOperation] = field(default_factory=list)
     else_operations: list[ScriptOperation] = field(default_factory=list)
 
@@ -174,10 +211,97 @@ class SetSecureTextOperation(ScriptOperation):
 @dataclass
 class ClickOperation(ScriptOperation):
     """
-    Represents an object Click operation.
+    Represents an object Click operation, optionally at recorded coordinates.
     """
 
     target: ObjectReference | None = None
+    x: int | None = None
+    y: int | None = None
+
+
+@dataclass
+class SelectOperation(ScriptOperation):
+    """
+    Represents Select on a list, combo box or radio group.
+    """
+
+    target: ObjectReference | None = None
+    value: ValueExpression | None = None
+
+
+@dataclass
+class NavigateOperation(ScriptOperation):
+    """
+    Represents Browser.Navigate.
+    """
+
+    target: ObjectReference | None = None
+    value: ValueExpression | None = None
+
+
+@dataclass
+class SyncOperation(ScriptOperation):
+    """
+    Represents Sync: wait until the page finished loading.
+    """
+
+    target: ObjectReference | None = None
+
+
+@dataclass
+class ActivateOperation(ScriptOperation):
+    """
+    Represents Activate: bring a window or dialog to the front.
+    """
+
+    target: ObjectReference | None = None
+
+
+@dataclass
+class CloseOperation(ScriptOperation):
+    """
+    Represents Close on a browser, window or dialog.
+    """
+
+    target: ObjectReference | None = None
+
+
+@dataclass
+class BackOperation(ScriptOperation):
+    """
+    Represents Browser.Back.
+    """
+
+    target: ObjectReference | None = None
+
+
+@dataclass
+class WaitOperation(ScriptOperation):
+    """
+    Represents the UFT Wait statement, in seconds.
+    """
+
+    seconds: ValueExpression | None = None
+
+
+@dataclass
+class AssignOperation(ScriptOperation):
+    """
+    Represents a VBScript assignment to a variable.
+    """
+
+    name: str = ""
+    value: ValueExpression | None = None
+
+
+@dataclass
+class DeclarationOperation(ScriptOperation):
+    """
+    Represents Dim/Option statements, which declare rather than act.
+    """
+
+    keyword: str = ""
+    names: list[str] = field(default_factory=list)
 
 
 @dataclass

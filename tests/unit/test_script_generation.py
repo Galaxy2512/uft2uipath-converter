@@ -130,7 +130,7 @@ def test_nested_if_has_distinct_result_variables():
 def test_partial_object_chain_remains_blocked_even_with_matching_name():
     root, report = emit("Wrapper()." + CLICK)
     assert first_action(root).tag == q("Throw")
-    assert any(i["code"] == "unsupported_object_chain" for i in report["issues"])
+    assert any(i["code"] == "unsupported_statement" for i in report["issues"])
 
 
 def setup_bundle(tmp_path):

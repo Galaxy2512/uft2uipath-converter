@@ -35,9 +35,10 @@ Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login
 
     result = UftVbScriptParser().parse(source)
 
-    # Option Explicit and Dim are currently preserved as unsupported.
-    assert isinstance(result.operations[0], UnknownScriptOperation)
-    assert isinstance(result.operations[1], UnknownScriptOperation)
+    # Option Explicit and Dim declare rather than act.
+    assert [(o.keyword, o.names) for o in result.operations[:2]] == [
+        ("Option", ["Explicit"]), ("Dim", ["sUser", "sPassword"]),
+    ]
 
     if_operation = result.operations[2]
 

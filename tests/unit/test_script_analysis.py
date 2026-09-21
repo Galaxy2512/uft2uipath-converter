@@ -72,7 +72,8 @@ def test_unknown_expression_and_declarations_have_line_diagnostics():
     source = 'Option Explicit\nDim user\n' + SET.replace('Parameter("User")', 'user & "x"')
     result = analyze_source(source)
     assert result["operations"][0]["raw"] == "Option Explicit"
-    assert result["coverage"]["unsupported_statement_count"] == 2
+    # Declarations are recognized; the composed expression is not.
+    assert result["coverage"]["unsupported_statement_count"] == 0
     assert result["coverage"]["unsupported_expression_count"] == 1
     expression = [i for i in result["issues"] if i["code"] == "unsupported_expression"][0]
     assert expression["line_number"] == 3
@@ -81,7 +82,8 @@ def test_unknown_expression_and_declarations_have_line_diagnostics():
 
 def test_partial_object_match_is_not_certified():
     result = analyze_source('Wrapper().' + CLICK)
-    assert any(i["code"] == "unsupported_object_chain" for i in result["issues"])
+    assert any(i["code"] == "unsupported_statement" for i in result["issues"])
+    assert result["coverage"]["recognized_operation_count"] == 0
 
 
 def test_identical_names_link_by_id_and_preserve_bytes(tmp_path):

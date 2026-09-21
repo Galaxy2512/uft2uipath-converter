@@ -5,7 +5,7 @@
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
 from uft2uipath.parser.uft_script_nodes import (
     ClickOperation, IfOperation, LiteralValue, ParameterReference,
-    SetTextOperation, UnknownValueExpression,
+    SetTextOperation, UnknownValueExpression, VariableReference,
 )
 
 TARGET = 'Browser("B").Page("P").WebEdit("Username")'
@@ -35,7 +35,6 @@ def test_unparsed_values_are_not_literals():
     for expression in (
         '"Admin" Parameter("Input_User")',
         '"Admin" & "User"',
-        'sUser',
     ):
         source = f"{TARGET}.Set {expression}"
         operation = UftVbScriptParser().parse(source).operations[0]
@@ -44,6 +43,14 @@ def test_unparsed_values_are_not_literals():
         assert isinstance(operation.value, UnknownValueExpression)
         assert operation.value.raw == expression
         assert not isinstance(operation.value, LiteralValue)
+
+
+def test_variable_values_are_named_references_not_text():
+    operation = UftVbScriptParser().parse(f"{TARGET}.Set sUser").operations[0]
+
+    assert isinstance(operation.value, VariableReference)
+    assert operation.value.name == "sUser"
+    assert not isinstance(operation.value, LiteralValue)
 
 
 def test_string_literals_decode_doubled_quotes():

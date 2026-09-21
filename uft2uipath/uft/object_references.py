@@ -48,6 +48,31 @@ class ObjectReference:
                       tuple(sorted(s.description.items()))) for s in self.path)
 
 
+def split_chain(expression: str) -> tuple[list[ObjectStep], str]:
+    """Splits a leading object chain from what follows it (e.g. '.Click 14, 11')."""
+    code = expression.strip()
+    steps, position = [], 0
+    while True:
+        match = _STEP.match(code, position)
+        if match is None or match.group(1).casefold() in _NOT_OBJECTS:
+            break
+        steps.append(_step(match.group(1), match.group(2)))
+        position = match.end()
+        if position >= len(code) or code[position] != ".":
+            break
+        following = _STEP.match(code, position + 1)
+        if following is None or following.group(1).casefold() in _NOT_OBJECTS | _METHODS:
+            break
+        position += 1
+    return steps, code[position:]
+
+
+def parse_chain(expression: str) -> list[ObjectStep] | None:
+    """Returns the steps when the expression is exactly one object chain."""
+    steps, remainder = split_chain(expression)
+    return steps if steps and not remainder.strip() else None
+
+
 def extract_references(text: str) -> list[ObjectReference]:
     references = []
     for number, line in enumerate(text.splitlines(), 1):
