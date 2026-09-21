@@ -31,6 +31,9 @@ def prepare(root):
             "If": ("Condition", "x:Boolean", False),
             "UiElementExists": ("Exists", "x:Boolean", True),
             "TypeInto": ("Text", "x:String", False),
+            "Delay": ("Duration", "s:TimeSpan", False),
+            "SelectItem": ("Item", "x:String", False),
+            "LogMessage": ("Message", "x:String", False),
         }
         if local in mappings:
             attribute, kind, output = mappings[local]
@@ -43,10 +46,13 @@ def prepare(root):
                 ET.SubElement(argument, q("CSharpReference" if output else "CSharpValue"),
                               {q("TypeArguments", X): kind}).text = value[1:-1]
                 element.insert(0, prop)
-        if local == "InArgument" and element.text and element.text.startswith("[") and element.text.endswith("]"):
+        if local in {"InArgument", "OutArgument"} and element.text and element.text.startswith("[") and element.text.endswith("]"):
             code, element.text = element.text[1:-1], None
-            ET.SubElement(element, q("CSharpValue"),
-                          {q("TypeArguments", X): element.attrib[q("TypeArguments", X)]}).text = code
+            ET.SubElement(
+                element,
+                q("CSharpValue" if local == "InArgument" else "CSharpReference"),
+                {q("TypeArguments", X): element.attrib[q("TypeArguments", X)]},
+            ).text = code
     namespaces = ET.Element(q("TextExpression.NamespacesForImplementation"))
     collection = ET.SubElement(namespaces, q("Collection", SCO), {q("TypeArguments", X): "x:String"})
     for value in ("System", "System.Activities", "System.Activities.Statements",
