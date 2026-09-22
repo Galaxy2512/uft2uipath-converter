@@ -10,11 +10,13 @@ Supported
 - object statements over any test-object hierarchy: Set, SetSecure, Click
   (with recorded coordinates), Select, Navigate, Sync, Activate, Close, Back
 - OptionalStep. prefixed steps, and UFT's " @@ ..." step metadata
-- If / ElseIf / Else / End If. Conditions are split by VBScript precedence
+- If / ElseIf / Else / End If, and Select Case / Case / Case Else / End Select.
+  Conditions are split by VBScript precedence
   (Or, And, Not, then a comparison, Exist or a value), never inside string
   literals or parentheses
 - Wait, Dim, Option, assignments to variables and to Parameter("...")
-- Reporter.ReportEvent (arguments split outside strings and calls), ExitTest
+- Reporter.ReportEvent (arguments split outside strings and calls), ExitTest,
+  SystemUtil.Run
 - Values: Parameter("..."), Environment("...") and Environment.Value("..."),
   DataTable("...", sheet), string, integer, decimal and Boolean literals,
   VBScript constants (vbCrLf, vbTrue ...), variables, & concatenation,
@@ -44,6 +46,9 @@ from uft2uipath.parser.uft_script_nodes import (
     BackOperation,
     BinaryExpression,
     CallOperation,
+    CaseClause,
+    RunApplicationOperation,
+    SelectCaseOperation,
     FunctionCall,
     UnaryExpression,
     CheckpointOperation,
@@ -136,6 +141,9 @@ class UftVbScriptParser:
         re.IGNORECASE,
     )
     WITH_PATTERN = re.compile(r"^\s*With\s+(?P<target>.+?)\s*$", re.IGNORECASE)
+    SELECT_PATTERN = re.compile(r"^\s*Select\s+Case\s+(?P<subject>.+?)\s*$", re.IGNORECASE)
+    CASE_PATTERN = re.compile(r"^\s*Case\s+(?P<values>.+?)\s*$", re.IGNORECASE)
+    RUN_PATTERN = re.compile(r"^\s*SystemUtil\s*\.\s*Run\b\s*(?P<arguments>.*?)\s*$", re.IGNORECASE)
     CHECKPOINT_PATTERN = re.compile(
         r'^\s*Check\s+CheckPoint\s*\(\s*"(?P<name>(?:[^"]|"")*)"\s*\)\s*$', re.IGNORECASE,
     )
@@ -317,6 +325,22 @@ class UftVbScriptParser:
                 index += 1
                 continue
 
+            if self.CASE_PATTERN.match(code) or re.fullmatch(r"end[ \t]+select", normalized):
+                kind = "case" if self.CASE_PATTERN.match(code) else "end_select"
+                if kind in expected_terminators:
+                    return operations, index, kind
+                operations.append(UnknownScriptOperation(
+                    raw=line, line_number=index + 1, reason=f"Unexpected block terminator: {kind}",
+                ))
+                index += 1
+                continue
+
+            select_match = self.SELECT_PATTERN.match(code)
+            if select_match:
+                operation, index = self._parse_select(lines, index, select_match.group("subject"))
+                operations.append(operation)
+                continue
+
             function_match = self.FUNCTION_PATTERN.match(code)
             if function_match:
                 operation, index = self._parse_function(lines, index, function_match)
@@ -457,6 +481,49 @@ class UftVbScriptParser:
             ),
             index + 1,
         )
+
+    def _parse_select(self, lines, index, subject: str) -> tuple[ScriptOperation, int]:
+        """
+        Parse Select Case ... Case ... Case Else ... End Select.
+
+        Case Is <op> x and Case a To b compare differently from equality; their
+        values are kept unparsed so they block instead of being guessed.
+        """
+
+        raw = lines[index]
+        before, current, terminator = self._parse_block(
+            lines=lines, start_index=index + 1, expected_terminators={"case", "end_select"},
+        )
+        cases: list[CaseClause] = []
+        else_operations: list[ScriptOperation] = []
+        malformed = bool(before)
+        while terminator == "case":
+            case_line = lines[current]
+            text = self.CASE_PATTERN.match(self._code(case_line)).group("values")
+            body, next_index, terminator = self._parse_block(
+                lines=lines, start_index=current + 1, expected_terminators={"case", "end_select"},
+            )
+            if text.strip().lower() == "else":
+                malformed |= bool(else_operations) or terminator == "case"
+                else_operations = body
+            else:
+                values = self._split_top_level(text, ",") or [text]
+                cases.append(CaseClause(
+                    raw=case_line, line_number=current + 1, operations=body,
+                    values=[UnknownValueExpression(raw=v, reason="Case Is / Case To ranges are not supported")
+                            if re.match(r"^Is\b", v, re.IGNORECASE) or re.search(r"\sTo\s", v, re.IGNORECASE)
+                            else self._parse_value(v) for v in values],
+                ))
+            current = next_index
+        if terminator != "end_select" or malformed:
+            return UnknownScriptOperation(
+                raw=raw, line_number=index + 1,
+                reason="Select Case block is malformed or has no matching End Select.",
+            ), current + (1 if terminator == "end_select" else 0)
+        return SelectCaseOperation(
+            raw=raw, line_number=index + 1, subject=self._parse_value(subject),
+            cases=cases, else_operations=else_operations,
+        ), current + 1
 
     def _terminator(self, normalized: str) -> str | None:
         """Kind of block end (End Function/Sub, End With) a normalized line is, if any."""
@@ -744,6 +811,21 @@ class UftVbScriptParser:
                 raw=line,
                 line_number=line_number,
                 code=self._parse_value(argument) if argument else None,
+            )
+
+        run_match = self.RUN_PATTERN.match(code)
+        if run_match:
+            text = self._unwrap(run_match.group("arguments"))
+            arguments = self._split_top_level(text, ",") if text else None
+            if not arguments or len(arguments) > 5:
+                return UnknownScriptOperation(
+                    raw=line, line_number=line_number,
+                    reason="SystemUtil.Run needs a file and at most parameters, directory, operation and mode.",
+                )
+            values = [self._parse_value(a) for a in arguments] + [None] * (5 - len(arguments))
+            return RunApplicationOperation(
+                raw=line, line_number=line_number, file=values[0], parameters=values[1],
+                directory=values[2], operation=values[3], mode=values[4],
             )
 
         call = self._parse_call(code, line, line_number)

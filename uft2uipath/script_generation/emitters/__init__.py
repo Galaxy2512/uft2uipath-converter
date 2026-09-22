@@ -12,6 +12,6 @@ call) go into parent before the statement that uses the value.
 
 Modules: ui (UI actions and checks), flow (If, conditions, assignments),
 testing (ReportEvent, ExitTest), functions (VBScript built-ins, arithmetic),
-calls (user and library Functions/Subs).
+calls (user and library Functions/Subs), system (SystemUtil.Run).
 """
-from uft2uipath.script_generation.emitters import calls, flow, functions, testing, ui  # noqa: F401
+from uft2uipath.script_generation.emitters import calls, flow, functions, system, testing, ui  # noqa: F401

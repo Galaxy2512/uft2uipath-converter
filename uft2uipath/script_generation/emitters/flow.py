@@ -1,4 +1,4 @@
-"""Control flow, variables and statements that emit nothing."""
+"""Control flow (If, Select Case, conditions), variables and statements that emit nothing."""
 import xml.etree.ElementTree as ET
 
 from uft2uipath.mapping.operation_registry import maps
@@ -30,6 +30,50 @@ def emit_if(ctx, node, parent, trace, display):
         body = ET.SubElement(prop, q("Sequence"), {"DisplayName": field})
         for child in node.get(field, []):
             ctx.map_operation(child, body)
+
+
+@maps("SelectCaseOperation", uft="Select Case x ... Case a, b ... Case Else ... End Select",
+      activities=("Assign", "If"),
+      notes="The subject is evaluated once into a variable, then each Case is an If/Else in order; "
+            "Case Is and Case a To b block.")
+def emit_select_case(ctx, node, parent, trace, display):
+    """Select Case: the subject once into a variable, then an If/Else chain of the Cases.
+
+    Each Case compares the subject for equality with its values (Or'ed), exactly
+    as VBScript tries them top to bottom; Case Else is the last Else.
+    """
+    subject = node.get("subject")
+    kind = ctx.expression_type(subject)
+    # Every Case value must compare with the subject; check before emitting anything.
+    for case in node.get("cases") or []:
+        for value in case.get("values") or []:
+            value_kind = ctx.expression_type(value)
+            if value_kind != kind:
+                raise ValueError(f"Case value {value.get('raw')!r} is {value_kind}, "
+                                 f"the Select Case subject is {kind}.")
+    code = ctx.value(subject, kind, parent)
+    variable = ctx.temporary("case", kind)
+    ctx.assigned.add((variable, kind))
+    assign(parent, display + " / subject", variable, kind, code)
+    current = parent
+    for case in node.get("cases") or []:
+        comparisons = [{"node_type": "ComparisonCondition", "operator": "=", "raw": case.get("raw"),
+                        "left": {"node_type": "VariableReference", "name": variable, "raw": variable},
+                        "right": value} for value in case.get("values") or []]
+        condition = comparisons[0] if len(comparisons) == 1 else {
+            "node_type": "LogicalCondition", "operator": "Or", "operands": comparisons, "raw": case.get("raw")}
+        case_display = f"UFT line {case.get('line_number')}: Case"
+        branch = ET.SubElement(current, q("If"), {
+            "DisplayName": case_display, "Condition": expr(ctx.condition(condition, current, case_display)),
+        })
+        then = ET.SubElement(ET.SubElement(branch, q("If.Then")), q("Sequence"),
+                             {"DisplayName": (case.get("raw") or "").strip()})
+        for child in case.get("operations") or []:
+            ctx.map_operation(child, then)
+        current = ET.SubElement(ET.SubElement(branch, q("If.Else")), q("Sequence"), {"DisplayName": "else"})
+    for child in node.get("else_operations") or []:
+        ctx.map_operation(child, current)
+    trace.update(status="mapped_unverified", activity="Assign + If (Select Case)")
 
 
 _ORDERING = {"<": "<", ">": ">", "<=": "<=", ">=": ">="}

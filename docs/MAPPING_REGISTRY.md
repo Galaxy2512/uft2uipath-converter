@@ -46,6 +46,7 @@ mapping/inventory.py                     coverage report (artifacts/migration-co
 | `script_generation/emitters/testing.py` | Test outcome: Reporter.ReportEvent, ExitTest |
 | `script_generation/emitters/functions.py` | VBScript built-in functions and arithmetic as typed C# |
 | `script_generation/emitters/calls.py` | Calls to user/library Functions and Subs: Invoke Workflow File |
+| `script_generation/emitters/system.py` | Starting programs: SystemUtil.Run → Start Process |
 | `script_generation/user_functions.py` | Compiles each called Function/Sub into its own workflow |
 | `script_analysis/function_definitions.py` | Which functions an action can call, in UFT lookup order |
 | `script_generation/emitter.py` | `ComponentEmitter`: dispatch, typed values, bindings, rollback, report |
@@ -96,6 +97,8 @@ def handler(ctx, node, parent) -> str: ...
 | `Obj.Select value` | Select Item | |
 | `Browser/Page.Sync` | Wait Ui Element Appear | Waits for the page element, close to but not the same as load completion |
 | `Wait n` | Delay | Positive literal seconds only |
+| `Select Case x` / `Case a, b` / `Case Else` | Assign + If/Else chain | Subject evaluated once; each Case compares for equality, in order; `Case Is` and `Case a To b` block |
+| `SystemUtil.Run file, params, dir, op, mode` | Start Process | Only the default `open` operation; the window mode is not reproduced (noted) |
 | `x = value` | Assign | Variable typed String, Int32, Boolean or Double; one type per variable |
 | `Parameter("X") = value` | Assign | To Out argument `out_param_X`; the test exposes it per step |
 | `Reporter.ReportEvent` | Log Message | See *Test outcome* |
@@ -256,14 +259,15 @@ wait for the Activity Lab examples from Studio.
 
 ## Known gaps
 
-- Function bodies in the sample libraries still block on: `Select Case`,
-  `WinRadioButton.Set` without a value and `.Type`, `SystemUtil.Run`,
-  `WaitProperty`, `CreateObject` (FileSystemObject, WScript.Shell), date
-  functions (`Date`, `Day`, `Month`, `Year`), arrays, and variables that change
-  type (VBScript Variants, e.g. a number later concatenated as a string).
+- Function bodies in the sample libraries still block on: `WinRadioButton.Set`
+  without a value and `.Type`, `WaitProperty` (returns True/False in UFT, while
+  UiPath's Wait Attribute throws on timeout), `ExitComponent`, `CreateObject`
+  (FileSystemObject, WScript.Shell), date functions (`Date`, `Day`, `Month`,
+  `Year`), arrays, and variables that change type (VBScript Variants, e.g. a
+  number later concatenated as a string).
 - `Excel_ReadValue` and other functions whose library is not in the export.
-- Navigate, Close, Activate, Back, `SystemUtil.Run`, UIA objects, descriptive
-  programming (`Browser("title:=...")`).
+- Navigate, Close, Activate, Back, UIA objects, descriptive programming
+  (`Browser("title:=...")`).
 - UFT regular expressions in object properties (e.g. `innertext="Admin|ESS"`)
   are copied into selectors literally; UiPath needs explicit regex matching.
 - Output parameters are exposed per step, but BPT links from one component's

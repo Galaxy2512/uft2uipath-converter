@@ -449,6 +449,42 @@ class ExitTestOperation(ScriptOperation):
 
 
 @dataclass
+class CaseClause:
+    """
+    One Case of a Select Case: the values it matches and the statements it runs.
+    """
+
+    raw: str = ""
+    line_number: int | None = None
+    values: list[ValueExpression] = field(default_factory=list)
+    operations: list[ScriptOperation] = field(default_factory=list)
+
+
+@dataclass
+class SelectCaseOperation(ScriptOperation):
+    """
+    Represents Select Case subject ... Case a, b ... Case Else ... End Select.
+    """
+
+    subject: ValueExpression | None = None
+    cases: list[CaseClause] = field(default_factory=list)
+    else_operations: list[ScriptOperation] = field(default_factory=list)
+
+
+@dataclass
+class RunApplicationOperation(ScriptOperation):
+    """
+    Represents SystemUtil.Run file, [parameters], [directory], [operation], [mode].
+    """
+
+    file: ValueExpression | None = None
+    parameters: ValueExpression | None = None
+    directory: ValueExpression | None = None
+    operation: ValueExpression | None = None
+    mode: ValueExpression | None = None
+
+
+@dataclass
 class CallOperation(ScriptOperation):
     """
     Represents a function or sub called as a statement:

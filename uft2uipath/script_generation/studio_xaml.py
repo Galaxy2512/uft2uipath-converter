@@ -32,18 +32,21 @@ def prepare(root):
             selector = element.attrib["Selector"]
             if selector.startswith("[") and selector.endswith("]"):
                 element.set("Selector", json.loads(selector[1:-1]))
+        # Activity -> (attribute, argument type, is output) for each expression property.
         mappings = {
-            "Throw": ("Exception", "s:Exception", False),
-            "If": ("Condition", "x:Boolean", False),
-            "UiElementExists": ("Exists", "x:Boolean", True),
-            "TypeInto": ("Text", "x:String", False),
-            "Delay": ("Duration", "s:TimeSpan", False),
-            "SelectItem": ("Item", "x:String", False),
+            "Throw": [("Exception", "s:Exception", False)],
+            "If": [("Condition", "x:Boolean", False)],
+            "UiElementExists": [("Exists", "x:Boolean", True)],
+            "TypeInto": [("Text", "x:String", False)],
+            "Delay": [("Duration", "s:TimeSpan", False)],
+            "SelectItem": [("Item", "x:String", False)],
             # Studio types Log Message's Message as Object; a String argument leaves it unresolved.
-            "LogMessage": ("Message", "x:Object", False),
+            "LogMessage": [("Message", "x:Object", False)],
+            "StartProcess": [("FileName", "x:String", False), ("Arguments", "x:String", False),
+                             ("WorkingDirectory", "x:String", False)],
         }
-        if local in mappings:
-            attribute, kind, output = mappings[local]
+        # Reversed so that inserting each at the front keeps the listed order.
+        for attribute, kind, output in reversed(mappings.get(local, [])):
             value = element.attrib.get(attribute)
             if value is not None and value.startswith("[") and value.endswith("]"):
                 del element.attrib[attribute]
