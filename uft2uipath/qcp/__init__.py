@@ -1,3 +1,2 @@
-# Package for working with OpenText ALM/QC "QCP" archives: extracting them
-# (extractor.py), loading their contents into an in-memory text database
-# (alm_database.py), and reading that database into a MigrationModel (reader.py).
+# Package for OpenText ALM/QC "QCP" archives: extractor.py extracts them for the
+# exploration tools. The convert pipeline uses uft2uipath.archive instead.

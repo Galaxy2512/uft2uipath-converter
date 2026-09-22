@@ -4,5 +4,3 @@
 # - inventory.py: operation inventory and migration coverage from generation reports
 # - selector_candidates.py / acceptance.py: UiPath selector proposals from UFT
 #   object properties and which of them are accepted for generation
-# - operation_classifier.py: legacy classification of component names for the
-#   old QCP reader; not used by the convert pipeline
