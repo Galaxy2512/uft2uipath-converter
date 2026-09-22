@@ -8,7 +8,8 @@ Parses a supported subset of UFT/VBScript into neutral script AST nodes.
 Supported
 --------
 - object statements over any test-object hierarchy: Set, SetSecure, Click
-  (with recorded coordinates), Select, Navigate, Sync, Activate, Close, Back
+  (with recorded coordinates), Select, Navigate, Sync, Activate, Close, Back,
+  Type, and Set on check boxes and radio buttons
 - OptionalStep. prefixed steps, and UFT's " @@ ..." step metadata
 - If / ElseIf / Else / End If, and Select Case / Case / Case Else / End Select.
   Conditions are split by VBScript precedence
@@ -21,8 +22,9 @@ Supported
   DataTable("...", sheet), string, integer, decimal and Boolean literals,
   VBScript constants (vbCrLf, vbTrue ...), variables, & concatenation,
   arithmetic (+ - * / \\ Mod ^ and unary minus, by VBScript precedence),
-  comparisons and And/Or/Not as Boolean values, function calls (Len(x), Rnd)
-  and Object.GetROProperty("property")
+  comparisons and And/Or/Not as Boolean values, function calls (Len(x), Rnd),
+  Object.GetROProperty("property") and methods of objects in variables
+  (fso.FileExists(path))
 - Function/Sub calls as statements: Name, Name args, Name (x), Call Name(args)
 
 Important
@@ -51,7 +53,9 @@ from uft2uipath.parser.uft_script_nodes import (
     SelectCaseOperation,
     FunctionCall,
     UnaryExpression,
+    CheckOperation,
     CheckpointOperation,
+    TypeOperation,
     ClickOperation,
     CloseOperation,
     ComparisonCondition,
@@ -70,6 +74,7 @@ from uft2uipath.parser.uft_script_nodes import (
     IfOperation,
     LiteralValue,
     LogicalCondition,
+    MethodCall,
     NavigateOperation,
     ObjectReference,
     ParameterReference,
@@ -208,6 +213,11 @@ class UftVbScriptParser:
 
     CALL_PATTERN = re.compile(r"^(?P<name>[A-Za-z_]\w*)\s*\(")
 
+    # variable.Method or variable.Method(arguments): a method of an object in a variable.
+    METHOD_CALL_PATTERN = re.compile(
+        r"^(?P<object>[A-Za-z_]\w*)\.(?P<method>[A-Za-z_]\w*)\s*(?:\((?P<arguments>.*)\))?$", re.DOTALL,
+    )
+
     # VBScript functions called without arguments are written without parentheses.
     NULLARY_FUNCTIONS = {"rnd", "now", "date", "time", "timer"}
 
@@ -218,6 +228,9 @@ class UftVbScriptParser:
         "vblf": "\n", "vbtab": "\t", "vbnullstring": "", "vbnullchar": "\0",
         "vbbinarycompare": 0, "vbtextcompare": 1,
     }
+
+    # UFT keyboard constants (micTab, micReturn, micCtrlDwn ...), not report statuses.
+    KEY_CONSTANT = re.compile(r"^mic(?!Pass$|Fail$|Done$|Warning$)[A-Z]\w*$")
 
     CALL_STATEMENT_PATTERN = re.compile(
         r"^(?P<call>Call\s+)?(?P<name>[A-Za-z_]\w*)(?P<arguments>(?:\s+|\s*\().*)?$",
@@ -768,6 +781,19 @@ class UftVbScriptParser:
                 )
             return self.SIMPLE_METHODS[method](raw=line, line_number=line_number, target=target)
 
+        if method == "set" and (target.object_type or "").lower().endswith(("checkbox", "radiobutton")):
+            # Check boxes take "ON"/"OFF"; radio buttons are set without a value.
+            return CheckOperation(
+                raw=line, line_number=line_number, target=target,
+                value=self._parse_value(self._unwrap(arguments)) if arguments.strip("() ") else None,
+            )
+
+        if method == "type":
+            if not arguments:
+                return UnknownScriptOperation(raw=line, line_number=line_number, reason="type requires a value.")
+            return TypeOperation(raw=line, line_number=line_number, target=target,
+                                 value=self._parse_value(self._unwrap(arguments)))
+
         if method in self.VALUE_METHODS:
             if not arguments:
                 return UnknownScriptOperation(
@@ -997,6 +1023,10 @@ class UftVbScriptParser:
         if value.lower() in self.CONSTANTS:
             return LiteralValue(raw=value, value=self.CONSTANTS[value.lower()])
 
+        if self.KEY_CONSTANT.match(value):
+            # micTab, micReturn ...: keystrokes for Type, which have no translation yet.
+            return UnknownValueExpression(raw=value, reason=f"UFT key constant {value} is not supported yet")
+
         if self.VARIABLE_PATTERN.match(value) and value.lower() in self.NULLARY_FUNCTIONS:
             # Rnd, Now...: VBScript calls a function without arguments without parentheses.
             return FunctionCall(raw=value, name=value, arguments=[])
@@ -1077,6 +1107,16 @@ class UftVbScriptParser:
             if not any(isinstance(side, UnknownValueExpression) for side in parsed):
                 return BinaryExpression(raw=value, operator=operator, left=parsed[0], right=parsed[1])
             return UnknownValueExpression(raw=value)
+
+        method_match = self.METHOD_CALL_PATTERN.match(value)
+        if method_match and method_match.group("object").lower() not in ("environment", "reporter", "datatable"):
+            text = method_match.group("arguments")
+            arguments = self._split_top_level(text, ",") if text and text.strip() else []
+            if arguments is not None:
+                parsed = [self._parse_value(argument) for argument in arguments]
+                if not any(isinstance(argument, UnknownValueExpression) for argument in parsed):
+                    return MethodCall(raw=value, object=method_match.group("object"),
+                                      method=method_match.group("method"), arguments=parsed)
 
         call_match = self.CALL_PATTERN.match(value)
         if call_match and self._unwrap(value[call_match.end("name"):]) != value[call_match.end("name"):].strip():

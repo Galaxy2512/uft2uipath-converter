@@ -47,6 +47,7 @@ mapping/inventory.py                     coverage report (artifacts/migration-co
 | `script_generation/emitters/functions.py` | VBScript built-in functions and arithmetic as typed C# |
 | `script_generation/emitters/calls.py` | Calls to user/library Functions and Subs: Invoke Workflow File |
 | `script_generation/emitters/system.py` | Starting programs: SystemUtil.Run → Start Process |
+| `script_generation/emitters/objects.py` | COM objects in variables: FileSystemObject → System.IO |
 | `script_generation/user_functions.py` | Compiles each called Function/Sub into its own workflow |
 | `script_analysis/function_definitions.py` | Which functions an action can call, in UFT lookup order |
 | `script_generation/emitter.py` | `ComponentEmitter`: dispatch, typed values, bindings, rollback, report |
@@ -93,6 +94,10 @@ def handler(ctx, node, parent) -> str: ...
 |---|---|---|
 | `Obj.Click` | Click | Single left click at the centre; a recorded offset is not reproduced |
 | `Obj.Set value` | Type Into | Replaces the field content |
+| `Obj.Type text` | Type Into | Keeps the field content (EmptyField false); key constants (`micTab` ...) block |
+| `CheckBox.Set "ON"/"OFF"`, `RadioButton.Set` | Check | Action Check/Uncheck; the state must be a literal |
+| `Set x = CreateObject("Scripting.FileSystemObject")`, `Set x = Nothing` | – | No activity; the object's methods become System.IO calls. Other ProgIDs block |
+| A mapped built-in called as a statement (`CStr(x)`) | – | No effect: its result is discarded, as in VBScript |
 | `Obj.SetSecure x` | Type Into | Value from a secure argument; UFT's encoded value is not decoded |
 | `Obj.Select value` | Select Item | |
 | `Browser/Page.Sync` | Wait Ui Element Appear | Waits for the page element, close to but not the same as load completion |
@@ -130,6 +135,8 @@ a condition needs run before the `If`, as VBScript evaluates every operand.
 | `+ - * / \ Mod ^`, unary `-` | Typed arithmetic; `/` and `^` give Double, `\` and `Mod` need Int32 |
 | `Len LCase UCase Trim LTrim RTrim Left Right Mid InStr InStrRev Replace Space Chr` | Null-safe string code |
 | `CStr CInt CLng CDbl Int Fix Abs Rnd` | Conversions with VBScript rounding (`CInt` rounds half to even, `True` is -1) |
+| `Date Now Day Month Year Hour Minute Second Weekday` | DateTime and Int32; `Weekday` counts Sunday as 1. A date converted to text blocks (VBScript formats it by the Windows locale) |
+| `fso.FileExists FolderExists GetFileName GetBaseName GetExtensionName GetParentFolderName BuildPath` | `System.IO.File`/`Directory`/`Path` |
 
 GetROProperty maps only these properties, since they read the same DOM value
 under the same name: `innertext outertext innerhtml outerhtml value href title
@@ -259,12 +266,11 @@ wait for the Activity Lab examples from Studio.
 
 ## Known gaps
 
-- Function bodies in the sample libraries still block on: `WinRadioButton.Set`
-  without a value and `.Type`, `WaitProperty` (returns True/False in UFT, while
-  UiPath's Wait Attribute throws on timeout), `ExitComponent`, `CreateObject`
-  (FileSystemObject, WScript.Shell), date functions (`Date`, `Day`, `Month`,
-  `Year`), arrays, and variables that change type (VBScript Variants, e.g. a
-  number later concatenated as a string).
+- Function bodies in the sample libraries still block on: variables that
+  change type (VBScript Variants, e.g. a month number later made a string, or a
+  String parameter assigned a number), `WaitProperty` (returns True/False in
+  UFT, while UiPath's Wait Attribute throws on timeout), `ExitComponent`,
+  `CreateObject` of other ProgIDs (WScript.Shell), and arrays.
 - `Excel_ReadValue` and other functions whose library is not in the export.
 - Navigate, Close, Activate, Back, UIA objects, descriptive programming
   (`Browser("title:=...")`).

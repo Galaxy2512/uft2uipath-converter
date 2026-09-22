@@ -99,6 +99,43 @@ def emit_type_into(ctx, node, parent, trace, display):
     trace.update(status="mapped_unverified", activity="TypeInto (replace)")
 
 
+@maps("TypeOperation", uft=".Type", activities=("TypeInto",), requires_selector=True,
+      notes="Keeps the field's content, as UFT Type adds keystrokes; key constants (micTab ...) block.")
+def emit_type(ctx, node, parent, trace, display):
+    """Object.Type text: Type Into without clearing the field first."""
+    binding = ctx.object_binding(node, "type")
+    text = ctx.value(node.get("value"), "String", parent)
+    activity = ET.SubElement(parent, q("TypeInto", UI), {
+        "DisplayName": display, "Text": expr(text), "EmptyField": "False", "ContinueOnError": "False",
+        "SimulateType": _input_flag(binding, "Simulate"),
+        "SendWindowMessages": _input_flag(binding, "SendWindowMessages"),
+    })
+    ctx.ui_target(activity, "TypeInto", binding, scoped=True)
+    trace.update(status="mapped_unverified", activity="TypeInto (append)")
+
+
+_CHECK_ACTIONS = {"on": "Check", "off": "Uncheck"}
+
+
+@maps("CheckOperation", uft="CheckBox.Set \"ON\"/\"OFF\", RadioButton.Set", activities=("Check",),
+      requires_selector=True, notes="The state must be a literal ON or OFF; a radio button is checked.")
+def emit_check(ctx, node, parent, trace, display):
+    """Check box Set "ON"/"OFF" or radio button Set: Check with the Check or Uncheck action."""
+    value = node.get("value")
+    if value is None:
+        action = "Check"
+    elif value.get("node_type") == "LiteralValue" and str(value.get("value")).lower() in _CHECK_ACTIONS:
+        action = _CHECK_ACTIONS[str(value["value"]).lower()]
+    else:
+        raise ValueError(f"Check box state {value.get('raw')!r} must be a literal ON or OFF.")
+    binding = ctx.object_binding(node, "check")
+    activity = ET.SubElement(parent, q("Check", UI), {
+        "DisplayName": display, "Action": action, "ContinueOnError": "False",
+    })
+    ctx.ui_target(activity, "Check", binding, scoped=True)
+    trace.update(status="mapped_unverified", activity=f"Check ({action})")
+
+
 @maps("SetSecureTextOperation", uft=".SetSecure", activities=("TypeInto",), requires_selector=True,
       notes="The UFT encoded value is not carried over; a secure argument supplies it.")
 def emit_secure_type_into(ctx, node, parent, trace, display):

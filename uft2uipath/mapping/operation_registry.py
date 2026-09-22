@@ -103,8 +103,6 @@ for _entry in (
                      requires_selector=True),
     OperationMapping("CheckpointOperation", "Checkpoint", ("VerifyExpression",), "requires_strategy",
                      notes="Checkpoint criteria live in the UFT resource files, not in the script."),
-    OperationMapping("ObjectAssignmentOperation", "Set x = ...", (), "requires_strategy",
-                     notes="Object references (CreateObject, test objects) have no direct equivalent."),
     OperationMapping("UnknownScriptOperation", "(unparsed statement)", (), "unsupported"),
 ):
     _register(_entry)

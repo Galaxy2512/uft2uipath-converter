@@ -26,7 +26,7 @@ for prefix, uri in (("", WF), ("x", X), ("ui", UI)):
     ET.register_namespace(prefix, uri)
 
 TYPES = {"String": "x:String", "Boolean": "x:Boolean", "Int32": "x:Int32", "Double": "x:Double",
-         "Object": "x:Object"}
+         "DateTime": "s:DateTime", "Object": "x:Object"}
 # Object only holds activity results internally; arguments stay typed.
 ARGUMENT_TYPES = ("String", "Boolean", "Int32")
 # A deliberately restrictive naming contract avoids keyword collisions.
@@ -179,6 +179,8 @@ class ComponentEmitter:
         # set once at load), "result" (the function's own name once assigned).
         self.aliases = {}
         self.result_type = None
+        # Variables holding a supported COM object (lower-case name -> ProgID), see emitters.objects.
+        self.com_objects = {}
         self.workflow_name = workflow_name or f"Component_{component_id}"
         self.analysis = analysis
         self.bindings = bindings
@@ -391,6 +393,9 @@ class ComponentEmitter:
     def as_string(self, node, parent=None):
         """C# String code for a value, converted as VBScript converts it in & and CStr."""
         kind = self.expression_type(node)
+        if kind == "DateTime":
+            # VBScript formats dates by the Windows locale, .NET by its culture and with the time.
+            raise ValueError("Converting a date to text is formatted differently in VBScript; not reproduced.")
         code = self._code(node, kind, parent)
         if kind == "String":
             return code

@@ -27,7 +27,7 @@ def _s(code: str) -> str:
 class Function:
     """How one VBScript built-in is translated: accepted argument types, result type and C# template."""
     # "String": any value, converted as VBScript would; "Int32"; "Number": Int32
-    # or Double as given; "Any": any type, passed as is.
+    # or Double as given; "DateTime"; "Any": any type, passed as is.
     params: tuple[str, ...]
     # A type, or a function of the argument types.
     returns: str | Callable[[list[str]], str]
@@ -96,6 +96,14 @@ FUNCTIONS: dict[str, Function] = {
     "chr": Function(("Int32",), "String", lambda c, k: f"((char)({c[0]})).ToString()",
                     notes="UTF-16 code; VBScript uses the ANSI code page above 127."),
     "space": Function(("Int32",), "String", lambda c, k: f"new string(' ', {c[0]})"),
+    "date": Function((), "DateTime", lambda c, k: "System.DateTime.Today"),
+    "now": Function((), "DateTime", lambda c, k: "System.DateTime.Now"),
+    **{name: Function(("DateTime",), "Int32", lambda c, k, part=part: f"({c[0]}).{part}")
+       for name, part in (("day", "Day"), ("month", "Month"), ("year", "Year"),
+                          ("hour", "Hour"), ("minute", "Minute"), ("second", "Second"))},
+    # VBScript counts Sunday as 1 by default; .NET's DayOfWeek counts it as 0.
+    "weekday": Function(("DateTime",), "Int32", lambda c, k: f"((int)({c[0]}).DayOfWeek + 1)",
+                        notes="Default first day (Sunday) only; a firstdayofweek argument blocks."),
 }
 
 
@@ -139,6 +147,8 @@ def _argument_types(ctx, node, spec):
             raise ValueError(f"Function {node.get('name')} needs an Int32 argument, not {kind}.")
         elif param == "Number" and kind not in NUMERIC:
             raise ValueError(f"Function {node.get('name')} needs a number, not {kind}.")
+        elif param == "DateTime" and kind != "DateTime":
+            raise ValueError(f"Function {node.get('name')} needs a date, not {kind}.")
         kinds.append(kind)
     return kinds
 

@@ -105,6 +105,17 @@ class FunctionCall(ValueExpression):
 
 
 @dataclass
+class MethodCall(ValueExpression):
+    """
+    Represents a method of an object held in a variable: fso.FileExists(path).
+    """
+
+    object: str = ""
+    method: str = ""
+    arguments: list[ValueExpression] = field(default_factory=list)
+
+
+@dataclass
 class BinaryExpression(ValueExpression):
     """
     Represents arithmetic: a + b, a - b, a * b, a / b, a \\ b, a Mod b, a ^ b.
@@ -157,13 +168,14 @@ class ObjectReference:
     Represents one logical UFT Object Repository target.
 
     The complete hierarchy is preserved because UiPath selectors may
-    need Browser, Page and control information.
+    need Browser, Page and control information. It can be any application:
+    web (Browser/Page/...) or desktop (Window/Dialog/...).
 
     Example:
 
-        Browser("OrangeHRM_BrowserObject")
-            .Page("OrangeHRM_PageObject")
-            .WebEdit("username_WebEdit")
+        Browser("MyBrowser")
+            .Page("MyPage")
+            .WebEdit("UserName")
     """
 
     browser: str | None = None
@@ -290,6 +302,26 @@ class ClickOperation(ScriptOperation):
     target: ObjectReference | None = None
     x: int | None = None
     y: int | None = None
+
+
+@dataclass
+class CheckOperation(ScriptOperation):
+    """
+    Represents Set on a check box ("ON"/"OFF") or a radio button (no value).
+    """
+
+    target: ObjectReference | None = None
+    value: ValueExpression | None = None
+
+
+@dataclass
+class TypeOperation(ScriptOperation):
+    """
+    Represents Object.Type: keystrokes sent to the object, added to what it holds.
+    """
+
+    target: ObjectReference | None = None
+    value: ValueExpression | None = None
 
 
 @dataclass

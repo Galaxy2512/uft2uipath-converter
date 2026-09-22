@@ -103,10 +103,14 @@ def emit_call(ctx, name, arguments, parent, display, want_result):
             "statements (MsgBox ...) are not mapped.")
 def emit_call_statement(ctx, node, parent, trace, display):
     """A Function/Sub called as a statement: Invoke Workflow File, the return value discarded."""
-    from uft2uipath.script_generation.emitters.functions import BUILTINS
+    from uft2uipath.script_generation.emitters.functions import BUILTINS, FUNCTIONS
     name = node.get("name") or ""
     if name.lower() in BUILTINS and ctx.function_definition(name) is None:
-        # Called as a statement, a built-in's result is discarded; only MsgBox-like side effects remain.
+        if name.lower() in FUNCTIONS:
+            # The mapped built-ins only compute a value; called as a statement, it is discarded.
+            trace.update(status="mapped_unverified", activity="(no effect)",
+                         note=f"{name} is called as a statement; its result is discarded, as in VBScript.")
+            return
         raise ValueError(f"Function {name} has no UiPath mapping as a statement.")
     compiled, _ = emit_call(ctx, name, node.get("arguments") or [], parent, display, want_result=False)
     if compiled.empty:
