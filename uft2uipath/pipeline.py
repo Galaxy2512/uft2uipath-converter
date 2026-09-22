@@ -26,6 +26,7 @@ from uft2uipath.mapping.acceptance import AcceptanceSettings, build_binding, dec
 from uft2uipath.mapping.inventory import build_inventory
 from uft2uipath.parser.uft_script_nodes import FunctionDefinitionOperation
 from uft2uipath.parser.uft_vbscript_parser import UftVbScriptParser
+from uft2uipath.script_analysis.function_definitions import LOCAL_ORIGIN, definitions_for, reachable
 from uft2uipath.script_analysis.library_calls import annotate_library_calls
 from uft2uipath.parser.project_builder import ProjectBuilder
 from uft2uipath.script_analysis.analyzer import analyze_source
@@ -68,6 +69,9 @@ class ConversionPipeline:
         self.output_dir = Path(output_dir).resolve()
         self.test_ids = list(dict.fromkeys(test_ids)) if test_ids else None
         self.acceptance = acceptance or AcceptanceSettings()
+        # Per asset: function library texts; per action: the functions it can call.
+        self._library_texts: dict[str, list[tuple[str, str]]] = {}
+        self._definitions: dict[str, dict[str, Any]] = {}
 
     def run(self) -> PipelineResult:
         """Run all stages in a temporary directory, then move the result to the output directory."""
@@ -235,6 +239,16 @@ class ConversionPipeline:
                     sources.append({"path": path, "issue": issue,
                                     "object_count": len(loaded.objects) if loaded else 0})
                 objects = resolve_objects(action.text, repositories)
+                # Library functions the action calls use the action's repositories too.
+                definitions = definitions_for(action.text, self._libraries(repository, key, resolver.assets[key]))
+                self._definitions[f"{key}/{folder}"] = definitions
+                for name in reachable(action.text, definitions):
+                    definition = definitions[name]
+                    if definition["origin"] == LOCAL_ORIGIN:
+                        continue
+                    for entry in resolve_objects(definition["source"], repositories):
+                        entry.update(function=definition["name"], origin=definition["origin"])
+                        objects.append(entry)
                 for entry in objects:
                     statuses[entry["status"]] = statuses.get(entry["status"], 0) + 1
                 actions[f"{key}/{folder}"] = {
@@ -251,27 +265,35 @@ class ConversionPipeline:
                  "artifact": "artifacts/selector-candidates.json", "reference_statuses": statuses}
         return stage, {key: value["objects"] for key, value in actions.items()}
 
-    @staticmethod
-    def _library_functions(repository, asset) -> dict[str, str]:
+    def _libraries(self, repository, asset_key, asset) -> list[tuple[str, str]]:
+        """(path, text) of the function libraries an asset associates, read once, in UFT order."""
+        if asset_key not in self._library_texts:
+            texts = []
+            for library in asset.function_libraries:
+                path = library.get("path")
+                if not path:
+                    continue
+                try:
+                    text, _ = decode_script(repository.read_bytes(path))
+                except (OSError, ValueError) as exc:
+                    library["issue"] = f"unreadable_library: {exc}"
+                    continue
+                texts.append((path, text))
+            self._library_texts[asset_key] = texts
+        return self._library_texts[asset_key]
+
+    def _library_functions(self, repository, asset_key, asset) -> dict[str, str]:
         """Maps function name -> library path for the libraries this asset associates."""
         functions: dict[str, str] = {}
-        for library in asset.function_libraries:
-            path = library.get("path")
-            if not path:
-                continue
-            try:
-                text, _ = decode_script(repository.read_bytes(path))
-            except (OSError, ValueError) as exc:
-                library["issue"] = f"unreadable_library: {exc}"
-                continue
+        for path, text in self._libraries(repository, asset_key, asset):
             for operation in UftVbScriptParser().parse(text).operations:
                 if isinstance(operation, FunctionDefinitionOperation):
                     functions.setdefault(operation.name.casefold(), path)
         return functions
 
     def _generate(self, repository, resolver, resolutions, resolved, staging: Path, project_name: str):
-        # Only actions a test actually executes become workflows; Action0 is the main flow.
         """Analyze the executed actions, bind accepted selectors and emit the UiPath project and reports."""
+        # Only actions a test actually executes become workflows; Action0 is the main flow.
         executed = {f"{unit.asset}/{unit.action}" for test in resolved for unit in test.execution}
         analyses, decisions, libraries = {}, {}, {}
         for key, objects in sorted(resolutions.items()):
@@ -280,9 +302,11 @@ class ConversionPipeline:
             asset_key, folder = key.rsplit("/", 1)
             asset = resolver.assets[asset_key]
             if asset_key not in libraries:
-                libraries[asset_key] = self._library_functions(repository, asset)
+                libraries[asset_key] = self._library_functions(repository, asset_key, asset)
             analysis = analyze_source(asset.actions[folder].text)
             annotate_library_calls(analysis, libraries[asset_key])
+            # Functions the emitter can compile into workflows when the action calls them.
+            analysis["function_definitions"] = self._definitions.get(key, {})
             analyses[key] = analysis
             decisions[key] = [decide(entry, self.acceptance) for entry in objects]
         _write(staging / "artifacts" / "script-analysis.json", {
@@ -358,8 +382,8 @@ class ConversionPipeline:
         return target, True
 
     def _project_name(self, extracted: Path) -> str:
-        # dbid.xml also holds DB connection details; only the name is read.
         """ALM project name from dbid.xml, reading nothing else from it."""
+        # dbid.xml also holds DB connection details; only the name is read.
         dbid = extracted / "dbid.xml"
         if dbid.is_file():
             name = ET.parse(dbid).getroot().findtext("PROJECT_NAME")

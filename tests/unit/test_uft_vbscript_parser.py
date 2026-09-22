@@ -88,7 +88,7 @@ Browser("OrangeHRM_BrowserObject").Page("OrangeHRM_PageObject").WebButton("Login
 
 
 def test_unknown_statement_is_not_discarded():
-    source = 'CustomFunction "value"'
+    source = 'On Error Resume Next'
 
     result = UftVbScriptParser().parse(source)
 
@@ -97,7 +97,7 @@ def test_unknown_statement_is_not_discarded():
         result.operations[0],
         UnknownScriptOperation,
     )
-    assert result.operations[0].raw == 'CustomFunction "value"'
+    assert result.operations[0].raw == 'On Error Resume Next'
 
 
 def test_parse_literal_set_value():

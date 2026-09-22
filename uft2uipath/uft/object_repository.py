@@ -120,8 +120,8 @@ def read_object_repository(data: bytes) -> ObjectRepository:
 
 
 def _parent_storage(databases, child: str) -> str | None:
-    # StgContainmentTable maps parent storage GUID -> child storage GUID (16-byte, little-endian layout).
     """GUID of the storage holding the object streams, from StgContainmentTable."""
+    # StgContainmentTable maps parent storage GUID -> child storage GUID (16-byte, little-endian layout).
     for parent, value in databases.get(CONTAINMENT, {}).items():
         if len(parent) == 16 and len(value) == 16 and _guid(value) == child.upper():
             return _guid(parent)

@@ -42,7 +42,7 @@ Each major stage writes reviewable JSON artifacts under `<output>/artifacts`.
 - explicit blocking with `Throw` when migration semantics remain unresolved
 - migration reports and intermediate artifacts for manual review
 
-Which UiPath activities each UFT construct becomes is decided by one mapping registry (`uft2uipath/mapping/operation_registry.py`). The emitter currently supports UI actions (click, set, secure set, select, sync), `If` with `Exist`, comparisons and `And`/`Or`/`Not`, `GetROProperty`, typed assignments, output parameters, `Reporter.ReportEvent` (micFail logs an error and fails the test at its end), `ExitTest`, arithmetic and the common VBScript string and number functions. Unsupported or ambiguous constructs remain visible as blockers with their reason.
+Which UiPath activities each UFT construct becomes is decided by one mapping registry (`uft2uipath/mapping/operation_registry.py`). The emitter currently supports UI actions (click, set, secure set, select, sync), `If` with `Exist`, comparisons and `And`/`Or`/`Not`, `GetROProperty`, typed assignments, output parameters, `Reporter.ReportEvent` (micFail logs an error and fails the test at its end), `ExitTest`, arithmetic, the common VBScript string and number functions, and calls to Functions/Subs from the action or its function libraries, each translated into its own workflow under `Functions\`. Unsupported or ambiguous constructs remain visible as blockers with their reason.
 
 See [docs/MAPPING_REGISTRY.md](docs/MAPPING_REGISTRY.md) for the full mapping table, semantics and how to add a mapping.
 

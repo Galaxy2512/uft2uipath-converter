@@ -23,6 +23,7 @@ from uft2uipath.script_generation.emitter import (
     assign, document, expr, literal, q, throw, write_xaml,
 )
 from uft2uipath.script_generation.project import project_metadata
+from uft2uipath.script_generation.user_functions import FOLDER as FUNCTION_FOLDER, UserFunctions
 
 _INVALID = re.compile(r"[^A-Za-z0-9_]")
 # Test variable that collects the failure flag of every step.
@@ -55,20 +56,28 @@ def workflow_name(key: str) -> str:
 
 def generate(output: Path, project_name: str, actions: dict[str, ActionPlan],
              tests: list[TestPlan], template: str | None = None) -> dict[str, Any]:
-    """Write the UiPath project: one workflow per action, one test case per ALM
-    test, project.json and Main.xaml. Returns the generation report.
+    """Write the UiPath project: one workflow per action, one per called Function/Sub,
+    one test case per ALM test, project.json and Main.xaml. Returns the generation report.
     """
     (output / "Workflows").mkdir(parents=True)
     (output / "Tests").mkdir()
 
     workflows: dict[str, dict[str, Any]] = {}
+    # Shared by every action, so a function called from several actions is emitted once.
+    functions = UserFunctions()
     for key, plan in sorted(actions.items()):
-        emitter = ComponentEmitter(key, plan.analysis, plan.binding, workflow_name=plan.workflow)
+        emitter = ComponentEmitter(key, plan.analysis, plan.binding, workflow_name=plan.workflow,
+                                   functions=functions)
         root, report = emitter.generate()
         write_xaml(output / "Workflows" / f"{plan.workflow}.xaml", root)
         report["action"] = key
         report["workflow"] = f"Workflows\\{plan.workflow}.xaml"
         workflows[key] = report
+
+    if functions.workflows:
+        (output / FUNCTION_FOLDER).mkdir()
+        for file_name, root in functions.workflows.items():
+            write_xaml(output / FUNCTION_FOLDER / f"{file_name}.xaml", root)
 
     test_reports = []
     for test in tests:
@@ -80,7 +89,7 @@ def generate(output: Path, project_name: str, actions: dict[str, ActionPlan],
     metadata = project_metadata(project_name, registered, template)
     (output / "project.json").write_text(_json(metadata), encoding="utf-8")
     write_xaml(output / "Main.xaml", _main())
-    return {"workflows": workflows, "tests": test_reports,
+    return {"workflows": workflows, "functions": functions.reports(), "tests": test_reports,
             "registered_test_count": len(registered)}
 
 

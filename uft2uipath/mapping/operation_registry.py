@@ -85,8 +85,8 @@ def capabilities() -> dict[str, list[dict]]:
 
 
 def _load_emitters() -> None:
-    # Emitter modules register on import; imported lazily to avoid a cycle.
     """Import the emitter modules so their @maps handlers are registered."""
+    # Emitter modules register on import; imported lazily to avoid a cycle.
     import uft2uipath.script_generation.emitters  # noqa: F401
 
 

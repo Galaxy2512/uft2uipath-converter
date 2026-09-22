@@ -45,6 +45,9 @@ mapping/inventory.py                     coverage report (artifacts/migration-co
 | `script_generation/emitters/flow.py` | If and conditions (comparison, And/Or/Not), assignments, output parameters, Wait, no-op statements |
 | `script_generation/emitters/testing.py` | Test outcome: Reporter.ReportEvent, ExitTest |
 | `script_generation/emitters/functions.py` | VBScript built-in functions and arithmetic as typed C# |
+| `script_generation/emitters/calls.py` | Calls to user/library Functions and Subs: Invoke Workflow File |
+| `script_generation/user_functions.py` | Compiles each called Function/Sub into its own workflow |
+| `script_analysis/function_definitions.py` | Which functions an action can call, in UFT lookup order |
 | `script_generation/emitter.py` | `ComponentEmitter`: dispatch, typed values, bindings, rollback, report |
 | `script_generation/project_emitter.py` | Test case per ALM test: argument wiring, failure flag, ExitTest catch |
 | `mapping/inventory.py` | Inventory of operations, blockers by reason, coverage per test |
@@ -97,7 +100,8 @@ def handler(ctx, node, parent) -> str: ...
 | `Parameter("X") = value` | Assign | To Out argument `out_param_X`; the test exposes it per step |
 | `Reporter.ReportEvent` | Log Message | See *Test outcome* |
 | `ExitTest` | Throw | See *Test outcome* |
-| `Dim`, `Option Explicit`, `Randomize`, `Function` definitions | – | No effect; calls to user functions block |
+| `Dim`, `Option Explicit`, `Randomize`, `Function` definitions | – | No effect; a definition runs only when called |
+| `Foo a, b`, `Call Foo(a)`, `x = Foo(a)` | Invoke Workflow File | Calls the function's own workflow; see *Functions and Subs* |
 | `Navigate`, `Close`, `Activate`, `Back` | – | **planned** (Go To URL, Close, Application Card, Go Back) |
 | Checkpoints, `Set x = CreateObject(...)` | – | **requires strategy** |
 
@@ -162,6 +166,38 @@ The converter reproduces that:
   exception message carries ` [failure reported]` when a failure was reported
   before, and the test adds it to `uft_failed`.
 
+### Functions and Subs (library strategy A)
+
+Every Function/Sub an action calls, defined in the action itself or in an
+associated function library (`.qfl`/`.vbs`/`.txt`), becomes its own workflow
+`Functions\Function_<Name>.xaml`, called with Invoke Workflow File
+(`script_generation/user_functions.py`, call sites in `emitters/calls.py`).
+
+- **Lookup** follows UFT: the action's own functions first, then the libraries
+  in their configured order (`script_analysis/function_definitions.py`). A user
+  definition wins over a VBScript built-in of the same name (e.g. `Sub Log`).
+- **Calls**: as statements (`Foo`, `Foo a, b`, `Call Foo(a)`), in values
+  (`x = Foo(a)`), and without parentheses (`n = GetCount`).
+- **Parameters** are In arguments typed from the call. A parameter the body
+  assigns is InOut: with ByRef (the VBScript default) and a variable passed, the
+  caller's variable changes; with ByVal or an expression passed, a copy does.
+- **Return value**: `FunctionName = value` assigns the Out argument `out_result`.
+- **Context**: `Environment`/`Parameter`/`DataTable` values used in the body are
+  passed on from the caller's arguments of the same name; `micFail` in a function
+  sets the caller's failure flag; `ExitTest` in a function still ends the test.
+- **Library globals** set once to a literal at load time (`IgnoredStringValue =
+  "<SKIP>"`) are constants; a local `Dim` shadows them; changing them without
+  one blocks, since other functions would not see the change.
+- **One workflow per signature**: a function is compiled once per combination
+  of argument types and the selectors its body uses, and shared by all callers.
+- **Blocking**: a function whose body cannot be fully migrated is still written,
+  guarded by a Throw; every call to it blocks as `library`, naming the function's
+  first blocker. Recursion, optional/array parameters, writing output
+  parameters or secure values inside a function also block.
+
+Strategy B (direct activity mappings for the most-used helpers, e.g.
+`Excel_ReadValue` → Read Cell) waits for the real function libraries.
+
 ### Blocking and rollback
 
 A handler raises `ValueError` with the reason. Everything the line had already
@@ -220,8 +256,12 @@ wait for the Activity Lab examples from Studio.
 
 ## Known gaps
 
-- Library functions (`Excel_ReadValue`, `Check_File` ...): need their `.qfl`
-  source and a strategy (translate to workflows, or map known helpers).
+- Function bodies in the sample libraries still block on: `Select Case`,
+  `WinRadioButton.Set` without a value and `.Type`, `SystemUtil.Run`,
+  `WaitProperty`, `CreateObject` (FileSystemObject, WScript.Shell), date
+  functions (`Date`, `Day`, `Month`, `Year`), arrays, and variables that change
+  type (VBScript Variants, e.g. a number later concatenated as a string).
+- `Excel_ReadValue` and other functions whose library is not in the export.
 - Navigate, Close, Activate, Back, `SystemUtil.Run`, UIA objects, descriptive
   programming (`Browser("title:=...")`).
 - UFT regular expressions in object properties (e.g. `innertext="Admin|ESS"`)

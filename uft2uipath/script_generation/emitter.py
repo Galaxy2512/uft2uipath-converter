@@ -38,6 +38,8 @@ DIRECTIONS = {"In": "InArgument", "Out": "OutArgument", "InOut": "InOutArgument"
 FAILED_FLAG = "io_uft_failed"
 # Marks the exception ExitTest raises, so the test can stop without failing.
 EXIT_TEST_MARKER = "UFT ExitTest"
+# Out argument of a function workflow that carries the VBScript return value.
+RESULT_ARGUMENT = "out_result"
 # Appended to that message when a failure was reported before the ExitTest.
 EXIT_FAILED_SUFFIX = " [failure reported]"
 CSHARP_KEYWORDS = frozenset("""
@@ -77,6 +79,17 @@ def literal(value):
         # A C# double literal needs a decimal point or an exponent.
         return text if any(c in text for c in ".eE") else text + ".0"
     raise ValueError("Unsupported literal type or Int32 range.")
+
+
+def _literal_type(value):
+    """Workflow type of a Python literal, or None when it cannot be one."""
+    if type(value) is bool:
+        return "Boolean"
+    if type(value) is int:
+        return "Int32" if -(2**31) <= value < 2**31 else None
+    if type(value) is float:
+        return "Double" if math.isfinite(value) else None
+    return "String" if isinstance(value, str) else None
 
 
 def throw(message, display="Migration blocked", exception="System.InvalidOperationException"):
@@ -150,9 +163,22 @@ class ComponentEmitter:
     end up in generation-report.json. Which activities a line becomes is decided
     by the handlers in script_generation.emitters, found through the registry.
     """
-    def __init__(self, component_id, analysis, bindings, workflow_name=None):
-        """Load the bindings (arguments and selectors) the workflow may use; nothing is emitted yet."""
+    def __init__(self, component_id, analysis, bindings, workflow_name=None, functions=None, function=None):
+        """Load the bindings (arguments and selectors) the workflow may use; nothing is emitted yet.
+
+        functions is the project's UserFunctions catalog, needed to call Functions/Subs.
+        function is set when this workflow is itself a function: {"name", "parameters"},
+        parameters being (VBScript name, argument name, type) triples.
+        """
         self.component_id = component_id
+        self.functions = functions
+        self.function = function
+        # VBScript names (case-insensitive) that stand for something other than a local
+        # variable: name -> (C# code, type, role). Roles: "parameter" (In argument),
+        # "byref" (a parameter the body assigns, InOut), "constant" (a library global
+        # set once at load), "result" (the function's own name once assigned).
+        self.aliases = {}
+        self.result_type = None
         self.workflow_name = workflow_name or f"Component_{component_id}"
         self.analysis = analysis
         self.bindings = bindings
@@ -170,6 +196,16 @@ class ComponentEmitter:
         self.assigned = set()
         self.scoped_actions = {}
         self._load_bindings()
+        for parameter in (function or {}).get("parameters", []):
+            self.arguments[parameter["argument"]] = parameter["kind"]
+            if parameter["direction"] != "In":
+                self.directions[parameter["argument"]] = parameter["direction"]
+            role = "parameter" if parameter["direction"] == "In" else "byref"
+            self.aliases[parameter["vb"].casefold()] = (parameter["argument"], parameter["kind"], role)
+        for name, value in (function or {}).get("constants", {}).items():
+            kind = _literal_type(value)
+            if kind is not None and name not in self.aliases:
+                self.aliases[name] = (literal(value), kind, "constant")
 
     def problem(self, node, code, message):
         """Record a blocker for the report; the workflow then starts with a Throw."""
@@ -238,10 +274,19 @@ class ComponentEmitter:
         self.directions[FAILED_FLAG] = "InOut"
         return FAILED_FLAG
 
+    def _as_call(self, node):
+        """A bare name that is no variable but a defined Function: VBScript calls it without parentheses."""
+        name = node.get("name") or ""
+        if (node.get("node_type") == "VariableReference" and name.casefold() not in self.aliases
+                and not any(known == name for known, _ in self.assigned) and self.function_definition(name)):
+            return {"node_type": "FunctionCall", "name": name, "arguments": [], "raw": node.get("raw")}
+        return node
+
     def expression_type(self, node):
         """Static type of a value expression; raises with the reason when it is unknown."""
         if not isinstance(node, dict):
             raise ValueError("Value expression is missing.")
+        node = self._as_call(node)
         kind = node.get("node_type")
         if kind == "LiteralValue":
             value = node.get("value")
@@ -261,6 +306,9 @@ class ComponentEmitter:
         if kind == "ConcatenationExpression":
             return "String"
         if kind == "VariableReference":
+            alias = self.aliases.get((node.get("name") or "").casefold())
+            if alias:
+                return alias[1]
             kinds = {kind for name, kind in self.assigned if name == node.get("name")}
             if len(kinds) != 1:
                 raise ValueError(f"{node.get('name')} is not assigned earlier in this action.")
@@ -268,6 +316,9 @@ class ComponentEmitter:
         entry = lookup(kind)
         if entry is not None and entry.kind == "expression" and entry.handler is not None:
             return entry.typer(self, node) if entry.typer else entry.returns
+        if entry is not None and entry.kind == "condition" and entry.handler is not None:
+            # A comparison or And/Or/Not used as a value, e.g. found = (a = b).
+            return "Boolean"
         raise ValueError("Unsupported expression remains unresolved.")
 
     def value_type(self, node):
@@ -277,8 +328,26 @@ class ComponentEmitter:
         except ValueError:
             return None
 
+    def function_definition(self, name):
+        """Source and origin of a Function/Sub callable from here, or None if not available."""
+        return (self.analysis.get("function_definitions") or {}).get(name.casefold())
+
+    def function_result(self, kind):
+        """The Out argument a function's return value is assigned to; one type per function."""
+        if self.result_type not in (None, kind):
+            raise ValueError(f"Function {self.function['name']} returns both {self.result_type} and {kind}.")
+        self.result_type = kind
+        self.arguments[RESULT_ARGUMENT] = kind
+        self.directions[RESULT_ARGUMENT] = "Out"
+        # Reading the function's name inside it reads the value assigned so far.
+        self.aliases[self.function["name"].casefold()] = (RESULT_ARGUMENT, kind, "result")
+        return RESULT_ARGUMENT
+
     def function_origin(self, name):
         """Where a non-built-in function is defined: its library, this action, or None."""
+        definition = self.function_definition(name)
+        if definition:
+            return definition["origin"]
         library = (self.analysis.get("library_functions") or {}).get(name.casefold())
         if library:
             return f"library {library}"
@@ -330,6 +399,7 @@ class ComponentEmitter:
 
     def _code(self, node, kind, parent):
         """C# code of a value already known to have the given type."""
+        node = self._as_call(node)
         node_type = node.get("node_type")
         if node_type == "LiteralValue":
             return literal(node.get("value"))
@@ -342,8 +412,14 @@ class ComponentEmitter:
             # C# concatenation turns null into "", as VBScript does with Empty.
             return NonNull(" + ".join(self.as_string(part, parent) for part in node.get("parts", [])))
         if node_type == "VariableReference":
-            return node.get("name")
-        return lookup(node_type).handler(self, node, parent)
+            alias = self.aliases.get((node.get("name") or "").casefold())
+            return alias[0] if alias else node.get("name")
+        entry = lookup(node_type)
+        if entry.kind == "condition":
+            if parent is None and node_type == "ExistCondition":
+                raise ValueError("Exist needs an activity before this statement; not supported here.")
+            return f"({self.condition(node, parent, 'Condition value')})"
+        return entry.handler(self, node, parent)
 
     def object_binding(self, node, action):
         """Verified selector binding of the object a node acts on.
@@ -415,13 +491,13 @@ class ComponentEmitter:
             parent.append(throw(f"Component {self.component_id}, line {line}: migration incomplete."))
 
     def generate(self):
-        # The root is built last: mapping can add arguments, e.g. the failure flag.
         """Emit the whole workflow and its report.
 
         Order: parser-level blockers, every operation, browser/window scopes, then
         variables and arguments, because mapping can still add them (e.g. the
         failure flag). Any issue puts a Throw before the first activity.
         """
+        # The root is built last: mapping can add arguments, e.g. the failure flag.
         seq = ET.Element(q("Sequence"), {"DisplayName": self.workflow_name})
         operations = self.analysis.get("operations")
         if not isinstance(operations, list) or not operations:

@@ -11,6 +11,7 @@ from typing import Callable
 
 from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import NonNull
+from uft2uipath.script_generation.emitters import calls
 
 NUMERIC = ("Int32", "Double")
 
@@ -24,9 +25,9 @@ def _s(code: str) -> str:
 
 @dataclass(frozen=True)
 class Function:
+    """How one VBScript built-in is translated: accepted argument types, result type and C# template."""
     # "String": any value, converted as VBScript would; "Int32"; "Number": Int32
     # or Double as given; "Any": any type, passed as is.
-    """How one VBScript built-in is translated: accepted argument types, result type and C# template."""
     params: tuple[str, ...]
     # A type, or a function of the argument types.
     returns: str | Callable[[list[str]], str]
@@ -142,8 +143,18 @@ def _argument_types(ctx, node, spec):
     return kinds
 
 
+def _user_call(ctx, node) -> bool:
+    """True for a call to a Function defined in the action or an associated library.
+
+    A user definition wins over a VBScript built-in of the same name, as in VBScript.
+    """
+    return ctx.function_definition(node.get("name") or "") is not None
+
+
 def _function_type(ctx, node):
     """Result type of a call (the registry's typer for FunctionCall)."""
+    if _user_call(ctx, node):
+        return calls.result_type(ctx, node["name"], node.get("arguments") or [])
     spec = _spec(ctx, node)
     kinds = _argument_types(ctx, node, spec)
     return spec.returns(kinds) if callable(spec.returns) else spec.returns
@@ -151,9 +162,20 @@ def _function_type(ctx, node):
 
 @maps("FunctionCall", uft="Len(x), CStr(n), Rnd ...", activities=(), kind="expression",
       typer=_function_type,
-      notes="VBScript built-ins: " + ", ".join(sorted(FUNCTIONS)) + ". Other calls block.")
+      notes="VBScript built-ins: " + ", ".join(sorted(FUNCTIONS)) + ". Functions defined in the "
+            "action or an associated library are called as their own workflow; others block.")
 def emit_function(ctx, node, parent):
-    """C# code for a built-in call; a String result is never null."""
+    """C# code for a call: a built-in inline, a user function through Invoke Workflow File.
+
+    A String built-in result is never null.
+    """
+    if _user_call(ctx, node):
+        if parent is None:
+            raise ValueError(f"Calling {node['name']} needs an activity before this statement; "
+                             "not supported here.")
+        _, result = calls.emit_call(ctx, node["name"], node.get("arguments") or [], parent,
+                                    f"Call {node['name']}", want_result=True)
+        return result
     spec = _spec(ctx, node)
     kinds = _argument_types(ctx, node, spec)
     codes = [ctx.as_string(argument, parent) if param == "String" else ctx.value(argument, kind, parent)

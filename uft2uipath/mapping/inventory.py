@@ -59,7 +59,7 @@ def categorize(issue: dict) -> str:
     code, message = issue.get("code"), issue.get("message") or ""
     if code in ("unsupported_statement", "unsupported_object_chain"):
         return "parser"
-    if "library functions are not migrated" in message:
+    if "library functions are not migrated" in message or "is not fully migrated" in message:
         return "library"
     if code == "unsupported_expression" or _EXPRESSION.search(message):
         return "expression"

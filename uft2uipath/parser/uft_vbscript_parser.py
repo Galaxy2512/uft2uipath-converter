@@ -17,9 +17,11 @@ Supported
 - Reporter.ReportEvent (arguments split outside strings and calls), ExitTest
 - Values: Parameter("..."), Environment("...") and Environment.Value("..."),
   DataTable("...", sheet), string, integer, decimal and Boolean literals,
-  variables, & concatenation, arithmetic (+ - * / \\ Mod ^ and unary minus, by
-  VBScript precedence), function calls (Len(x), Rnd) and
-  Object.GetROProperty("property")
+  VBScript constants (vbCrLf, vbTrue ...), variables, & concatenation,
+  arithmetic (+ - * / \\ Mod ^ and unary minus, by VBScript precedence),
+  comparisons and And/Or/Not as Boolean values, function calls (Len(x), Rnd)
+  and Object.GetROProperty("property")
+- Function/Sub calls as statements: Name, Name args, Name (x), Call Name(args)
 
 Important
 ---------
@@ -41,6 +43,7 @@ from uft2uipath.parser.uft_script_nodes import (
     AssignOperation,
     BackOperation,
     BinaryExpression,
+    CallOperation,
     FunctionCall,
     UnaryExpression,
     CheckpointOperation,
@@ -106,7 +109,8 @@ class UftVbScriptParser:
     )
 
     IF_PATTERN = re.compile(
-        r"^\s*(?P<keyword>ElseIf|If)\s+(?P<condition>.+?)\s+Then\s*$",
+        # VBScript needs no space before a parenthesized condition: If(x > 1) Then.
+        r"^\s*(?P<keyword>ElseIf|If)(?:\s+|(?=\())(?P<condition>.+?)\s+Then\s*$",
         re.IGNORECASE,
     )
 
@@ -198,6 +202,27 @@ class UftVbScriptParser:
 
     # VBScript functions called without arguments are written without parentheses.
     NULLARY_FUNCTIONS = {"rnd", "now", "date", "time", "timer"}
+
+    # VBScript constants with the value VBScript gives them. vbTrue/vbFalse are the
+    # numbers -1/0 in VBScript; as values they behave as True/False, so they are Booleans here.
+    CONSTANTS = {
+        "vbtrue": True, "vbfalse": False, "vbcrlf": "\r\n", "vbnewline": "\r\n", "vbcr": "\r",
+        "vblf": "\n", "vbtab": "\t", "vbnullstring": "", "vbnullchar": "\0",
+        "vbbinarycompare": 0, "vbtextcompare": 1,
+    }
+
+    CALL_STATEMENT_PATTERN = re.compile(
+        r"^(?P<call>Call\s+)?(?P<name>[A-Za-z_]\w*)(?P<arguments>(?:\s+|\s*\().*)?$",
+        re.IGNORECASE | re.DOTALL,
+    )
+    # Statement keywords and UFT test-flow statements that look like calls but are not.
+    NOT_CALLS = {
+        "call", "const", "dim", "redim", "erase", "set", "let", "get", "on", "exit", "end", "if",
+        "else", "elseif", "for", "each", "next", "do", "loop", "while", "wend", "select", "case",
+        "with", "function", "sub", "class", "property", "private", "public", "option", "execute",
+        "executeglobal", "stop", "randomize", "exitcomponent", "exitaction", "exitactioniteration",
+        "exittestiteration", "exitrun", "exittest", "reporter", "print", "wait",
+    }
 
     def parse(self, source: str) -> ParsedScript:
         """
@@ -583,6 +608,11 @@ class UftVbScriptParser:
     def _parse_code(self, code: str, line: str, line_number: int) -> ScriptOperation:
         """Parse one statement: object statement, parameter/object assignment, keyword or other."""
         steps, remainder = split_chain(code)
+        # A lone Name("text") with no method is a call like OpenApp ("app.exe"), not an object.
+        if len(steps) == 1 and not remainder.strip():
+            call = self._parse_call(code, line, line_number)
+            if call is not None:
+                return call
         if steps:
             return self._parse_object_statement(steps, remainder, code, line, line_number)
 
@@ -716,10 +746,43 @@ class UftVbScriptParser:
                 code=self._parse_value(argument) if argument else None,
             )
 
+        call = self._parse_call(code, line, line_number)
+        if call is not None:
+            return call
+
         return UnknownScriptOperation(
             raw=line,
             line_number=line_number,
         )
+
+    def _parse_call(self, code: str, line: str, line_number: int) -> CallOperation | None:
+        """A statement calling a function or sub: Name, Name args, Name(args) or Call Name(args).
+
+        Keywords and UFT statements (On Error, Exit Function, ExitComponent ...)
+        are not calls; they stay unknown so they are never mistaken for one.
+        """
+        match = self.CALL_STATEMENT_PATTERN.match(code)
+        if match is None or match.group("name").lower() in self.NOT_CALLS:
+            return None
+        text = (match.group("arguments") or "").strip()
+        if match.group("call"):
+            # Call requires parentheses around the whole argument list.
+            if text and self._unwrap(text) == text:
+                return None
+            text = self._unwrap(text)
+        elif text.startswith("("):
+            # Name (x) passes one parenthesized value; Name(a, b) lists arguments.
+            unwrapped = self._unwrap(text)
+            if unwrapped != text:
+                text = unwrapped
+            elif match.group("arguments").startswith("("):
+                # Name(...).More is an expression or object chain, not a call statement.
+                return None
+        arguments = self._split_top_level(text, ",") if text else []
+        if arguments is None:
+            return None
+        return CallOperation(raw=line, line_number=line_number, name=match.group("name"),
+                             arguments=[self._parse_value(argument) for argument in arguments])
 
     def _parse_object_reference(self, expression: str) -> ObjectReference:
         """
@@ -849,12 +912,24 @@ class UftVbScriptParser:
                 sheet=(data_table_match.group("sheet") or "").strip() or None,
             )
 
+        if value.lower() in self.CONSTANTS:
+            return LiteralValue(raw=value, value=self.CONSTANTS[value.lower()])
+
         if self.VARIABLE_PATTERN.match(value) and value.lower() in self.NULLARY_FUNCTIONS:
             # Rnd, Now...: VBScript calls a function without arguments without parentheses.
             return FunctionCall(raw=value, name=value, arguments=[])
 
         if self.VARIABLE_PATTERN.match(value) and value.lower() not in ("true", "false", "nothing"):
             return VariableReference(raw=value, name=value)
+
+        # Comparisons and And/Or/Not bind looser than & and arithmetic: x = a & b is Boolean.
+        if self._split_comparison(value) or any(
+                len(self._split_top_level_word(value, word)) > 1 for word in ("Or", "And")) \
+                or re.match(r"^Not\b", value, re.IGNORECASE):
+            condition = self._parse_condition(value)
+            if not isinstance(condition, UnknownValueExpression) and not _has_unknown(condition):
+                return condition
+            return UnknownValueExpression(raw=value)
 
         parts = self._split_concatenation(value)
         if parts is not None:
@@ -967,3 +1042,15 @@ class UftVbScriptParser:
             line.rstrip()
             for line in normalized.split("\n")
         ]
+
+def _has_unknown(node) -> bool:
+    """True if any part of a parsed condition could not be interpreted."""
+    if isinstance(node, UnknownValueExpression):
+        return True
+    if isinstance(node, LogicalCondition):
+        return any(_has_unknown(operand) for operand in node.operands)
+    if isinstance(node, NotCondition):
+        return _has_unknown(node.operand)
+    if isinstance(node, ComparisonCondition):
+        return _has_unknown(node.left) or _has_unknown(node.right)
+    return False

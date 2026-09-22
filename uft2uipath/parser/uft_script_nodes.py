@@ -449,6 +449,20 @@ class ExitTestOperation(ScriptOperation):
 
 
 @dataclass
+class CallOperation(ScriptOperation):
+    """
+    Represents a function or sub called as a statement:
+
+        InvokeFlightApp
+        OpenApp "C:\\app.exe"
+        Call FillSearchOrderCriteria(name, date, number)
+    """
+
+    name: str = ""
+    arguments: list[ValueExpression] = field(default_factory=list)
+
+
+@dataclass
 class UnknownScriptOperation(ScriptOperation):
     """
     Preserves unsupported or currently unrecognized VBScript.

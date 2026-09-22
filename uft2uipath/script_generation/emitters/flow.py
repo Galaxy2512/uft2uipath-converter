@@ -105,6 +105,13 @@ def _variable(ctx, name, kind):
     """Declare a workflow variable for a VBScript variable of one static type."""
     if not IDENTIFIER_NAME.fullmatch(name or ""):
         raise ValueError("Assignment target is not a simple variable name.")
+    alias = ctx.aliases.get(name.casefold())
+    if alias and alias[2] == "constant":
+        # Without a local Dim the function would change the library global for every caller.
+        raise ValueError(f"{name} is a library global set at load time; changing it inside "
+                         "a function is not supported.")
+    if alias:
+        raise ValueError(f"{name} is a function parameter; it cannot be assigned here.")
     if name in CSHARP_KEYWORDS or name in ctx.arguments:
         raise ValueError(f"{name} collides with a C# keyword or a workflow argument.")
     # VBScript names ignore case; C# names do not.
@@ -126,6 +133,19 @@ def emit_assign(ctx, node, parent, trace, display):
         raise ValueError("Assignment target is not a simple variable name.")
     kind = ctx.value_type(node.get("value")) or "String"
     code = ctx.value(node.get("value"), kind, parent)
+    if ctx.function and node["name"].casefold() == ctx.function["name"].casefold():
+        # FunctionName = value sets the function's return value.
+        assign(parent, display, ctx.function_result(kind), kind, code)
+        trace.update(status="mapped_unverified", activity="Assign (return value)")
+        return
+    alias = ctx.aliases.get(node["name"].casefold())
+    if alias and alias[2] == "byref":
+        # A parameter the body assigns is InOut: the caller's variable changes as in VBScript.
+        if alias[1] != kind:
+            raise ValueError(f"Parameter {node['name']} is {alias[1]}, assigned {kind}.")
+        assign(parent, display, alias[0], kind, code)
+        trace.update(status="mapped_unverified", activity="Assign (ByRef parameter)")
+        return
     _variable(ctx, node.get("name"), kind)
     assign(parent, display, node["name"], kind, code)
     trace.update(status="mapped_unverified", activity="Assign")

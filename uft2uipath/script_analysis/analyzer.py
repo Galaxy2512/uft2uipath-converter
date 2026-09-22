@@ -36,6 +36,26 @@ def analyze_source(source):
     secure values/outputs/objects, coverage counts and line-level issues.
     """
     parsed = UftVbScriptParser().parse(source)
+    return analyze_operations(parsed.operations, parsed.source_lines)
+
+
+def analyze_function(source):
+    """Analyze the body of the first Function/Sub in source as if it were a script.
+
+    Returns analyze_operations' result plus the function's keyword, name and
+    parameters, or None when source defines no function.
+    """
+    parsed = UftVbScriptParser().parse(source)
+    definition = next((op for op in parsed.operations if isinstance(op, FunctionDefinitionOperation)), None)
+    if definition is None:
+        return None
+    result = analyze_operations(definition.body, parsed.source_lines, allow_empty=True)
+    result.update(keyword=definition.keyword, name=definition.name, parameters=list(definition.parameters))
+    return result
+
+
+def analyze_operations(operations, source_lines, allow_empty=False):
+    """References, issues and coverage of parsed operations (a script or a function body)."""
     issues, parameters, environments, objects = [], set(), set(), []
     data_columns, secrets, secure_values, outputs = set(), set(), set(), set()
     kinds = Counter()
@@ -133,16 +153,16 @@ def analyze_source(source):
             for item in value:
                 walk(item, line)
 
-    for operation in parsed.operations:
+    for operation in operations:
         walk(operation)
     operation_count = sum(kinds.values())
     unsupported = kinds.get("UnknownScriptOperation", 0)
     # Block markers/comments are retained in source, not counted as operations.
-    if operation_count == 0:
+    if operation_count == 0 and not allow_empty:
         issue("empty_script", "No operations parsed; requires review.", None, "")
     return {
-        "operations": typed(parsed.operations),
-        "source_lines": parsed.source_lines,
+        "operations": typed(operations),
+        "source_lines": source_lines,
         "references": {
             "parameters": sorted(parameters),
             "environment": sorted(environments),
