@@ -41,8 +41,10 @@ mapping/inventory.py                     coverage report (artifacts/migration-co
 
 | Module | Responsibility |
 |---|---|
-| `contracts/` | What the layers agree on: value types, UFT object identity, selector states |
+| `contracts/` | What the layers agree on: value types, UFT object identity, selector states, mapping statuses |
 | `mapping/operation_registry.py` | Source of truth: every parser node type, its UiPath activities and status, as data |
+| `mapping/function_registry.py` | Every VBScript built-in function and how far it is migrated |
+| `mapping/object_method_registry.py` | Methods on test objects, FileSystemObject and data accessors |
 | `script_generation/handlers.py` | Handler table: which function emits which node type, checked against the registry |
 | `script_generation/emitters/ui.py` | UI actions and checks: Exist, GetROProperty, Click, Set, SetSecure, Select, Sync |
 | `script_generation/emitters/flow.py` | If and conditions (comparison, And/Or/Not), assignments, output parameters, Wait, no-op statements |
@@ -66,7 +68,7 @@ Each entry (`OperationMapping`) describes one parser node type:
 | `node_type` | Parser class name, e.g. `ClickOperation` |
 | `uft` | The UFT construct, for people and reports, e.g. `.Click` |
 | `activities` | UiPath activities it becomes |
-| `status` | `supported`, `no_effect`, `planned`, `requires_strategy`, `unsupported` |
+| `status` | `supported`, `no_effect`, `planned`, `requires_strategy`, `unsupported` (`contracts/status.py`, shared by all three registries) |
 | `kind` | `operation` (a statement), `condition` (the test of an If), `expression` (a value) |
 | `returns` | For an expression whose type is always the same; otherwise the handler's `typer` decides |
 | `requires_selector` | Needs an object binding accepted for generation |
@@ -148,6 +150,16 @@ a condition needs run before the `If`, as VBScript evaluates every operand.
 GetROProperty maps only these properties, since they read the same DOM value
 under the same name: `innertext outertext innerhtml outerhtml value href title
 name class url src alt text`, `html id` → `id`, `html tag` → `tag`. Others block.
+
+Which VBScript built-ins exist, and why an unmapped one is not mapped, is in
+`mapping/function_registry.py`; methods called on an object (test object,
+FileSystemObject, `Environment.Value`) are in `mapping/object_method_registry.py`.
+Both classify every name with the same statuses, so a report can say whether a
+call is a built-in nobody has written yet (`planned`), one that needs a decision
+first (`requires_strategy`, e.g. arrays, Variant introspection, `WaitProperty`),
+or a Function/Sub from the action or a library (`unknown` to these registries).
+The tables carry no code: the C# lives in `script_generation/emitters/`, which
+is checked against them at import, so neither side can drift.
 
 ## Semantics
 
@@ -232,9 +244,15 @@ python -m uft2uipath inventory output\run1 output\run2 --out coverage.json
 ```
 
 It reports lines mapped/blocked, operations by outcome, blocked lines by reason,
-unmapped functions and object methods, coverage per test and the registry by
+the names blocked lines call, coverage per test and all three registries by
 status. Coverage is computed from the per-line trace, not from the registry: a
 supported operation still blocks when its object has no selector.
+
+`blocked_calls` lists every function and object method a blocked line calls,
+with what the registries say about it: whether it is a VBScript built-in or a
+Function/Sub from the action or a library, and its status. A name that is
+already translated (`CStr`) is listed last, because its line blocked for
+another reason; the work sits in the `unknown` and `planned` names above it.
 
 Coverage is reported three times, because one number answers three different
 questions at once:

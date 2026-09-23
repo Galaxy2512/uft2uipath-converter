@@ -17,6 +17,10 @@ different questions at once:
 
 Mapped never means verified: it means an activity or a deliberate no-op was
 emitted for the line.
+
+The names blocked lines call are reported with what the registries say about
+them, so a VBScript built-in that is already translated is not mistaken for
+missing work: the line it sits in blocked for another reason.
 """
 from __future__ import annotations
 
@@ -27,6 +31,7 @@ import textwrap
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from uft2uipath.mapping import function_registry, object_method_registry
 from uft2uipath.mapping.operation_registry import capabilities
 
 # Why a line is blocked. A line can have several reasons.
@@ -68,6 +73,33 @@ def _calls(raw: str) -> tuple[set[str], set[str]]:
     return functions, methods
 
 
+def _function_fact(name: str) -> dict:
+    """What the function registry knows about a called name."""
+    entry = function_registry.lookup(name)
+    if entry is None:
+        # Not a VBScript built-in: a Function/Sub of the action or a library.
+        return {"source": "user_or_library", "status": "unknown"}
+    return {"source": "vbscript_builtin", "status": entry.status, "notes": entry.notes}
+
+
+def _method_fact(name: str) -> dict:
+    """What the object-method registry knows about a called method name."""
+    entry = object_method_registry.find(name)
+    if entry is None:
+        return {"owner": "unknown", "status": "unknown"}
+    fact = {"owner": entry.owner, "status": entry.status, "notes": entry.notes}
+    if entry.node_type:
+        fact["node_type"] = entry.node_type
+    return fact
+
+
+def _named(counts: Counter, fact) -> dict:
+    """Called names with their count and registry facts, the unmigrated ones first."""
+    ordered = sorted(counts.items(),
+                     key=lambda item: (fact(item[0])["status"] == "supported", -item[1], item[0]))
+    return {name: {"count": count, **fact(name)} for name, count in ordered}
+
+
 def categorize(issue: dict) -> str:
     """Blocker category of one report issue (parser, expression, library, condition, binding, mapping)."""
     code, message = issue.get("code"), issue.get("message") or ""
@@ -93,7 +125,7 @@ def _counted(mapped: int, total: int, scope: str) -> dict:
 
 
 def build_inventory(reports: list[dict]) -> dict:
-    """Count lines, operations, blockers by category, unmapped functions and methods,
+    """Count lines, operations, blockers by category, the calls blocked lines make,
     source, execution-weighted and function coverage, over one or more generation reports.
     """
     operations: dict[str, Counter] = defaultdict(Counter)
@@ -166,7 +198,7 @@ def build_inventory(reports: list[dict]) -> dict:
             })
 
     return {
-        "format_version": 2,
+        "format_version": 3,
         "definition": "Mapped means an activity or a deliberate no-op was emitted for the line, "
                       "not that it was verified in Studio or in a run. Operations and blockers "
                       "count action and function workflows together; coverage keeps them apart.",
@@ -184,11 +216,21 @@ def build_inventory(reports: list[dict]) -> dict:
         "blocked_by": {category: {"description": CATEGORIES[category], "lines": count,
                                   "operations": dict(blocked_ops_by[category].most_common())}
                        for category, count in blocked_by.most_common()},
-        "unsupported_functions": dict(functions.most_common()),
-        "unmapped_object_methods": dict(methods.most_common()),
+        "blocked_calls": {
+            "scope": "Names called in blocked lines, with what the registries say about them. "
+                     "A supported name means the line blocked for another reason.",
+            "functions": _named(functions, _function_fact),
+            "object_methods": _named(methods, _method_fact),
+        },
         "tests": tests,
-        "registry": {status: [e["node_type"] for e in entries]
-                     for status, entries in capabilities().items()},
+        "registry": {
+            "operations": {status: [e["node_type"] for e in entries]
+                           for status, entries in capabilities().items()},
+            "functions": {status: [e["name"] for e in entries]
+                          for status, entries in function_registry.capabilities().items()},
+            "object_methods": {status: [f"{e['owner']}.{e['method']}" for e in entries]
+                               for status, entries in object_method_registry.capabilities().items()},
+        },
     }
 
 
@@ -211,18 +253,27 @@ def format_inventory(inventory: dict) -> str:
     out += ["", "Blocked lines by reason (a line can have several):"]
     for category, entry in inventory["blocked_by"].items():
         out.append(f"  {category:<12}{entry['lines']:>6}  {entry['description']}")
-    for title, key in (("Unsupported functions in expressions:", "unsupported_functions"),
-                       ("Object methods without mapping:", "unmapped_object_methods")):
-        if inventory[key]:
-            out += ["", title, "  " + ", ".join(f"{name} {n}" for name, n in inventory[key].items())]
+    for title, key in (("Functions called in blocked lines:", "functions"),
+                       ("Object methods called in blocked lines:", "object_methods")):
+        called = inventory["blocked_calls"][key]
+        if called:
+            out += ["", title]
+            out += [f"  {name:<28}{fact['count']:>4}  {fact['status']}"
+                    f"{'' if key == 'object_methods' else ' ' + fact['source']}"
+                    for name, fact in called.items()]
     out += ["", "Tests (steps / operations / mapped / blocked / coverage), each action once:"]
     for test in inventory["tests"]:
         out.append(f"  {test['test_id']:>6} {test['name'][:40]:<40}{test['steps']:>5}"
                    f"{test['operations']:>6}{test['mapped']:>7}{test['blocked']:>8}"
                    f"  {_percent(test['coverage'])}")
-    out += ["", "Registry:"]
-    for status, names in inventory["registry"].items():
-        out.append(f"  {status:<18}{len(names):>3}  {', '.join(names)}")
+    for title, key in (("Operations", "operations"), ("VBScript functions", "functions"),
+                       ("Object methods", "object_methods")):
+        out += ["", f"Registry - {title}:"]
+        for status, names in inventory["registry"][key].items():
+            if names:
+                out += textwrap.wrap(", ".join(names), width=96,
+                                     initial_indent=f"  {status:<18}{len(names):>3}  ",
+                                     subsequent_indent=" " * 25)
     return "\n".join(out)
 
 

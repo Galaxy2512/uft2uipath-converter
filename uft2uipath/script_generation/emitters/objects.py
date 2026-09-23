@@ -7,6 +7,7 @@ or a test object held in a variable blocks with the reason.
 """
 import re
 
+from uft2uipath.mapping import object_method_registry
 from uft2uipath.script_generation.emitter import NonNull
 from uft2uipath.script_generation.handlers import emits
 
@@ -30,6 +31,9 @@ FILE_SYSTEM_METHODS = {
                             lambda a: f'(System.IO.Path.GetDirectoryName({_s(a[0])}) ?? "")'),
     "buildpath": (2, "String", lambda a: f"System.IO.Path.Combine({_s(a[0])}, {_s(a[1])})"),
 }
+# The registry promises exactly these methods, so neither list can drift.
+object_method_registry.implemented(object_method_registry.FILE_SYSTEM_OBJECT,
+                                   set(FILE_SYSTEM_METHODS))
 
 
 @emits("ObjectAssignmentOperation")

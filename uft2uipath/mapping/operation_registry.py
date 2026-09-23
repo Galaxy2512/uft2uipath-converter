@@ -13,16 +13,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from uft2uipath.contracts.status import EMITTED, STATUSES  # noqa: F401  (re-exported)
 from uft2uipath.contracts.value_types import VALUE_TYPES
 
-# supported: a handler emits it. no_effect: nothing to emit, by design.
-# planned: a known mapping, not implemented yet. requires_strategy: needs a
-# design decision first. unsupported: no target semantics identified.
-STATUSES = ("supported", "no_effect", "planned", "requires_strategy", "unsupported")
 # Where the construct appears: a statement, the Boolean test of an If, or a value.
 KINDS = ("operation", "condition", "expression")
-# Statuses that promise a handler; the rest document what is still missing.
-EMITTED = ("supported", "no_effect")
 
 
 @dataclass(frozen=True)

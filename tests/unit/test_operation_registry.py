@@ -125,8 +125,15 @@ def test_inventory_counts_lines_reasons_calls_and_test_coverage():
     assert inventory["operations"]["ClickOperation"] == {"mapped": 2}
     assert inventory["blocked_by"]["expression"]["lines"] == 1
     assert inventory["blocked_by"]["mapping"]["operations"] == {"ReportEventOperation": 1}
-    assert inventory["unsupported_functions"] == {"Len": 1, "CStr": 1}
-    assert inventory["unmapped_object_methods"] == {"Value": 1, "GetROProperty": 1}
+    # Names called in blocked lines carry what the registries know about them, and
+    # the ones that are already translated sort last: they are not missing work.
+    called = inventory["blocked_calls"]["functions"]
+    assert list(called) == ["Len", "CStr"] or list(called) == ["CStr", "Len"]
+    assert all(fact["status"] == "supported" and fact["source"] == "vbscript_builtin"
+               for fact in called.values())
+    methods = inventory["blocked_calls"]["object_methods"]
+    assert methods["GetROProperty"]["node_type"] == "ObjectPropertyReference"
+    assert methods["Value"]["owner"] == "UFT data accessor"
     # A test's own numbers are the work left in it: each action once, whatever
     # its step count. Manual tests are left out of every count.
     assert inventory["tests"] == [{"project": "P", "test_id": 1, "name": "T", "status": "blocked",

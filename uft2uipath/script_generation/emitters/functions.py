@@ -9,6 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
+from uft2uipath.mapping import function_registry
 from uft2uipath.script_generation.emitter import NonNull
 from uft2uipath.script_generation.emitters import calls
 from uft2uipath.script_generation.handlers import emits
@@ -108,16 +109,11 @@ FUNCTIONS: dict[str, Function] = {
 }
 
 
-# VBScript built-ins not mapped yet; any other name is a user or library function.
-BUILTINS = set(FUNCTIONS) | set("""
-    asc ascb ascw array cbool cbyte ccur cdate chrb chrw createobject csng date dateadd datediff
-    datepart dateserial datevalue day escape eval exp filter formatcurrency formatdatetime
-    formatnumber formatpercent getlocale getobject getref hex hour inputbox instrb isarray isdate
-    isempty isnull isnumeric isobject join lbound leftb lenb loadpicture log midb minute month
-    monthname msgbox now oct rgb rightb round scriptengine second setlocale sgn sin sqr split
-    strcomp string strreverse tan time timer timeserial timevalue typename ubound unescape
-    vartype weekday weekdayname year atn cos
-""".split())
+# Every VBScript built-in the converter knows of; any other name is a user or
+# library function. The registry also says why an unmapped one is not mapped.
+BUILTINS = function_registry.BUILTINS
+# The registry promises exactly these translations, so neither list can drift.
+function_registry.implemented(set(FUNCTIONS))
 
 
 def _spec(ctx, node) -> Function:
