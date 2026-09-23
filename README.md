@@ -127,7 +127,17 @@ The generated test cases are registered in `project.json` and are intended to be
 
 ## Migration coverage
 
-`migration-coverage.json` counts mapped and blocked lines, blockers by reason (missing mapping, unsupported expression, library function, missing selector, ...) and coverage per test. To summarize one or more outputs:
+`migration-coverage.json` counts mapped and blocked lines, blockers by reason (missing mapping, unsupported expression, library function, missing selector, ...) and coverage per test.
+
+Coverage is reported three times, because one number would answer three different questions at once:
+
+| Coverage | Counts | Answers |
+|---|---|---|
+| `source` | every action once, whether a test runs it or not | how much of the migration work is done |
+| `execution` | every action once per test step that runs it | how much of what actually runs is migrated |
+| `functions` | each compiled Function/Sub workflow once | how far the shared library code got |
+
+To summarize one or more outputs:
 
 ```powershell
 python -m uft2uipath inventory output\alm_demo output\bpt --out coverage.json

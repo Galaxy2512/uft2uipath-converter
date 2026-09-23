@@ -4,12 +4,26 @@ Counts what the scripts actually contain and why lines are blocked, so the
 next mappings can be chosen by how many lines they unblock. Coverage is read
 from the per-line trace, not from the registry: a supported operation still
 blocks when its object has no selector.
+
+Coverage is reported three times, because one number would answer three
+different questions at once:
+
+    source     every action written once - how much of the migration work is
+               done. An action no test uses still counts.
+    execution  every action once per test step that runs it - how much of what
+               actually runs is migrated. An action 40 tests share weighs 40x.
+    functions  the Function/Sub workflows compiled from the scripts, each
+               compiled workflow once.
+
+Mapped never means verified: it means an activity or a deliberate no-op was
+emitted for the line.
 """
 from __future__ import annotations
 
 import argparse
 import json
 import re
+import textwrap
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -72,67 +86,99 @@ def categorize(issue: dict) -> str:
     return "other"
 
 
+def _counted(mapped: int, total: int, scope: str) -> dict:
+    """One coverage block: what was counted, and how much of it is mapped."""
+    return {"scope": scope, "total": total, "mapped": mapped, "blocked": total - mapped,
+            "coverage": round(mapped / total, 3) if total else None}
+
+
 def build_inventory(reports: list[dict]) -> dict:
     """Count lines, operations, blockers by category, unmapped functions and methods,
-    and coverage per test, over one or more generation reports.
+    source, execution-weighted and function coverage, over one or more generation reports.
     """
     operations: dict[str, Counter] = defaultdict(Counter)
     blocked_by: Counter = Counter()
     blocked_ops_by: dict[str, Counter] = defaultdict(Counter)
     functions: Counter = Counter()
     methods: Counter = Counter()
-    lines_total = lines_mapped = 0
+    source_total = source_mapped = 0
+    run_total = run_mapped = steps_total = 0
+    function_total = function_mapped = 0
     tests = []
+
+    def count_workflow(workflow: dict) -> tuple[int, int]:
+        """Count one workflow's lines by status and collect why they are blocked."""
+        reasons: dict[int | None, set[str]] = defaultdict(set)
+        for issue in workflow.get("issues", []):
+            reasons[issue.get("line_number")].add(categorize(issue))
+            if issue.get("code") == "unsupported_expression":
+                called, invoked = _calls(issue.get("raw") or "")
+                functions.update(called)
+                methods.update(invoked)
+            if match := _METHOD.search(issue.get("message") or ""):
+                methods[match.group(1)] += 1
+            if match := _FUNCTION.search(issue.get("message") or ""):
+                functions[match.group(1)] += 1
+        mapped = total = 0
+        for entry in workflow.get("trace", []):
+            kind, status = entry.get("node_type"), entry.get("status")
+            total += 1
+            if status == "blocked":
+                operations[kind]["blocked"] += 1
+                for category in reasons.get(entry.get("line_number")) or {"other"}:
+                    blocked_by[category] += 1
+                    blocked_ops_by[category][kind] += 1
+            else:
+                operations[kind]["mapped"] += 1
+                mapped += 1
+        return mapped, total
 
     for report in reports:
         action_lines: dict[str, tuple[int, int]] = {}
         for key, workflow in report.get("workflows", {}).items():
-            reasons: dict[int | None, set[str]] = defaultdict(set)
-            for issue in workflow.get("issues", []):
-                reasons[issue.get("line_number")].add(categorize(issue))
-                if issue.get("code") == "unsupported_expression":
-                    called, invoked = _calls(issue.get("raw") or "")
-                    functions.update(called)
-                    methods.update(invoked)
-                if match := _METHOD.search(issue.get("message") or ""):
-                    methods[match.group(1)] += 1
-                if match := _FUNCTION.search(issue.get("message") or ""):
-                    functions[match.group(1)] += 1
-            mapped = total = 0
-            for entry in workflow.get("trace", []):
-                kind, status = entry.get("node_type"), entry.get("status")
-                total += 1
-                if status == "blocked":
-                    operations[kind]["blocked"] += 1
-                    for category in reasons.get(entry.get("line_number")) or {"other"}:
-                        blocked_by[category] += 1
-                        blocked_ops_by[category][kind] += 1
-                else:
-                    operations[kind]["mapped"] += 1
-                    mapped += 1
+            mapped, total = count_workflow(workflow)
             action_lines[key] = (mapped, total)
-            lines_mapped += mapped
-            lines_total += total
+            source_mapped += mapped
+            source_total += total
+        # Each compiled Function/Sub workflow is counted once, however many
+        # actions call it; its lines are not part of any action's source.
+        for workflow in (report.get("functions") or {}).values():
+            mapped, total = count_workflow(workflow)
+            function_mapped += mapped
+            function_total += total
         for test in report.get("tests", []):
             if test.get("status") == "not_automated":
                 continue
-            # Each action counts once per test, however often the test calls it.
-            keys = list(dict.fromkeys(test.get("actions", [])))
+            steps = test.get("actions", [])
+            steps_total += len(steps)
+            # Execution weight: a step counts every time the test runs it.
+            run_mapped += sum(action_lines.get(key, (0, 0))[0] for key in steps)
+            run_total += sum(action_lines.get(key, (0, 0))[1] for key in steps)
+            # The test's own numbers are the work left in it: each action once.
+            keys = list(dict.fromkeys(steps))
             mapped = sum(action_lines.get(key, (0, 0))[0] for key in keys)
             total = sum(action_lines.get(key, (0, 0))[1] for key in keys)
             tests.append({
                 "project": report.get("project_name"), "test_id": test.get("test_id"),
-                "name": test.get("name"), "status": test.get("status"),
+                "name": test.get("name"), "status": test.get("status"), "steps": len(steps),
                 "operations": total, "mapped": mapped, "blocked": total - mapped,
                 "coverage": round(mapped / total, 3) if total else None,
             })
 
     return {
-        "format_version": 1,
-        "definition": "Source lines of executed actions; mapped means an activity or a deliberate "
-                      "no-op was emitted, not that it was verified in Studio.",
-        "lines": {"total": lines_total, "mapped": lines_mapped, "blocked": lines_total - lines_mapped,
-                  "coverage": round(lines_mapped / lines_total, 3) if lines_total else None},
+        "format_version": 2,
+        "definition": "Mapped means an activity or a deliberate no-op was emitted for the line, "
+                      "not that it was verified in Studio or in a run. Operations and blockers "
+                      "count action and function workflows together; coverage keeps them apart.",
+        "coverage": {
+            "source": _counted(source_mapped, source_total,
+                               "Action source lines, each action counted once."),
+            "execution": _counted(run_mapped, run_total,
+                                  "Action source lines weighted by the test steps that run them; "
+                                  f"{len(tests)} automated tests, {steps_total} steps."),
+            "functions": _counted(function_mapped, function_total,
+                                  "Source lines of the compiled Function/Sub workflows, each once."),
+        },
         "operations": {kind: dict(counts) for kind, counts in
                        sorted(operations.items(), key=lambda item: -sum(item[1].values()))},
         "blocked_by": {category: {"description": CATEGORIES[category], "lines": count,
@@ -146,11 +192,20 @@ def build_inventory(reports: list[dict]) -> dict:
     }
 
 
+TITLES = {"source": "Source (each action once)", "execution": "Executed (weighted by test steps)",
+          "functions": "Function workflows"}
+
+
 def format_inventory(inventory: dict) -> str:
     """Human-readable summary of an inventory, as printed by `uft2uipath inventory`."""
-    lines = inventory["lines"]
-    out = [f"Lines: {lines['total']}  mapped: {lines['mapped']}  blocked: {lines['blocked']}  "
-           f"coverage: {_percent(lines['coverage'])}", "", "Operations (mapped / blocked):"]
+    out = ["Coverage (lines / mapped / blocked):"]
+    for name, block in inventory["coverage"].items():
+        out.append(f"  {TITLES[name]:<34}{block['total']:>7}{block['mapped']:>8}{block['blocked']:>8}"
+                   f"  {_percent(block['coverage'])}")
+    out += [""] + textwrap.wrap(inventory["definition"], width=96, initial_indent="  ",
+                                subsequent_indent="  ")
+    out += [f"  {TITLES[name]}: {block['scope']}" for name, block in inventory["coverage"].items()]
+    out += ["", "Operations (mapped / blocked):"]
     for kind, counts in inventory["operations"].items():
         out.append(f"  {kind:<32}{counts.get('mapped', 0):>6}{counts.get('blocked', 0):>8}")
     out += ["", "Blocked lines by reason (a line can have several):"]
@@ -160,10 +215,11 @@ def format_inventory(inventory: dict) -> str:
                        ("Object methods without mapping:", "unmapped_object_methods")):
         if inventory[key]:
             out += ["", title, "  " + ", ".join(f"{name} {n}" for name, n in inventory[key].items())]
-    out += ["", "Tests (operations / mapped / blocked / coverage):"]
+    out += ["", "Tests (steps / operations / mapped / blocked / coverage), each action once:"]
     for test in inventory["tests"]:
-        out.append(f"  {test['test_id']:>6} {test['name'][:40]:<40}{test['operations']:>6}"
-                   f"{test['mapped']:>7}{test['blocked']:>8}  {_percent(test['coverage'])}")
+        out.append(f"  {test['test_id']:>6} {test['name'][:40]:<40}{test['steps']:>5}"
+                   f"{test['operations']:>6}{test['mapped']:>7}{test['blocked']:>8}"
+                   f"  {_percent(test['coverage'])}")
     out += ["", "Registry:"]
     for status, names in inventory["registry"].items():
         out.append(f"  {status:<18}{len(names):>3}  {', '.join(names)}")

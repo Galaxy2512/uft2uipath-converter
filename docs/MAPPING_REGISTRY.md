@@ -236,6 +236,21 @@ unmapped functions and object methods, coverage per test and the registry by
 status. Coverage is computed from the per-line trace, not from the registry: a
 supported operation still blocks when its object has no selector.
 
+Coverage is reported three times, because one number answers three different
+questions at once:
+
+| Coverage | Counts | Answers |
+|---|---|---|
+| `source` | every action once, whether a test runs it or not | how much of the migration work is done |
+| `execution` | every action once per test step that runs it | how much of what actually runs is migrated |
+| `functions` | each compiled Function/Sub workflow once | how far the shared library code got |
+
+An action 40 tests share weighs 40 times in `execution` and once in `source`, so
+the two numbers differ on purpose; a large gap says the remaining blockers sit in
+the actions tests use most (or least). Per test, each action counts once: that
+row is the work left in the test, not its runtime. Operations and blockers count
+action and function workflows together.
+
 | Reason | Meaning | Owner |
 |---|---|---|
 | `mapping` | Operation has no UiPath mapping yet | converter |
@@ -264,10 +279,19 @@ supported operation still blocks when its object has no selector.
 
 Confirmed by opening generated projects in UiPath Studio (Windows, C#):
 
-- Loaded: Get Attribute with `Result` as `OutArgument<Object>`; Click inside
-  Attach Browser; Assign to an InOut Boolean argument; If with a C# condition.
+- A whole generated action round-trips. Copied out of Studio,
+  `Action_component_10_Action1` is what the converter wrote, apart from
+  Studio's own presentation attributes (`HintSize`, `IdRef`): nothing was
+  rewritten, nothing was left unresolved. It covers Get Attribute (`Result` as
+  `OutArgument<Object>`, full selector outside the browser scope), If with a C#
+  condition, Log Message (`Message` as `InArgument<Object>`), Assign to an InOut
+  Boolean argument, and Attach Browser (`BrowserType`, `ActivityAction` with
+  `ContextTarget`) holding a Click with its `CursorPosition`.
 - Rejected, now fixed: Log Message with `Message` as `InArgument<String>` was
   shown as an unresolved ErrorActivity; Studio types `Message` as Object.
+
+A load is still only a load: Studio accepts a selector as a string without ever
+matching it against the application, so bindings stay `accepted_unverified`.
 
 Not yet confirmed: the test-level TryCatch/Rethrow for ExitTest, InOut
 arguments on Invoke Workflow File, and whether an exception from an invoked

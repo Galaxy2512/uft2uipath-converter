@@ -101,22 +101,37 @@ def test_inventory_counts_lines_reasons_calls_and_test_coverage():
     ]
     report = {
         "project_name": "P",
-        "workflows": {"a/Action1": {"trace": trace, "issues": issues}},
+        "workflows": {"a/Action1": {"trace": trace, "issues": issues},
+                      "a/Unused": {"trace": [{"line_number": 1, "node_type": "WaitOperation",
+                                              "status": "mapped_unverified"}], "issues": []}},
+        "functions": {"Functions\\Login.xaml": {
+            "trace": [{"line_number": 1, "node_type": "ClickOperation", "status": "mapped_unverified"}],
+            "issues": []}},
         "tests": [
             {"test_id": 1, "name": "T", "status": "blocked", "actions": ["a/Action1", "a/Action1"]},
             {"test_id": 2, "name": "Manual", "status": "not_automated", "actions": []},
         ],
     }
     inventory = build_inventory([report])
-    assert inventory["lines"] == {"total": 3, "mapped": 1, "blocked": 2, "coverage": 0.333}
-    assert inventory["operations"]["ClickOperation"] == {"mapped": 1}
+    coverage = inventory["coverage"]
+    # Source: every action written once, including the one no test runs.
+    assert [coverage["source"][key] for key in ("total", "mapped", "blocked", "coverage")] \
+        == [4, 2, 2, 0.5]
+    # Execution: the test runs Action1 twice, so its lines weigh twice; Unused never runs.
+    assert [coverage["execution"][key] for key in ("total", "mapped", "coverage")] == [6, 2, 0.333]
+    assert "2 steps" in coverage["execution"]["scope"]
+    # Compiled Function/Sub workflows are counted apart from the actions.
+    assert [coverage["functions"][key] for key in ("total", "mapped")] == [1, 1]
+    assert inventory["operations"]["ClickOperation"] == {"mapped": 2}
     assert inventory["blocked_by"]["expression"]["lines"] == 1
     assert inventory["blocked_by"]["mapping"]["operations"] == {"ReportEventOperation": 1}
     assert inventory["unsupported_functions"] == {"Len": 1, "CStr": 1}
     assert inventory["unmapped_object_methods"] == {"Value": 1, "GetROProperty": 1}
-    # An action called twice by a test counts once; manual tests are left out.
+    # A test's own numbers are the work left in it: each action once, whatever
+    # its step count. Manual tests are left out of every count.
     assert inventory["tests"] == [{"project": "P", "test_id": 1, "name": "T", "status": "blocked",
-                                   "operations": 3, "mapped": 1, "blocked": 2, "coverage": 0.333}]
+                                   "steps": 2, "operations": 3, "mapped": 1, "blocked": 2,
+                                   "coverage": 0.333}]
 
 
 def test_binding_that_is_not_accepted_is_a_binding_blocker():
