@@ -59,7 +59,7 @@ objects contains exact UFT identities:
    "input_method":"Simulate", "timeout_ms":30000, "browser_type":"Edge"}
 
 accepted_for_generation says the converter may emit this selector, nothing more.
-verification_status says how far it was checked (see mapping/selector_state.py):
+verification_status says how far it was checked (see contracts/selector_state.py):
 accepted_unverified, studio_validated or runtime_verified. The converter never
 raises that status by itself; only a person who checked the selector in Studio
 or in a run may record the stronger values, in the selector review file.

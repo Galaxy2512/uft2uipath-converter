@@ -6,10 +6,11 @@ caller's own arguments) and the failure flag, and reads the return value.
 """
 import xml.etree.ElementTree as ET
 
-from uft2uipath.mapping.operation_registry import maps
+from uft2uipath.contracts.value_types import XAML_TYPES
 from uft2uipath.script_generation.emitter import (
-    DIRECTIONS, FAILED_FLAG, RESULT_ARGUMENT, TYPES, UI, X, assign, expr, q,
+    DIRECTIONS, FAILED_FLAG, RESULT_ARGUMENT, UI, X, assign, expr, q,
 )
+from uft2uipath.script_generation.handlers import emits
 
 
 def user_function(ctx, name, arguments):
@@ -74,7 +75,7 @@ def emit_call(ctx, name, arguments, parent, display, want_result):
     def bind(direction, kind, key, code):
         """Add one argument binding to the Invoke Workflow File."""
         ET.SubElement(mapped, q(DIRECTIONS[direction]), {
-            q("TypeArguments", X): TYPES[kind], q("Key", X): key,
+            q("TypeArguments", X): XAML_TYPES[kind], q("Key", X): key,
         }).text = expr(code)
 
     for binding in bindings:
@@ -98,9 +99,7 @@ def emit_call(ctx, name, arguments, parent, display, want_result):
     return compiled, result
 
 
-@maps("CallOperation", uft="Name args / Call Name(args)", activities=("InvokeWorkflowFile",),
-      notes="Calls a Function/Sub compiled into its own workflow; VBScript built-ins called as "
-            "statements (MsgBox ...) are not mapped.")
+@emits("CallOperation")
 def emit_call_statement(ctx, node, parent, trace, display):
     """A Function/Sub called as a statement: Invoke Workflow File, the return value discarded."""
     from uft2uipath.script_generation.emitters.functions import BUILTINS, FUNCTIONS

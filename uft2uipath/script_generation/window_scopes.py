@@ -1,7 +1,8 @@
 """Attach to desktop windows the same way browser actions attach to a browser."""
 import xml.etree.ElementTree as ET
 
-from uft2uipath.script_generation.emitter import UI, X, q, target_key
+from uft2uipath.contracts.targets import target_key
+from uft2uipath.script_generation.emitter import UI, X, q
 
 
 def window_target(binding):

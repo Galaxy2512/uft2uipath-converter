@@ -6,8 +6,9 @@ import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from uft2uipath.contracts.value_types import XAML_TYPES
 from uft2uipath.script_generation.emitter import (
-    ComponentEmitter, IDENTIFIER, TYPES, UI, X, document, expr, q, throw, write_xaml,
+    ComponentEmitter, IDENTIFIER, UI, X, document, expr, q, throw, write_xaml,
 )
 
 LIMITATIONS = [
@@ -88,7 +89,7 @@ def emit_test(test, components, call_bindings, global_issues):
                 continue
             arguments[caller] = kind
             ET.SubElement(args, q("InArgument"), {
-                q("TypeArguments", X): TYPES[kind], q("Key", X): target_arg,
+                q("TypeArguments", X): XAML_TYPES[kind], q("Key", X): target_arg,
             }).text = expr(caller)
         if set(mapping) - set(component["arguments"]):
             issues.append({"message": f"Relation {relation_id}: unknown target arguments in call mapping."})

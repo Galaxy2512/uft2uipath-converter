@@ -10,6 +10,7 @@ from uft2uipath.mapping import operation_registry as registry
 from uft2uipath.mapping.inventory import build_inventory, categorize
 from uft2uipath.parser import uft_script_nodes as nodes
 from uft2uipath.script_analysis.analyzer import analyze_source
+from uft2uipath.script_generation import handlers
 from uft2uipath.script_generation.emitter import ComponentEmitter
 
 EXISTS = 'Browser("B").Page("P").WebElement("Ready")'
@@ -31,11 +32,12 @@ def test_every_parser_node_type_has_a_registry_entry():
             if entry.kind == "condition"} >= {"ExistCondition", "ComparisonCondition"}
 
 
-def test_statuses_and_handlers_agree():
-    registry.lookup("ClickOperation")
-    for entry in registry.REGISTRY.values():
-        assert entry.status in registry.STATUSES
-        assert (entry.handler is not None) == (entry.status in ("supported", "no_effect"))
+def test_every_promised_handler_exists_and_no_other():
+    # The registry promises a handler for supported/no_effect entries only; the
+    # handler table must deliver exactly those, and nothing it invented itself.
+    handlers.load_emitters()
+    promised = {name for name, entry in registry.REGISTRY.items() if entry.status in registry.EMITTED}
+    assert set(handlers.HANDLERS) == promised
     grouped = registry.capabilities()
     assert "ClickOperation" in [e["node_type"] for e in grouped["supported"]]
     assert "ReportEventOperation" in [e["node_type"] for e in grouped["supported"]]
@@ -43,9 +45,16 @@ def test_statuses_and_handlers_agree():
 
 
 def test_second_handler_for_the_same_node_type_is_rejected():
-    registry.lookup("ClickOperation")
+    handlers.load_emitters()
     with pytest.raises(ValueError, match="Duplicate handler"):
-        registry.maps("ClickOperation", uft=".Click", activities=("Click",))(lambda *a: None)
+        handlers.emits("ClickOperation")(lambda *a: None)
+
+
+def test_a_handler_needs_an_entry_that_promises_it():
+    with pytest.raises(ValueError, match="no entry in mapping.operation_registry"):
+        handlers.emits("InventedOperation")(lambda *a: None)
+    with pytest.raises(ValueError, match="planned"):
+        handlers.emits("CloseOperation")(lambda *a: None)
 
 
 def test_planned_operation_blocks_with_its_source_line():
@@ -113,5 +122,5 @@ def test_inventory_counts_lines_reasons_calls_and_test_coverage():
 def test_binding_that_is_not_accepted_is_a_binding_blocker():
     issue = {"code": "unsupported_mapping",
              "message": "Object binding must be accepted for generation, with a known "
-                        "verification status (see mapping.selector_state)."}
+                        "verification status (see contracts.selector_state)."}
     assert categorize(issue) == "binding"

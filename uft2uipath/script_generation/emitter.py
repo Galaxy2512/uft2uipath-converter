@@ -17,8 +17,11 @@ import math
 import re
 import xml.etree.ElementTree as ET
 
-from uft2uipath.mapping import selector_state
+from uft2uipath.contracts import selector_state
+from uft2uipath.contracts.targets import target_key
+from uft2uipath.contracts.value_types import ARGUMENT_TYPES, XAML_TYPES
 from uft2uipath.mapping.operation_registry import lookup
+from uft2uipath.script_generation.handlers import handler_for
 
 WF = "http://schemas.microsoft.com/netfx/2009/xaml/activities"
 X = "http://schemas.microsoft.com/winfx/2006/xaml"
@@ -26,10 +29,6 @@ UI = "http://schemas.uipath.com/workflow/activities"
 for prefix, uri in (("", WF), ("x", X), ("ui", UI)):
     ET.register_namespace(prefix, uri)
 
-TYPES = {"String": "x:String", "Boolean": "x:Boolean", "Int32": "x:Int32", "Double": "x:Double",
-         "DateTime": "s:DateTime", "Object": "x:Object"}
-# Object only holds activity results internally; arguments stay typed.
-ARGUMENT_TYPES = ("String", "Boolean", "Int32")
 # A deliberately restrictive naming contract avoids keyword collisions.
 IDENTIFIER = re.compile(r"in_[A-Za-z][A-Za-z0-9_]*\Z")
 OUT_IDENTIFIER = re.compile(r"out_[A-Za-z][A-Za-z0-9_]*\Z")
@@ -106,9 +105,9 @@ def assign(parent, display, target, kind, code):
     """Assign the C# expression code to a variable or argument of the given type."""
     element = ET.SubElement(parent, q("Assign"), {"DisplayName": display})
     ET.SubElement(ET.SubElement(element, q("Assign.To")), q("OutArgument"), {
-        q("TypeArguments", X): TYPES[kind]}).text = expr(target)
+        q("TypeArguments", X): XAML_TYPES[kind]}).text = expr(target)
     ET.SubElement(ET.SubElement(element, q("Assign.Value")), q("InArgument"), {
-        q("TypeArguments", X): TYPES[kind]}).text = expr(code)
+        q("TypeArguments", X): XAML_TYPES[kind]}).text = expr(code)
     return element
 
 
@@ -121,7 +120,7 @@ def document(name, arguments, directions=None):
         for arg, kind in sorted(arguments.items()):
             direction = DIRECTIONS[(directions or {}).get(arg, "In")]
             ET.SubElement(members, q("Property", X), {
-                "Name": arg, "Type": f"{direction}({TYPES[kind]})",
+                "Name": arg, "Type": f"{direction}({XAML_TYPES[kind]})",
             })
     seq = ET.SubElement(root, q("Sequence"), {"DisplayName": name})
     return root, seq
@@ -139,22 +138,6 @@ def _secret_source(node):
     """Name of the secure argument a SetSecure step needs: its object's logical name."""
     target = node.get("target") or {}
     return target.get("logical_name") or target.get("object_type") or "value"
-
-
-def target_key(target):
-    """Identity of a UFT object: its hierarchy, however the binding spelled it."""
-    path = target.get("path")
-    if not path:
-        path = [{"class": kind, "name": target.get(name)} for kind, name in
-                (("Browser", "browser"), ("Page", "page"))] + [
-            {"class": target.get("object_type"), "name": target.get("logical_name")}]
-    steps = []
-    for step in path:
-        kind, name = step.get("class"), step.get("name")
-        # A statement on the page repeats it as the target; keep one step for it.
-        if kind and name and (kind.casefold(), name.casefold()) not in steps[-1:]:
-            steps.append((kind.casefold(), name.casefold()))
-    return tuple(steps)
 
 
 class ComponentEmitter:
@@ -317,10 +300,10 @@ class ComponentEmitter:
             if len(kinds) != 1:
                 raise ValueError(f"{node.get('name')} is not assigned earlier in this action.")
             return kinds.pop()
-        entry = lookup(kind)
-        if entry is not None and entry.kind == "expression" and entry.handler is not None:
-            return entry.typer(self, node) if entry.typer else entry.returns
-        if entry is not None and entry.kind == "condition" and entry.handler is not None:
+        entry, handler = lookup(kind), handler_for(kind)
+        if handler is not None and entry.kind == "expression":
+            return handler.typer(self, node) if handler.typer else entry.returns
+        if handler is not None and entry.kind == "condition":
             # A comparison or And/Or/Not used as a value, e.g. found = (a = b).
             return "Boolean"
         raise ValueError("Unsupported expression remains unresolved.")
@@ -370,9 +353,9 @@ class ComponentEmitter:
         """C# Boolean code for an If condition; activities it needs go to parent first."""
         if not isinstance(node, dict):
             raise ValueError("Condition is missing.")
-        entry = lookup(node.get("node_type"))
-        if entry is not None and entry.kind == "condition" and entry.handler is not None:
-            return entry.handler(self, node, parent, display)
+        entry, handler = lookup(node.get("node_type")), handler_for(node.get("node_type"))
+        if handler is not None and entry.kind == "condition":
+            return handler.emit(self, node, parent, display)
         if entry is None or entry.kind == "expression":
             # A plain value used as a condition must be Boolean, as VBScript would test it.
             return self.value(node, "Boolean", parent)
@@ -421,12 +404,11 @@ class ComponentEmitter:
         if node_type == "VariableReference":
             alias = self.aliases.get((node.get("name") or "").casefold())
             return alias[0] if alias else node.get("name")
-        entry = lookup(node_type)
-        if entry.kind == "condition":
+        if lookup(node_type).kind == "condition":
             if parent is None and node_type == "ExistCondition":
                 raise ValueError("Exist needs an activity before this statement; not supported here.")
             return f"({self.condition(node, parent, 'Condition value')})"
-        return entry.handler(self, node, parent)
+        return handler_for(node_type).emit(self, node, parent)
 
     def object_binding(self, node, action):
         """Verified selector binding of the object a node acts on.
@@ -447,7 +429,7 @@ class ComponentEmitter:
         ET.fromstring("<root>" + selector + "</root>")
         if not selector_state.usable(binding):
             raise ValueError("Object binding must be accepted for generation, with a known "
-                             "verification status (see mapping.selector_state).")
+                             "verification status (see contracts.selector_state).")
         timeout = binding.get("timeout_ms")
         if type(timeout) is not int or not 0 < timeout < 2**31:
             raise ValueError("Positive Int32 timeout_ms required.")
@@ -485,13 +467,13 @@ class ComponentEmitter:
         trace = {"component_id": self.component_id, "line_number": line,
                  "raw": node.get("raw"), "node_type": kind, "status": "blocked"}
         self.trace.append(trace)
-        # Handlers live in script_generation.emitters; the registry says which applies.
-        entry = lookup(kind)
+        # The registry says what the construct means; the handler table, who emits it.
+        entry, handler = lookup(kind), handler_for(kind)
         start = len(parent)
         try:
-            if entry is None or entry.handler is None or entry.kind != "operation":
+            if handler is None or entry.kind != "operation":
                 raise ValueError(f"{kind} has no validated semantic mapping; source preserved.")
-            entry.handler(self, node, parent, trace, display)
+            handler.emit(self, node, parent, trace, display)
         except (ValueError, ET.ParseError) as exc:
             # Drop activities the line emitted before it failed, e.g. a property read.
             del parent[start:]
@@ -525,7 +507,7 @@ class ComponentEmitter:
         if self.typed_variables:
             variables = ET.Element(q("Sequence.Variables"))
             for name, kind in self.typed_variables.items():
-                ET.SubElement(variables, q("Variable"), {q("TypeArguments", X): TYPES[kind], "Name": name})
+                ET.SubElement(variables, q("Variable"), {q("TypeArguments", X): XAML_TYPES[kind], "Name": name})
             seq.insert(0, variables)
         if self.issues:
             index = 1 if self.typed_variables else 0

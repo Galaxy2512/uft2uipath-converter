@@ -1,8 +1,8 @@
 """UI automation: actions and checks on objects bound to an explicit selector."""
 import xml.etree.ElementTree as ET
 
-from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import UI, X, _secret_source, expr, q
+from uft2uipath.script_generation.handlers import emits
 
 
 def _input_flag(binding, method):
@@ -10,8 +10,7 @@ def _input_flag(binding, method):
     return str(binding["input_method"] == method).lower()
 
 
-@maps("ExistCondition", uft=".Exist(n)", activities=("UiElementExists",), requires_selector=True,
-      kind="condition", notes="Timeout must be a positive literal number of seconds.")
+@emits("ExistCondition")
 def emit_exists(ctx, condition, parent, display):
     """Object.Exist(n): UiElementExists into a new Boolean variable, returned as the condition.
 
@@ -40,10 +39,7 @@ PROPERTY_ATTRIBUTES = {
 }
 
 
-@maps("ObjectPropertyReference", uft='.GetROProperty("property")', activities=("GetAttribute",),
-      requires_selector=True, kind="expression", returns="String",
-      notes="Read with the full selector, outside any browser scope. The attribute is converted "
-            "to String, as GetROProperty's value is compared in UFT.")
+@emits("ObjectPropertyReference")
 def emit_get_attribute(ctx, node, parent):
     """Object.GetROProperty("p"): Get Attribute into an Object variable, read as String.
 
@@ -67,8 +63,7 @@ def emit_get_attribute(ctx, node, parent):
     return f"System.Convert.ToString({variable})"
 
 
-@maps("ClickOperation", uft=".Click", activities=("Click",), requires_selector=True,
-      notes="A recorded click offset is not reproduced.")
+@emits("ClickOperation")
 def emit_click(ctx, node, parent, trace, display):
     """Object.Click: single left click at the element's centre."""
     binding = ctx.object_binding(node, "click")
@@ -85,7 +80,7 @@ def emit_click(ctx, node, parent, trace, display):
                          "the element is clicked at its centre.")
 
 
-@maps("SetTextOperation", uft=".Set", activities=("TypeInto",), requires_selector=True)
+@emits("SetTextOperation")
 def emit_type_into(ctx, node, parent, trace, display):
     """Object.Set value: Type Into replacing the field's content."""
     binding = ctx.object_binding(node, "set")
@@ -99,8 +94,7 @@ def emit_type_into(ctx, node, parent, trace, display):
     trace.update(status="mapped_unverified", activity="TypeInto (replace)")
 
 
-@maps("TypeOperation", uft=".Type", activities=("TypeInto",), requires_selector=True,
-      notes="Keeps the field's content, as UFT Type adds keystrokes; key constants (micTab ...) block.")
+@emits("TypeOperation")
 def emit_type(ctx, node, parent, trace, display):
     """Object.Type text: Type Into without clearing the field first."""
     binding = ctx.object_binding(node, "type")
@@ -117,8 +111,7 @@ def emit_type(ctx, node, parent, trace, display):
 _CHECK_ACTIONS = {"on": "Check", "off": "Uncheck"}
 
 
-@maps("CheckOperation", uft="CheckBox.Set \"ON\"/\"OFF\", RadioButton.Set", activities=("Check",),
-      requires_selector=True, notes="The state must be a literal ON or OFF; a radio button is checked.")
+@emits("CheckOperation")
 def emit_check(ctx, node, parent, trace, display):
     """Check box Set "ON"/"OFF" or radio button Set: Check with the Check or Uncheck action."""
     value = node.get("value")
@@ -136,8 +129,7 @@ def emit_check(ctx, node, parent, trace, display):
     trace.update(status="mapped_unverified", activity=f"Check ({action})")
 
 
-@maps("SetSecureTextOperation", uft=".SetSecure", activities=("TypeInto",), requires_selector=True,
-      notes="The UFT encoded value is not carried over; a secure argument supplies it.")
+@emits("SetSecureTextOperation")
 def emit_secure_type_into(ctx, node, parent, trace, display):
     """Object.SetSecure: Type Into from a secure argument; the UFT encoded value is not used."""
     binding = ctx.object_binding(node, "set")
@@ -158,7 +150,7 @@ def emit_secure_type_into(ctx, node, parent, trace, display):
                  note="The UFT encoded value is not carried over; the argument supplies it.")
 
 
-@maps("SelectOperation", uft=".Select", activities=("SelectItem",), requires_selector=True)
+@emits("SelectOperation")
 def emit_select_item(ctx, node, parent, trace, display):
     """Object.Select value: Select Item."""
     binding = ctx.object_binding(node, "select")
@@ -170,8 +162,7 @@ def emit_select_item(ctx, node, parent, trace, display):
     trace.update(status="mapped_unverified", activity="SelectItem")
 
 
-@maps("SyncOperation", uft=".Sync", activities=("WaitUiElementAppear",), requires_selector=True,
-      notes="Sync waits for load completion; waiting for the page element is close, not identical.")
+@emits("SyncOperation")
 def emit_sync(ctx, node, parent, trace, display):
     """Browser/Page.Sync: wait until the page element appears (close to, not the same as, load completion)."""
     binding = ctx.object_binding(node, "exists")

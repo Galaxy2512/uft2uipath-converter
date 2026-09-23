@@ -18,8 +18,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from uft2uipath.contracts.value_types import XAML_TYPES
 from uft2uipath.script_generation.emitter import (
-    DIRECTIONS, EXIT_FAILED_SUFFIX, EXIT_TEST_MARKER, FAILED_FLAG, ComponentEmitter, TYPES, UI, X,
+    DIRECTIONS, EXIT_FAILED_SUFFIX, EXIT_TEST_MARKER, FAILED_FLAG, ComponentEmitter, UI, X,
     assign, document, expr, literal, q, throw, write_xaml,
 )
 from uft2uipath.script_generation.project import project_metadata
@@ -130,7 +131,7 @@ def _emit_test(test: TestPlan, workflows: dict[str, dict[str, Any]]):
                 if direction != "In":
                     directions[caller] = direction
             ET.SubElement(mapped, q(DIRECTIONS[direction]), {
-                q("TypeArguments", X): TYPES[kind], q("Key", X): name,
+                q("TypeArguments", X): XAML_TYPES[kind], q("Key", X): name,
             }).text = expr(caller)
         if not len(mapped):
             invoke.remove(mapped)

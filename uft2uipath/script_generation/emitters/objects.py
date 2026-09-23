@@ -7,8 +7,9 @@ or a test object held in a variable blocks with the reason.
 """
 import re
 
-from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import NonNull
+from uft2uipath.script_generation.handlers import emits
+
 
 FILE_SYSTEM = "scripting.filesystemobject"
 _CREATE = re.compile(r'^CreateObject\s*\(\s*"(?P<progid>[^"]+)"\s*\)$', re.IGNORECASE)
@@ -31,10 +32,7 @@ FILE_SYSTEM_METHODS = {
 }
 
 
-@maps("ObjectAssignmentOperation", uft='Set x = CreateObject("...") / Set x = Nothing', activities=(),
-      status="no_effect",
-      notes="Scripting.FileSystemObject only: its methods become System.IO calls, so the object "
-            "itself needs no activity. Other ProgIDs and test objects in variables block.")
+@emits("ObjectAssignmentOperation")
 def emit_object_assignment(ctx, node, parent, trace, display):
     """Remember which COM object a variable holds; nothing is emitted for it."""
     name = (node.get("name") or "").casefold()
@@ -69,9 +67,7 @@ def _method(ctx, node):
     return method
 
 
-@maps("MethodCall", uft="fso.FileExists(path) ...", activities=(), kind="expression",
-      typer=lambda ctx, node: _method(ctx, node)[1],
-      notes="FileSystemObject: " + ", ".join(sorted(FILE_SYSTEM_METHODS)) + ".")
+@emits("MethodCall", typer=lambda ctx, node: _method(ctx, node)[1])
 def emit_method_call(ctx, node, parent):
     """C# System.IO code for a FileSystemObject method."""
     _, kind, template = _method(ctx, node)

@@ -1,13 +1,13 @@
 """Control flow (If, Select Case, conditions), variables and statements that emit nothing."""
 import xml.etree.ElementTree as ET
 
-from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import (
     CSHARP_KEYWORDS, IDENTIFIER_NAME, assign, expr, q, throw,
 )
+from uft2uipath.script_generation.handlers import emits
 
 
-@maps("IfOperation", uft="If ... Then ... Else ... End If", activities=("If",))
+@emits("IfOperation")
 def emit_if(ctx, node, parent, trace, display):
     """If ... Then ... Else: the condition's activities first, then an If with the
     C# condition. A condition that cannot be mapped blocks only the If line.
@@ -32,10 +32,7 @@ def emit_if(ctx, node, parent, trace, display):
             ctx.map_operation(child, body)
 
 
-@maps("SelectCaseOperation", uft="Select Case x ... Case a, b ... Case Else ... End Select",
-      activities=("Assign", "If"),
-      notes="The subject is evaluated once into a variable, then each Case is an If/Else in order; "
-            "Case Is and Case a To b block.")
+@emits("SelectCaseOperation")
 def emit_select_case(ctx, node, parent, trace, display):
     """Select Case: the subject once into a variable, then an If/Else chain of the Cases.
 
@@ -79,9 +76,7 @@ def emit_select_case(ctx, node, parent, trace, display):
 _ORDERING = {"<": "<", ">": ">", "<=": "<=", ">=": ">="}
 
 
-@maps("ComparisonCondition", uft="a = b, a <> b, a < b ...", activities=(), kind="condition",
-      notes="Both sides must have the same static type; VBScript's implicit conversions are "
-            "not reproduced. Strings compare ordinally, as VBScript's default binary compare.")
+@emits("ComparisonCondition")
 def emit_comparison(ctx, node, parent, display):
     """C# comparison of two values of the same static type.
 
@@ -107,7 +102,7 @@ def emit_comparison(ctx, node, parent, display):
     return f"{a} {'==' if operator == '=' else '!=' if operator == '<>' else operator} {b}"
 
 
-@maps("LogicalCondition", uft="a And b, a Or b", activities=(), kind="condition")
+@emits("LogicalCondition")
 def emit_logical(ctx, node, parent, display):
     """C# && / || of the operands. VBScript evaluates every operand; the
     activities they need all run before the If, so nothing is skipped.
@@ -118,28 +113,26 @@ def emit_logical(ctx, node, parent, display):
     return joiner.join(f"({ctx.condition(operand, parent, display)})" for operand in node["operands"])
 
 
-@maps("NotCondition", uft="Not a", activities=(), kind="condition")
+@emits("NotCondition")
 def emit_not(ctx, node, parent, display):
     """C# negation of a condition."""
     return f"!({ctx.condition(node.get('operand'), parent, display)})"
 
 
-@maps("DeclarationOperation", uft="Dim / Option Explicit", activities=(), status="no_effect",
-      notes="Declarations become workflow variables where they are used.")
+@emits("DeclarationOperation")
 def emit_declaration(ctx, node, parent, trace, display):
     """Dim / Option Explicit: nothing to emit; variables are declared where they are assigned."""
     trace.update(status="mapped_unverified", activity="(declaration)")
 
 
-@maps("NoEffectOperation", uft="Randomize and similar", activities=(), status="no_effect")
+@emits("NoEffectOperation")
 def emit_no_effect(ctx, node, parent, trace, display):
     """Statements without a migrated effect, e.g. Randomize: nothing to emit."""
     trace.update(status="mapped_unverified", activity="(no effect)",
                  note=f"{node.get('keyword')} has no migrated equivalent.")
 
 
-@maps("FunctionDefinitionOperation", uft="Function / Sub definition", activities=(),
-      status="no_effect", notes="The definition is not part of the flow; calls to it block instead.")
+@emits("FunctionDefinitionOperation")
 def emit_function_definition(ctx, node, parent, trace, display):
     """A Function/Sub definition is not part of the flow; calls to it block instead."""
     trace.update(status="mapped_unverified", activity="(definition not migrated)")
@@ -169,8 +162,7 @@ def _variable(ctx, name, kind):
     ctx.assigned.add((name, kind))
 
 
-@maps("AssignOperation", uft="x = value", activities=("Assign",),
-      notes="String, Int32 and Boolean; a variable keeps one type for the whole action.")
+@emits("AssignOperation")
 def emit_assign(ctx, node, parent, trace, display):
     """x = value: Assign to a workflow variable typed from the value (String, Int32, Boolean, Double)."""
     if not IDENTIFIER_NAME.fullmatch(node.get("name") or ""):
@@ -195,8 +187,7 @@ def emit_assign(ctx, node, parent, trace, display):
     trace.update(status="mapped_unverified", activity="Assign")
 
 
-@maps("ParameterAssignmentOperation", uft='Parameter("X") = value', activities=("Assign",),
-      notes="Writes an Out argument of the action workflow; the test exposes it per step.")
+@emits("ParameterAssignmentOperation")
 def emit_output_parameter(ctx, node, parent, trace, display):
     """Parameter("X") = value: Assign to the Out argument of output parameter X."""
     binding = ctx.references.get(("outputs", node.get("name")))
@@ -207,7 +198,7 @@ def emit_output_parameter(ctx, node, parent, trace, display):
     trace.update(status="mapped_unverified", activity="Assign (output parameter)")
 
 
-@maps("WaitOperation", uft="Wait n", activities=("Delay",))
+@emits("WaitOperation")
 def emit_wait(ctx, node, parent, trace, display):
     """Wait n: Delay of n seconds; only a positive literal is accepted."""
     seconds = (node.get("seconds") or {}).get("value")

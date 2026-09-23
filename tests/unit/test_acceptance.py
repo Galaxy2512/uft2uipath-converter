@@ -4,7 +4,7 @@
 # environment values are named as workflow arguments.
 import pytest
 
-from uft2uipath.mapping import selector_state
+from uft2uipath.contracts import selector_state
 from uft2uipath.mapping.acceptance import (AcceptanceSettings, ReviewError, argument_name,
                                            build_binding, decide, load_review, review_template)
 

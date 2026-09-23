@@ -9,7 +9,8 @@ from pathlib import Path
 
 from uft2uipath.script_analysis.batch import run_batch
 from uft2uipath.script_generation.batch import emit_bundle
-from uft2uipath.script_generation.emitter import TYPES, UI, X, document, expr, q, throw, write_xaml
+from uft2uipath.contracts.value_types import XAML_TYPES
+from uft2uipath.script_generation.emitter import UI, X, document, expr, q, throw, write_xaml
 
 DEPENDENCIES = {
     "UiPath.System.Activities": "[23.10.3]",
@@ -96,7 +97,7 @@ def migrate_project(manifest, bindings, output, template=None, make_zip=False):
         arguments = ET.SubElement(invoke, q("InvokeWorkflowFile.Arguments", UI))
         for name, kind in first["arguments"].items():
             ET.SubElement(arguments, q("InArgument"), {
-                q("TypeArguments", X): TYPES[kind], q("Key", X): name,
+                q("TypeArguments", X): XAML_TYPES[kind], q("Key", X): name,
             }).text = expr(name)
         if not len(arguments):
             invoke.remove(arguments)

@@ -137,7 +137,7 @@ Use it to choose the next mappings by how many lines they unblock.
 
 ## Selector safety model
 
-Selectors derived from UFT repositories are candidates. Acceptance for generation does **not** mean the selector has been verified against the live target application. Every binding therefore records both facts separately (`uft2uipath/mapping/selector_state.py`):
+Selectors derived from UFT repositories are candidates. Acceptance for generation does **not** mean the selector has been verified against the live target application. Every binding therefore records both facts separately (`uft2uipath/contracts/selector_state.py`):
 
 | State | Meaning |
 |---|---|
@@ -177,11 +177,14 @@ uft2uipath/
   alm/                 ALM/PTD data and repository resolution
   archive/             QCP/ZIP extraction
   ast/                 neutral project model
+  contracts/           what the layers agree on: value types, UFT object
+                       identity, selector states (depends on nothing)
   mapping/             UFT -> UiPath mapping registry, coverage inventory,
                        selector candidates and acceptance
   parser/              ALM entities and VBScript parsing (neutral AST)
   script_analysis/     references, blockers and coverage per script
   script_generation/   UiPath XAML and Test Project generation
+    handlers.py        which function emits which UFT construct
     emitters/          one handler per UFT construct (ui, flow, testing, functions)
   uft/                 UFT Object Repository and resource readers
   pipeline.py          end-to-end conversion orchestration

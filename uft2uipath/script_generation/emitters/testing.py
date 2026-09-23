@@ -1,10 +1,11 @@
 """Test outcome: reported results and ending the test."""
 import xml.etree.ElementTree as ET
 
-from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import (
     EXIT_FAILED_SUFFIX, EXIT_TEST_MARKER, UI, assign, expr, literal, q,
 )
+from uft2uipath.script_generation.handlers import emits
+
 
 # Reporter status (constant or its numeric value) -> log level and label.
 REPORT_LEVELS = {
@@ -15,9 +16,7 @@ REPORT_LEVELS = {
 }
 
 
-@maps("ReportEventOperation", uft="Reporter.ReportEvent", activities=("LogMessage",),
-      notes="micFail logs an error and continues, as UFT does; the calling test fails at "
-            "its end. A screenshot argument is not carried over.")
+@emits("ReportEventOperation")
 def emit_report_event(ctx, node, parent, trace, display):
     """Reporter.ReportEvent: Log Message with the level of the status.
 
@@ -42,8 +41,7 @@ def emit_report_event(ctx, node, parent, trace, display):
                  note="Execution continues as in UFT; the calling test fails at its end.")
 
 
-@maps("ExitTestOperation", uft="ExitTest", activities=("Throw",),
-      notes="The calling test catches it: the run stops, and fails only if a failure was reported.")
+@emits("ExitTestOperation")
 def emit_exit_test(ctx, node, parent, trace, display):
     """ExitTest: throw the marked exception the calling test catches.
 

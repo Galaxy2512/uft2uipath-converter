@@ -24,10 +24,11 @@ Script.mts
 Neutral AST (operations, conditions, values)
    │  script_analysis/analyzer.py         references, parser-level blockers, coverage
    ▼
-mapping/operation_registry.py            UFT → UiPath registry: one entry per node type
+mapping/operation_registry.py            UFT → UiPath registry: one entry per node type (data only)
    │
    ▼
-script_generation/emitters/*.py          handlers: which activities a node becomes
+script_generation/handlers.py            which function emits which node type
+script_generation/emitters/*.py          the handlers themselves
    │  script_generation/emitter.py        ComponentEmitter: per-workflow state, typed values, selectors
    ▼
 script_generation/browser_scopes.py      Attach Browser / Attach Window grouping
@@ -40,7 +41,9 @@ mapping/inventory.py                     coverage report (artifacts/migration-co
 
 | Module | Responsibility |
 |---|---|
-| `mapping/operation_registry.py` | Source of truth: every parser node type, its UiPath activities, status and handler |
+| `contracts/` | What the layers agree on: value types, UFT object identity, selector states |
+| `mapping/operation_registry.py` | Source of truth: every parser node type, its UiPath activities and status, as data |
+| `script_generation/handlers.py` | Handler table: which function emits which node type, checked against the registry |
 | `script_generation/emitters/ui.py` | UI actions and checks: Exist, GetROProperty, Click, Set, SetSecure, Select, Sync |
 | `script_generation/emitters/flow.py` | If and conditions (comparison, And/Or/Not), assignments, output parameters, Wait, no-op statements |
 | `script_generation/emitters/testing.py` | Test outcome: Reporter.ReportEvent, ExitTest |
@@ -65,13 +68,17 @@ Each entry (`OperationMapping`) describes one parser node type:
 | `activities` | UiPath activities it becomes |
 | `status` | `supported`, `no_effect`, `planned`, `requires_strategy`, `unsupported` |
 | `kind` | `operation` (a statement), `condition` (the test of an If), `expression` (a value) |
-| `returns` / `typer` | For expressions: the result type, or a function computing it from the operands |
+| `returns` | For an expression whose type is always the same; otherwise the handler's `typer` decides |
 | `requires_selector` | Needs an object binding accepted for generation |
-| `handler` | The emitter function; `None` while not implemented |
 
-Handlers register themselves with the `@maps(...)` decorator. A second handler
-for the same node type is an error at import time. A test fails if the parser
-gains a node type without a registry entry.
+The registry holds no code: it can be read, reported and reviewed without
+importing the generator. Handlers live on the generation side and register
+themselves next to the code they emit, with `@emits("ClickOperation")` from
+`script_generation/handlers.py`. That registration is checked against the
+registry — an unknown node type, an entry that does not promise a handler, or
+a second handler for the same node type is an error at import time. Tests fail
+if the parser gains a node type without an entry, if a `supported` entry has no
+handler, or if a layer imports a later one.
 
 Handler signatures:
 
@@ -243,14 +250,15 @@ supported operation still blocks when its object has no selector.
 1. Find the priority with `uft2uipath inventory` over real exports.
 2. If the parser does not produce a node for the construct yet, add the node to
    `parser/uft_script_nodes.py` and parse it in `parser/uft_vbscript_parser.py`.
-3. Write the handler in the matching `script_generation/emitters/*.py` module
-   with `@maps(...)`; remove the `planned` entry from `operation_registry.py` if
-   there was one.
-4. Reproduce UFT semantics; raise `ValueError` for anything that would need a
+3. Add the entry to the table in `mapping/operation_registry.py`, or change the
+   status of the `planned` entry to `supported`.
+4. Write the handler in the matching `script_generation/emitters/*.py` module
+   and register it with `@emits("<NodeType>")`.
+5. Reproduce UFT semantics; raise `ValueError` for anything that would need a
    guess. Prefer blocking to an approximation that changes behaviour.
-5. Add tests: the parse, the emitted XAML, and the cases that must block.
-6. Run `pytest`, `convert` both sample exports and compare `inventory` before and after.
-7. Have the new activity opened in Studio; record the result below.
+6. Add tests: the parse, the emitted XAML, and the cases that must block.
+7. Run `pytest`, `convert` both sample exports and compare `inventory` before and after.
+8. Have the new activity opened in Studio; record the result below.
 
 ## Studio evidence
 

@@ -27,7 +27,8 @@ from typing import Any
 
 from uft2uipath.mapping.acceptance import build_binding
 from uft2uipath.script_analysis.analyzer import analyze_function
-from uft2uipath.script_generation.emitter import RESULT_ARGUMENT, ComponentEmitter, target_key
+from uft2uipath.contracts.targets import target_key
+from uft2uipath.script_generation.emitter import RESULT_ARGUMENT, ComponentEmitter
 
 FOLDER = "Functions"
 _INVALID = re.compile(r"[^A-Za-z0-9_]")

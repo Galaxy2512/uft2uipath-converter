@@ -2,7 +2,7 @@
 
 A candidate is used only when a review file accepts it explicitly, or when a
 confidence threshold was given and the candidate reaches it. Acceptance is
-recorded as what it is (see mapping.selector_state): accepted_for_generation
+recorded as what it is (see contracts.selector_state): accepted_for_generation
 with a verification status, which stays accepted_unverified unless a person
 recorded having checked the selector in Studio or in a run.
 """
@@ -13,13 +13,13 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
-from uft2uipath.mapping import selector_state
-from uft2uipath.script_generation.browser_scopes import BROWSER_TYPES
-from uft2uipath.script_generation.emitter import target_key
+from uft2uipath.contracts import selector_state
+from uft2uipath.contracts.targets import (
+    BROWSER_TYPES, DEFAULT_INPUT_METHOD, INPUT_METHODS, TARGET_KINDS, target_key,
+)
+from uft2uipath.contracts.value_types import STRING
 
 IDENTITY_KEYS = ("browser", "page", "object_type", "logical_name")
-INPUT_METHODS = {"Simulate", "HardwareEvents", "SendWindowMessages"}
-DEFAULT_INPUT_METHOD = "Simulate"
 _IDENTIFIER = re.compile(r"[^A-Za-z0-9_]")
 
 
@@ -94,7 +94,7 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
         reviewed, selector, source = {}, candidate["selector"], "threshold"
 
     kind = candidate.get("kind")
-    if kind not in ("web", "desktop"):
+    if kind not in TARGET_KINDS:
         decision["reasons"].append(f"unsupported_target_kind: {kind}")
         return decision
     browser_type = reviewed.get("browser_type") or settings.browser_type
@@ -148,7 +148,7 @@ def build_binding(analysis: dict[str, Any], decisions: list[dict[str, Any]]) -> 
     outputs = set(references.get("outputs", []))
     for name in sorted(outputs):
         binding["outputs"][name] = {
-            "name": argument_name("param", name, "out"), "type": "String", "direction": "Out",
+            "name": argument_name("param", name, "out"), "type": STRING, "direction": "Out",
         }
     for category, kind in (("parameters", "param"), ("environment", "env"),
                            ("data", "data"), ("secure", "secure")):
@@ -156,7 +156,7 @@ def build_binding(analysis: dict[str, Any], decisions: list[dict[str, Any]]) -> 
             if category == "parameters" and name in outputs:
                 continue
             binding[category][name] = {
-                "name": argument_name(kind, name), "type": "String", "direction": "In",
+                "name": argument_name(kind, name), "type": STRING, "direction": "In",
             }
     seen = set()
     for decision in decisions:

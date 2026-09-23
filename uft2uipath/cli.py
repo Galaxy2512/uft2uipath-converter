@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 from uft2uipath.archive.extractor import ArchiveExtractor
 from uft2uipath.discovery.discovery_report import DiscoveryReportBuilder
-from uft2uipath.script_generation.browser_scopes import BROWSER_TYPES
+from uft2uipath.contracts.targets import BROWSER_TYPES
 
 
 def main():

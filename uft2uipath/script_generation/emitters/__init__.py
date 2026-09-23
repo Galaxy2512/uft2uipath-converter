@@ -1,4 +1,7 @@
-"""Activity emitters, one handler per mapped node type (see mapping.operation_registry).
+"""Activity emitters, one handler per mapped node type.
+
+Each handler registers itself with @emits from script_generation.handlers,
+against the entry the node type has in mapping.operation_registry.
 
 A handler is called as handler(ctx, node, parent, trace, display): ctx is the
 ComponentEmitter, parent the XAML element to append to, trace the report entry

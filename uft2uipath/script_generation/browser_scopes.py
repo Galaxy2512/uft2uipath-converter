@@ -1,9 +1,8 @@
 """Attach to explicitly mapped browsers without moving condition evaluation."""
 import xml.etree.ElementTree as ET
 
-from uft2uipath.script_generation.emitter import UI, X, q, target_key
-
-BROWSER_TYPES = {"IE", "Firefox", "Chrome", "Edge", "Custom"}
+from uft2uipath.contracts.targets import BROWSER_TYPES, target_key
+from uft2uipath.script_generation.emitter import UI, X, q
 
 
 def browser_target(binding):

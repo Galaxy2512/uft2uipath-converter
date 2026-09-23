@@ -1,16 +1,15 @@
 """System operations outside the application under test: starting programs."""
 import xml.etree.ElementTree as ET
 
-from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import UI, expr, q
+from uft2uipath.script_generation.handlers import emits
+
 
 # SystemUtil.Run operations Start Process reproduces: "open" is the default verb.
 _OPEN = {"", "open"}
 
 
-@maps("RunApplicationOperation", uft="SystemUtil.Run file, [parameters], [directory], [operation], [mode]",
-      activities=("StartProcess",),
-      notes="Only the default 'open' operation; the window mode is not carried over.")
+@emits("RunApplicationOperation")
 def emit_start_process(ctx, node, parent, trace, display):
     """SystemUtil.Run: Start Process with the file, its parameters and working directory.
 

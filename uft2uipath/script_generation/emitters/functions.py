@@ -9,9 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-from uft2uipath.mapping.operation_registry import maps
 from uft2uipath.script_generation.emitter import NonNull
 from uft2uipath.script_generation.emitters import calls
+from uft2uipath.script_generation.handlers import emits
+
 
 NUMERIC = ("Int32", "Double")
 
@@ -170,10 +171,7 @@ def _function_type(ctx, node):
     return spec.returns(kinds) if callable(spec.returns) else spec.returns
 
 
-@maps("FunctionCall", uft="Len(x), CStr(n), Rnd ...", activities=(), kind="expression",
-      typer=_function_type,
-      notes="VBScript built-ins: " + ", ".join(sorted(FUNCTIONS)) + ". Functions defined in the "
-            "action or an associated library are called as their own workflow; others block.")
+@emits("FunctionCall", typer=_function_type)
 def emit_function(ctx, node, parent):
     """C# code for a call: a built-in inline, a user function through Invoke Workflow File.
 
@@ -216,10 +214,7 @@ def _binary_type(ctx, node):
     return "Int32" if left == right == "Int32" else "Double"
 
 
-@maps("BinaryExpression", uft="a + b, a - b, a * b, a / b, a \\ b, a Mod b, a ^ b", activities=(),
-      kind="expression", typer=_binary_type,
-      notes="Operands must be numbers, or both strings for +. Int32 overflow wraps instead of "
-            "promoting to Long/Double as VBScript does.")
+@emits("BinaryExpression", typer=_binary_type)
 def emit_binary(ctx, node, parent):
     """C# code for an arithmetic operation of the type _binary_type found."""
     kind, operator = _binary_type(ctx, node), node.get("operator")
@@ -247,7 +242,7 @@ def _unary_type(ctx, node):
     return kind
 
 
-@maps("UnaryExpression", uft="-a", activities=(), kind="expression", typer=_unary_type)
+@emits("UnaryExpression", typer=_unary_type)
 def emit_unary(ctx, node, parent):
     """C# negation of a number."""
     operand = node.get("operand")
