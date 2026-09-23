@@ -137,16 +137,16 @@ Use it to choose the next mappings by how many lines they unblock.
 
 ## Selector safety model
 
-Selectors derived from UFT repositories are candidates. Acceptance for generation does **not** mean the selector has been verified against the live target application.
+Selectors derived from UFT repositories are candidates. Acceptance for generation does **not** mean the selector has been verified against the live target application. Every binding therefore records both facts separately (`uft2uipath/mapping/selector_state.py`):
 
-The next iteration should make the distinction explicit between:
+| State | Meaning |
+|---|---|
+| `candidate` | proposed from UFT properties; not used for generation |
+| `accepted_unverified` | accepted for generation, by review or confidence threshold; never checked against the application |
+| `studio_validated` | a person confirmed the selector in Studio |
+| `runtime_verified` | a run against the application found the element |
 
-- candidate
-- accepted for generation
-- Studio validated
-- runtime verified
-
-This avoids treating a confidence threshold as proof that the target matches during execution.
+`accepted_for_generation` is what the emitter requires; the status is what the selector is worth. The converter only ever sets `accepted_unverified`: the stronger states are recorded by a person in the selector review file. There is deliberately no `verified` flag, because it cannot say which of these is meant.
 
 ## Secure values
 

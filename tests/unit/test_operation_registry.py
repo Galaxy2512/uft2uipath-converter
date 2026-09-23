@@ -108,3 +108,10 @@ def test_inventory_counts_lines_reasons_calls_and_test_coverage():
     # An action called twice by a test counts once; manual tests are left out.
     assert inventory["tests"] == [{"project": "P", "test_id": 1, "name": "T", "status": "blocked",
                                    "operations": 3, "mapped": 1, "blocked": 2, "coverage": 0.333}]
+
+
+def test_binding_that_is_not_accepted_is_a_binding_blocker():
+    issue = {"code": "unsupported_mapping",
+             "message": "Object binding must be accepted for generation, with a known "
+                        "verification status (see mapping.selector_state)."}
+    assert categorize(issue) == "binding"

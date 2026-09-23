@@ -13,7 +13,8 @@ def bindings():
         "objects": [
             {"uft": {"browser": "B", "page": "P", "object_type": kind, "logical_name": name},
              "selector": f"<html title='Fixture' /><webctrl id='{name}' />",
-             "verified": True, "input_method": "Simulate", "timeout_ms": 30000,
+             "accepted_for_generation": True, "verification_status": "accepted_unverified",
+             "input_method": "Simulate", "timeout_ms": 30000,
              "browser_type": "Edge"}
             for kind, name in OBJECTS
         ],
@@ -110,7 +111,9 @@ def desktop_bindings():
         {"uft": {"path": [{"class": "Dialog", "name": name[0]}, {"class": kind, "name": name[1]}]},
          "selector": (f"<wnd title='{name[0]}' cls='#32770' />"
                       f"<wnd cls='{cls}' title='{name[1].replace('&', '&amp;')}' />"),
-         "kind": "desktop", "verified": True, "input_method": "Simulate", "timeout_ms": 30000}
+         "kind": "desktop", "accepted_for_generation": True,
+         "verification_status": "accepted_unverified",
+         "input_method": "Simulate", "timeout_ms": 30000}
         for kind, name, cls in (
             ("WinEdit", ("Login", "Agent Name:"), "Edit"),
             ("WinButton", ("Login", "OK"), "Button"),

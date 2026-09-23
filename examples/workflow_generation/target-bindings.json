@@ -19,7 +19,7 @@
             "logical_name": "Ready"
           },
           "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='DIV' id='Ready' />",
-          "verified": true,
+          "accepted_for_generation": true, "verification_status": "accepted_unverified",
           "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
           "input_method": "Simulate",
           "timeout_ms": 30000,
@@ -33,7 +33,7 @@
             "logical_name": "Username"
           },
           "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='INPUT' id='Username' />",
-          "verified": true,
+          "accepted_for_generation": true, "verification_status": "accepted_unverified",
           "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
           "input_method": "Simulate",
           "timeout_ms": 30000,
@@ -47,7 +47,7 @@
             "logical_name": "Submit"
           },
           "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='BUTTON' id='Submit' />",
-          "verified": true,
+          "accepted_for_generation": true, "verification_status": "accepted_unverified",
           "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
           "input_method": "Simulate",
           "timeout_ms": 30000,
@@ -61,7 +61,7 @@
             "logical_name": "Retry"
           },
           "selector": "<html title='SYNTHETIC FIXTURE' /><webctrl tag='BUTTON' id='Retry' />",
-          "verified": true,
+          "accepted_for_generation": true, "verification_status": "accepted_unverified",
           "verification_note": "Synthetic fixture only; execution is blocked by fixture_only.",
           "input_method": "Simulate",
           "timeout_ms": 30000,

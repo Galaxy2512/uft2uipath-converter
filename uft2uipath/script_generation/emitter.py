@@ -17,6 +17,7 @@ import math
 import re
 import xml.etree.ElementTree as ET
 
+from uft2uipath.mapping import selector_state
 from uft2uipath.mapping.operation_registry import lookup
 
 WF = "http://schemas.microsoft.com/netfx/2009/xaml/activities"
@@ -36,12 +37,13 @@ IDENTIFIER_NAME = re.compile(r"[A-Za-z][A-Za-z0-9_]*\Z")
 DIRECTIONS = {"In": "InArgument", "Out": "OutArgument", "InOut": "InOutArgument"}
 # Set by Reporter micFail in any action; the calling test fails at its end.
 FAILED_FLAG = "io_uft_failed"
-# Marks the exception ExitTest raises, so the test can stop without failing.
-EXIT_TEST_MARKER = "UFT ExitTest"
+# Marks the exception ExitTest raises, so the test can stop without failing. The
+# fixed identifier cannot collide with a message the application under test produces.
+EXIT_TEST_MARKER = "__UFT2UIPATH_EXIT_TEST__:0f7a1c2e-5d64-4f0a-9a7e-2b0f3c8d6a11:"
 # Out argument of a function workflow that carries the VBScript return value.
 RESULT_ARGUMENT = "out_result"
 # Appended to that message when a failure was reported before the ExitTest.
-EXIT_FAILED_SUFFIX = " [failure reported]"
+EXIT_FAILED_SUFFIX = ":failure-reported"
 CSHARP_KEYWORDS = frozenset("""
     abstract as base bool break byte case catch char checked class const continue decimal
     default delegate do double else enum event explicit extern false finally fixed float for
@@ -443,8 +445,9 @@ class ComponentEmitter:
             raise ValueError("Explicit selector required.")
         # Syntax check only; matching the live UI must be verified in Studio.
         ET.fromstring("<root>" + selector + "</root>")
-        if binding.get("verified") is not True:
-            raise ValueError("Object binding must be explicitly marked verified.")
+        if not selector_state.usable(binding):
+            raise ValueError("Object binding must be accepted for generation, with a known "
+                             "verification status (see mapping.selector_state).")
         timeout = binding.get("timeout_ms")
         if type(timeout) is not int or not 0 < timeout < 2**31:
             raise ValueError("Positive Int32 timeout_ms required.")

@@ -66,7 +66,7 @@ Each entry (`OperationMapping`) describes one parser node type:
 | `status` | `supported`, `no_effect`, `planned`, `requires_strategy`, `unsupported` |
 | `kind` | `operation` (a statement), `condition` (the test of an If), `expression` (a value) |
 | `returns` / `typer` | For expressions: the result type, or a function computing it from the operands |
-| `requires_selector` | Needs a verified object binding |
+| `requires_selector` | Needs an object binding accepted for generation |
 | `handler` | The emitter function; `None` while not implemented |
 
 Handlers register themselves with the `@maps(...)` decorator. A second handler
@@ -170,7 +170,9 @@ The converter reproduces that:
 - `micFail` also sets the InOut argument `io_uft_failed` of the action workflow.
 - The test case passes one shared variable `uft_failed` to every step and ends
   with `If uft_failed → Throw`.
-- `ExitTest` throws an `ApplicationException` marked `UFT ExitTest`. The test runs
+- `ExitTest` throws an `ApplicationException` whose message starts with a fixed
+  identifier (`__UFT2UIPATH_EXIT_TEST__:<guid>:`) that an application exception
+  cannot produce by accident. The test runs
   its steps in a TryCatch that stops them without failing; other exceptions are
   rethrown. A faulted workflow does not hand back its InOut arguments, so the
   exception message carries ` [failure reported]` when a failure was reported
@@ -234,7 +236,7 @@ supported operation still blocks when its object has no selector.
 | `condition` | If condition not supported | converter |
 | `parser` | Statement or object chain not fully parsed | converter |
 | `library` | Calls a function library routine, not migrated yet | converter + libraries from the export |
-| `binding` | No verified selector or argument | selector review |
+| `binding` | No accepted selector or argument binding | selector review |
 
 ## Adding a mapping
 

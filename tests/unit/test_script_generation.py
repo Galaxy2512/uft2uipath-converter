@@ -29,7 +29,8 @@ def bindings():
         "objects": [
             {"uft": {"browser": "B", "page": "P", "object_type": kind, "logical_name": name},
              "selector": f"<html title='Fixture' /><webctrl id='{name}' />",
-             "verified": True, "input_method": "Simulate", "timeout_ms": 30000,
+             "accepted_for_generation": True, "verification_status": "accepted_unverified",
+             "input_method": "Simulate", "timeout_ms": 30000,
              "browser_type": "Edge"}
             for kind, name in (("WebEdit", "User"), ("WebButton", "Go"), ("WebElement", "Ready"))
         ],
@@ -118,7 +119,7 @@ def test_missing_binding_prevents_execution(change):
     if change == "missing_selector":
         config["objects"][0].pop("selector")
     elif change == "unverified":
-        config["objects"][0]["verified"] = False
+        config["objects"][0]["accepted_for_generation"] = False
     elif change == "missing_method":
         config["objects"][0].pop("input_method")
     else:

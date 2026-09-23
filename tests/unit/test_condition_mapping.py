@@ -49,7 +49,8 @@ def bindings(analysis, selector=True):
     if selector:
         binding["objects"] = [{
             "uft": {"browser": "B", "page": "P", "object_type": "WebElement", "logical_name": "Role"},
-            "selector": "<html title='T' /><webctrl id='role' />", "verified": True,
+            "selector": "<html title='T' /><webctrl id='role' />",
+            "accepted_for_generation": True, "verification_status": "accepted_unverified",
             "input_method": "Simulate", "timeout_ms": 30000, "browser_type": "Edge",
         }]
     return binding

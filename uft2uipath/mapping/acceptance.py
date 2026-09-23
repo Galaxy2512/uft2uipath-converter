@@ -1,9 +1,10 @@
 """Decides which selector candidates may be used, and builds emitter bindings.
 
 A candidate is used only when a review file accepts it explicitly, or when a
-confidence threshold was given and the candidate reaches it. Accepted-by
-threshold is recorded as such: it means "good enough to generate", never
-"verified against the application".
+confidence threshold was given and the candidate reaches it. Acceptance is
+recorded as what it is (see mapping.selector_state): accepted_for_generation
+with a verification status, which stays accepted_unverified unless a person
+recorded having checked the selector in Studio or in a run.
 """
 
 from __future__ import annotations
@@ -12,6 +13,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Any
 
+from uft2uipath.mapping import selector_state
 from uft2uipath.script_generation.browser_scopes import BROWSER_TYPES
 from uft2uipath.script_generation.emitter import target_key
 
@@ -64,7 +66,8 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
     decision: dict[str, Any] = {
         "uft": identity, "path": entry["path"], "lines": entry["lines"],
         "status": entry["status"], "confidence": candidate.get("confidence"),
-        "accepted": False, "accepted_by": None, "selector": None,
+        "accepted": False, "acceptance_source": None,
+        "verification_status": selector_state.CANDIDATE, "selector": None,
         "proposed": candidate.get("selector"), "reasons": [],
     }
     if identity is None:
@@ -107,18 +110,24 @@ def decide(entry: dict[str, Any], settings: AcceptanceSettings) -> dict[str, Any
         decision["reasons"].append("invalid_timeout_ms")
         return decision
 
+    state = reviewed.get("verification_status") or selector_state.ACCEPTED_UNVERIFIED
+    if state not in selector_state.GENERATION_STATES:
+        decision["reasons"].append(f"unsupported_verification_status: {state}")
+        return decision
     binding = {
         "uft": {**{key: identity.get(key) for key in IDENTITY_KEYS},
                 "path": identity.get("path")},
         "selector": selector, "kind": kind,
-        # The emitter refuses unverified bindings; record how this one was accepted.
-        "verified": True,
-        "verification_note": f"Accepted by {source}; not verified against the application.",
+        # The emitter uses accepted bindings; the status says what that acceptance is worth.
+        "accepted_for_generation": True,
+        "acceptance_source": source,
+        "verification_status": state,
         "input_method": input_method, "timeout_ms": timeout,
     }
     if kind == "web":
         binding["browser_type"] = browser_type
-    decision.update(accepted=True, accepted_by=source, selector=selector, binding=binding)
+    decision.update(accepted=True, acceptance_source=source, verification_status=state,
+                    selector=selector, binding=binding)
     return decision
 
 
@@ -175,11 +184,14 @@ def review_template(actions: dict[str, list[dict[str, Any]]]) -> dict[str, Any]:
             objects.append({
                 "uft": decision["uft"], "selector": decision["selector"] or decision.get("proposed"),
                 "confidence": decision["confidence"], "accepted": decision["accepted"],
+                "verification_status": decision["verification_status"],
                 "first_seen_in": action, "lines": decision["lines"],
                 "input_method": DEFAULT_INPUT_METHOD, "timeout_ms": None, "browser_type": None,
             })
     return {
         "format_version": 1,
-        "note": "Set accepted to true for selectors you have checked; pass this file with --selector-review.",
+        "note": "Set accepted to true for selectors you want generated, and pass this file with "
+                "--selector-review. verification_status records how far you checked a selector: "
+                + ", ".join(selector_state.GENERATION_STATES) + ".",
         "objects": objects,
     }

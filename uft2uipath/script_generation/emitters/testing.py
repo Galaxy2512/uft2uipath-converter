@@ -55,7 +55,8 @@ def emit_exit_test(ctx, node, parent, trace, display):
     # A faulted workflow does not hand back its InOut arguments, so the
     # failure flag travels in the message for the calling test to read.
     flag = ctx.failure_flag()
-    message = literal(f"{EXIT_TEST_MARKER}({code}) in {ctx.component_id}, line {node.get('line_number')}")
+    message = literal(f"{EXIT_TEST_MARKER} UFT ExitTest({code}) in {ctx.component_id}, "
+                      f"line {node.get('line_number')}")
     ET.SubElement(parent, q("Throw"), {
         "DisplayName": display,
         "Exception": expr(f"new System.ApplicationException({message} + "

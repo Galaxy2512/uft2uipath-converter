@@ -14,7 +14,8 @@ def bindings(analysis, objects=()):
     binding = build_binding(analysis, [])
     binding["objects"] = [{
         "uft": {"path": [{"class": "Window", "name": "W"}, {"class": kind, "name": name}]},
-        "kind": "desktop", "selector": f"<wnd title='W' /><ctrl name='{name}' />", "verified": True,
+        "kind": "desktop", "selector": f"<wnd title='W' /><ctrl name='{name}' />",
+        "accepted_for_generation": True, "verification_status": "accepted_unverified",
         "input_method": "Simulate", "timeout_ms": 30000,
     } for kind, name in objects]
     return binding

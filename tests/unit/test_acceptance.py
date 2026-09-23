@@ -4,6 +4,7 @@
 # environment values are named as workflow arguments.
 import pytest
 
+from uft2uipath.mapping import selector_state
 from uft2uipath.mapping.acceptance import (AcceptanceSettings, ReviewError, argument_name,
                                            build_binding, decide, load_review, review_template)
 
@@ -26,10 +27,13 @@ def test_threshold_accepts_confident_candidates_only():
     accepted = decide(entry(0.6), settings(threshold=0.5))
     rejected = decide(entry(0.4), settings(threshold=0.5))
 
-    assert accepted["accepted"] and accepted["accepted_by"] == "threshold"
+    assert accepted["accepted"] and accepted["acceptance_source"] == "threshold"
     assert accepted["binding"]["selector"] == SELECTOR
-    assert accepted["binding"]["verified"] is True
-    assert "not verified against the application" in accepted["binding"]["verification_note"]
+    # Accepted for generation is not a claim about the application.
+    assert accepted["binding"]["accepted_for_generation"] is True
+    assert accepted["binding"]["verification_status"] == selector_state.ACCEPTED_UNVERIFIED
+    assert "verified" not in accepted["binding"]
+    assert rejected["verification_status"] == selector_state.CANDIDATE
     assert not rejected["accepted"] and rejected["reasons"] == ["below_threshold: 0.4 < 0.5"]
 
 
@@ -46,7 +50,7 @@ def test_review_accepts_rejects_and_overrides_low_confidence_candidates():
     ]})
     accepted = decide(entry(0.1), settings(review=review))
 
-    assert accepted["accepted"] and accepted["accepted_by"] == "review"
+    assert accepted["accepted"] and accepted["acceptance_source"] == "review"
     assert accepted["binding"]["selector"] == "<html /><webctrl id='user' />"
     assert accepted["binding"]["input_method"] == "HardwareEvents"
     assert accepted["binding"]["timeout_ms"] == 5000
@@ -110,3 +114,28 @@ def test_review_template_lists_every_proposed_selector_once():
         ("userName", True), ("password", False),
     ]
     assert template["objects"][1]["selector"] == SELECTOR
+
+
+def test_review_can_record_a_selector_checked_in_studio_or_at_runtime():
+    review = load_review({"objects": [
+        {"uft": IDENTITY, "accepted": True, "verification_status": selector_state.STUDIO_VALIDATED},
+    ]})
+    decision = decide(entry(0.1), settings(review=review))
+
+    assert decision["binding"]["verification_status"] == selector_state.STUDIO_VALIDATED
+    assert selector_state.usable(decision["binding"])
+
+
+def test_review_cannot_invent_a_verification_status():
+    review = load_review({"objects": [
+        {"uft": IDENTITY, "accepted": True, "verification_status": "verified"},
+    ]})
+    decision = decide(entry(0.9), settings(threshold=0.1, review=review))
+
+    assert not decision["accepted"]
+    assert decision["reasons"] == ["unsupported_verification_status: verified"]
+
+
+def test_a_candidate_is_not_usable_for_generation():
+    assert not selector_state.usable({"verification_status": selector_state.CANDIDATE})
+    assert not selector_state.usable({"accepted_for_generation": True})

@@ -55,12 +55,15 @@ There is no arbitrary expression execution from binding configuration.
 objects contains exact UFT identities:
   {"uft": {"browser":"B","page":"P","object_type":"WebEdit","logical_name":"User"},
    "selector":"<html ... /><webctrl ... />",
-   "verified":true, "input_method":"Simulate", "timeout_ms":30000,
-   "browser_type":"Edge"}
+   "accepted_for_generation":true, "verification_status":"accepted_unverified",
+   "input_method":"Simulate", "timeout_ms":30000, "browser_type":"Edge"}
 
-For real use, verified=true means the supplied identity-to-selector mapping was
-verified externally against the correct application. The converter cannot verify
-a live selector. Input methods: Simulate, HardwareEvents, SendWindowMessages.
+accepted_for_generation says the converter may emit this selector, nothing more.
+verification_status says how far it was checked (see mapping/selector_state.py):
+accepted_unverified, studio_validated or runtime_verified. The converter never
+raises that status by itself; only a person who checked the selector in Studio
+or in a run may record the stronger values, in the selector review file.
+Input methods: Simulate, HardwareEvents, SendWindowMessages.
 Selectors must be explicit XML fragments; this version does not generate or
 infer them. timeout_ms is required. Exist uses its source timeout instead.
 WaitForReady=NONE avoids adding a separate document-ready wait; runtime behavior

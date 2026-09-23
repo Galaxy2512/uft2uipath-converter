@@ -20,13 +20,13 @@ CATEGORIES = {
     "parser": "Statement or object chain not fully parsed",
     "expression": "Value expression unsupported (functions, operators, types)",
     "condition": "If condition other than a supported condition",
-    "binding": "No verified selector or argument binding",
+    "binding": "No accepted selector or argument binding",
     "library": "Calls a function from a function library or the action itself (not migrated yet)",
     "mapping": "Operation has no UiPath mapping yet",
     "other": "Other",
 }
 _BINDING = re.compile(
-    r"object-identity binding|selector required|marked verified|timeout_ms required|"
+    r"object-identity binding|selector required|accepted for generation|timeout_ms required|"
     r"input_method required|browser_type required|actions require a full|"
     r"^Missing (\w+ )?binding|SetSecure needs"
 )

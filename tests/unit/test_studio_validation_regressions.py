@@ -19,7 +19,8 @@ def config():
     return {"objects": [
         {"uft": {"browser": "B", "page": "P", "object_type": kind, "logical_name": name},
          "selector": f"<html app='msedge.exe' title='Fixture' /><webctrl id='{name}' />",
-         "verified": True, "input_method": "Simulate", "timeout_ms": 30000,
+         "accepted_for_generation": True, "verification_status": "accepted_unverified",
+         "input_method": "Simulate", "timeout_ms": 30000,
          "browser_type": "Edge"}
         for kind, name in (("WebEdit", "User"), ("WebButton", "Go"), ("WebElement", "Ready"))
     ]}
