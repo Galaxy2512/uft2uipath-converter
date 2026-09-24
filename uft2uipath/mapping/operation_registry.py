@@ -15,6 +15,7 @@ from dataclasses import dataclass
 
 from uft2uipath.contracts.status import EMITTED, STATUSES  # noqa: F401  (re-exported)
 from uft2uipath.contracts.value_types import VALUE_TYPES
+from uft2uipath.mapping.uipath_activity_catalog import require as require_activity
 
 # Where the construct appears: a statement, the Boolean test of an If, or a value.
 KINDS = ("operation", "condition", "expression")
@@ -159,6 +160,8 @@ def _index(table: tuple[OperationMapping, ...]) -> dict[str, OperationMapping]:
             raise ValueError(f"Unknown mapping kind {entry.kind!r} for {entry.node_type}.")
         if entry.returns is not None and entry.returns not in VALUE_TYPES:
             raise ValueError(f"Unknown return type {entry.returns!r} for {entry.node_type}.")
+        for activity_id in entry.activities:
+            require_activity(activity_id)
         if entry.node_type in registry:
             raise ValueError(f"Duplicate registry entry for {entry.node_type}.")
         registry[entry.node_type] = entry
@@ -180,6 +183,18 @@ def capabilities() -> dict[str, list[dict]]:
         grouped[entry.status].append({
             "node_type": entry.node_type, "kind": entry.kind, "uft": entry.uft,
             "activities": list(entry.activities),
+            "activity_specs": [
+                {
+                    "activity_id": spec.activity_id,
+                    "display_name": spec.display_name,
+                    "package": spec.package,
+                    "category": spec.category,
+                    "target": spec.target,
+                    "backend": spec.backend,
+                    "status": spec.status,
+                }
+                for spec in (require_activity(activity_id) for activity_id in entry.activities)
+            ],
             "requires_selector": entry.requires_selector, "notes": entry.notes,
         })
     return grouped
